@@ -111,17 +111,6 @@ dripping dot in the logo; springy squish on every tap; cards and rows that float
 The match screen adds rising bubbles and water ripples. Everything turns off when the phone's "reduce motion" is on.
 Build note: in React Native use Reanimated + Skia for the blobs (cheap GPU shaders) and spring physics for taps.
 
-## 3i. Premium pass (v2 design rules)
-
-Applied first to Welcome, Discover, Profile, Chats and Chat (row 13 on the canvas) for comparison:
-- One primary action per screen (the only gradient); everything else is quiet text or ghost icons.
-- No boxes for grouping: spacing plus inset hairlines (6% white). Surfaces: #09080A base, #141216 raised.
-- Type scale: 40 display · 28 title · 17 headline · 15 body · 13 meta; Bricolage Grotesque only at 28 px and up.
-- 8-pt grid, 24 px side margins, 32 px radius on hero media; photo-first with soft gradient fades.
-- Colour means something: pink acts, blue protects, green is live. Nothing decorative.
-- Floating glass tab bar, icon-only, active state is a small gradient dot.
-- Calmer motion: half-strength ambient light, slow photo drift, springy taps, staggered entrances.
-
 ## 4. Visual system
 
 Duotone “two energies”: hot pink-red + electric blue, blended through violet.
