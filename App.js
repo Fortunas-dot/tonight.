@@ -16,6 +16,7 @@ import { C } from './src/theme';
 import { CHATS, IDEAS, PEOPLE } from './src/data';
 import { TabBar } from './src/ui';
 import * as api from './src/backend';
+import { applyNewestUpdate } from './src/version';
 
 import { Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
 import {
@@ -64,6 +65,11 @@ export default function App() {
   const [online, setOnline] = useState(false);
   const [deck, setDeck] = useState([]);
   const [likesYou, setLikesYou] = useState([]);
+
+  // Get a new OTA update in right away (restarts the app once when there is one).
+  useEffect(() => {
+    applyNewestUpdate();
+  }, []);
 
   // Restore saved progress once.
   useEffect(() => {

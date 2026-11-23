@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { GUIDES, PEOPLE, POSTS, VOWS, personById } from '../data';
+import { versionLabel } from '../version';
 import {
   Avatar,
   Card,
@@ -798,6 +799,9 @@ export function Me({ profile, go, onRestart }) {
         />
       </Card>
       <GhostButton title="Restart onboarding (test build)" onPress={onRestart} border={false} color={C.muted} style={{ marginTop: 18 }} />
+      <T v="small" c={C.faint} style={{ textAlign: 'center', marginTop: 4 }}>
+        {versionLabel()}
+      </T>
       <T v="small" c={C.faint} style={{ textAlign: 'center' }}>
         Tonight 1.0 · test build with sample members
       </T>

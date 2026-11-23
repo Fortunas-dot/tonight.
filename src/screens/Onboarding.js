@@ -8,6 +8,7 @@ import { Icon, Verified } from '../icons';
 import { BOUNDARIES, INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS } from '../data';
 import { MaskEditor } from './MaskEditor';
 import * as api from '../backend';
+import { versionLabel } from '../version';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
 
 const STEPS = 6;
@@ -59,6 +60,9 @@ export function Welcome({ next }) {
         <GradientButton title="Get started" onPress={next} />
         <T v="small" c={C.faint} style={{ textAlign: 'center', marginTop: 8 }}>
           18+ only. By continuing you agree to the Terms and Privacy Policy at fortunas.nl/tonight.
+        </T>
+        <T v="small" c={C.faint} style={{ textAlign: 'center', fontSize: 10, opacity: 0.6 }}>
+          {versionLabel()}
         </T>
       </Rise>
     </Screen>
