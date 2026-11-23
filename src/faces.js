@@ -8,6 +8,8 @@ export const VH = 430;
 const MASK_EYE_GAP = 72;
 export const MASK_EYE_X = 171;
 export const MASK_EYE_Y = 225;
+// How far (in eye-gaps) the mask's eye line sits below the detected eye centres.
+const DROP = 0.2;
 
 let detector = null;
 async function getDetector() {
@@ -66,11 +68,14 @@ export async function findFace(uri) {
     }
     const gap = Math.hypot(b.x - a.x, b.y - a.y);
     if (gap < 4) return null;
+    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+    // Nudge the mask down the face a little so it rests on the eyes and the bridge of the nose.
+    const down = gap * DROP;
     return {
-      x: (a.x + b.x) / 2,
-      y: (a.y + b.y) / 2,
+      x: (a.x + b.x) / 2 - Math.sin(angle) * down,
+      y: (a.y + b.y) / 2 + Math.cos(angle) * down,
       s: gap / MASK_EYE_GAP,
-      r: (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI,
+      r: (angle * 180) / Math.PI,
       auto: true,
     };
   } catch (e) {

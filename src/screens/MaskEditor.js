@@ -3,7 +3,7 @@
 // The mask is burned into a new image on the phone, so the bare face is never uploaded.
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import Svg, { Circle, Defs, Ellipse, G, Image as SvgImage, Path, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, G, Image as SvgImage, LinearGradient as SvgLinear, Path, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { File, Paths } from 'expo-file-system';
 import { C, F } from '../theme';
@@ -15,26 +15,105 @@ import { MANUAL, MASK_EYE_X, MASK_EYE_Y, VH, VW, findFace } from '../faces';
 const OUT_W = 1080;
 const OUT_H = Math.round((OUT_W * VH) / VW);
 
-// Eye mask with two eye holes (even-odd fill keeps the holes see-through).
-const EYES = 'M96 222C108 198 150 196 171 211C192 196 234 198 246 222C240 252 206 260 188 245C180 238 162 238 154 245C136 260 102 252 96 222Z M122 225a13 6.5 0 1 0 26 0a13 6.5 0 1 0 -26 0Z M194 225a13 6.5 0 1 0 26 0a13 6.5 0 1 0 -26 0Z';
+// The masks, drawn around the wearer's eyes: the eye holes sit 72 units apart, centred on (171, 225).
+// A real face is about 2.4 eye-gaps wide and the top of the head about 1.7 eye-gaps above the eyes.
+
+// Eye mask with almond eye holes (even-odd fill keeps the holes see-through).
+const BODY = 'M72 194C98 196 136 188 171 205C206 188 244 196 270 194C266 234 246 264 212 265C193 266 182 255 171 248C160 255 149 266 130 265C96 264 76 234 72 194Z';
+const HOLES = 'M112 227Q135 208 158 227Q135 241 112 227Z M184 227Q207 208 230 227Q207 241 184 227Z';
+const EYES = `${BODY} ${HOLES}`;
+// The band a headpiece sits on, following the top of the head.
+const BAND = 'M86 132Q171 58 256 132';
+
+// Gradients shared by every mask; each Svg that draws a mask includes these in its Defs.
+function MaskDefs() {
+  return (
+    <>
+      <SvgLinear id="satin" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#3A1828" />
+        <Stop offset="0.55" stopColor="#14080F" />
+        <Stop offset="1" stopColor="#070306" />
+      </SvgLinear>
+      <SvgLinear id="trimPink" x1="0" y1="0" x2="1" y2="1">
+        <Stop offset="0" stopColor="#FF7FB5" />
+        <Stop offset="0.5" stopColor="#F0287A" />
+        <Stop offset="1" stopColor="#B01E8E" />
+      </SvgLinear>
+      <SvgLinear id="velvetViolet" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#4B2A7A" />
+        <Stop offset="1" stopColor="#170C2A" />
+      </SvgLinear>
+      <SvgLinear id="gold" x1="0" y1="0" x2="1" y2="1">
+        <Stop offset="0" stopColor="#FFE6A3" />
+        <Stop offset="0.5" stopColor="#E8B64C" />
+        <Stop offset="1" stopColor="#A8761E" />
+      </SvgLinear>
+      <SvgLinear id="earInner" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#FF9CC6" />
+        <Stop offset="1" stopColor="#E0246F" />
+      </SvgLinear>
+      <SvgLinear id="feather" x1="0" y1="1" x2="1" y2="0">
+        <Stop offset="0" stopColor="#7B3CFF" />
+        <Stop offset="1" stopColor="#E3C8FF" />
+      </SvgLinear>
+      <RadialGradient id="frost" cx="50%" cy="50%" r="50%">
+        <Stop offset="0" stopColor="#2A2430" stopOpacity="0.98" />
+        <Stop offset="0.8" stopColor="#2A2430" stopOpacity="0.95" />
+        <Stop offset="1" stopColor="#2A2430" stopOpacity="0.75" />
+      </RadialGradient>
+    </>
+  );
+}
+
+// Soft shadow under the mask so it sits on the skin instead of floating.
+function Shadow({ d }) {
+  return <Path d={d} fill="#000000" opacity={0.32} transform="translate(0 5)" fillRule="evenodd" />;
+}
+
+function EyeMask({ fill, trim, shine = 0.22 }) {
+  return (
+    <G>
+      <Shadow d={EYES} />
+      <Path d={EYES} fillRule="evenodd" fill={fill} stroke={trim} strokeWidth={3} strokeLinejoin="round" />
+      {/* inner rim around the eyes */}
+      <Path d={HOLES} fill="none" stroke={trim} strokeWidth={1.6} opacity={0.9} />
+      {/* satin shine along the top edge */}
+      <Path d="M84 202C106 200 142 196 166 208M176 208C200 196 236 200 258 202" fill="none" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" opacity={shine} />
+    </G>
+  );
+}
+
+function Lace({ color }) {
+  return (
+    <G fill="none" stroke={color} strokeWidth={1.3} opacity={0.75}>
+      <Path d="M98 246q14 12 30 12M244 246q-14 12-30 12" />
+      <Circle cx={104} cy={252} r={2.4} />
+      <Circle cx={116} cy={258} r={2.4} />
+      <Circle cx={238} cy={252} r={2.4} />
+      <Circle cx={226} cy={258} r={2.4} />
+      <Circle cx={171} cy={238} r={2} />
+    </G>
+  );
+}
 
 function Bunny() {
   return (
     <G>
-      <Ellipse cx={128} cy={96} rx={22} ry={72} transform="rotate(-14 128 96)" fill="#120A10" stroke="#F0287A" strokeWidth={3} />
-      <Ellipse cx={128} cy={100} rx={9} ry={52} transform="rotate(-14 128 100)" fill="#F0287A" opacity={0.85} />
-      <Ellipse cx={216} cy={98} rx={22} ry={72} transform="rotate(16 216 98)" fill="#120A10" stroke="#F0287A" strokeWidth={3} />
-      <Ellipse cx={216} cy={102} rx={9} ry={52} transform="rotate(16 216 102)" fill="#F0287A" opacity={0.85} />
-      <Path d="M104 178Q171 126 238 178" fill="none" stroke="#120A10" strokeWidth={11} strokeLinecap="round" />
-      <Path d={EYES} fillRule="evenodd" fill="#120A10" stroke="#F0287A" strokeWidth={2.5} strokeLinejoin="round" />
-      <G fill="none" stroke="#F0287A" strokeWidth={1.4} opacity={0.7}>
-        <Circle cx={112} cy={240} r={3} />
-        <Circle cx={124} cy={247} r={3} />
-        <Circle cx={218} cy={247} r={3} />
-        <Circle cx={230} cy={240} r={3} />
-        <Circle cx={171} cy={231} r={2.5} />
+      {/* ears on a headband over the top of the head */}
+      <G opacity={0.98}>
+        <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+        <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
+        <Path d="M116 94C108 64 110 20 120 6C130 20 132 64 128 92Z" fill="url(#earInner)" />
+        <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+        <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
+        <Path d="M214 92C210 64 212 20 222 6C232 20 234 64 226 94Z" fill="url(#earInner)" />
       </G>
-      <Path d="M244 214c-2-5-9-4-8.5 1.5c.4 4 8.5 8.5 8.5 8.5s8-4.5 8.5-8.5c.5-5.5-6.5-6.5-8.5-1.5z" fill="#F0287A" />
+      <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
+      <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
+      <EyeMask fill="url(#satin)" trim="url(#trimPink)" />
+      <Lace color="#FF7FB5" />
+      {/* little heart at the temple */}
+      <Path d="M258 210c-2.5-6-11-5-10.5 1.8c.5 5 10.5 10.2 10.5 10.2s10-5.2 10.5-10.2c.5-6.8-8-7.8-10.5-1.8z" fill="url(#trimPink)" />
     </G>
   );
 }
@@ -42,12 +121,16 @@ function Bunny() {
 function Masquerade() {
   return (
     <G>
-      <Path d="M244 214C262 180 284 150 302 138C294 170 278 198 250 222Z" fill="#7B3CFF" />
-      <Path d="M246 220C272 200 298 190 316 192C298 208 276 222 250 228Z" fill="#A35BFF" />
-      <Path d="M248 210C258 176 266 146 270 120C276 152 270 184 254 216Z" fill="#C3A2FF" opacity={0.8} />
-      <Path d={EYES} fillRule="evenodd" fill="#2A1A40" stroke="#C3A2FF" strokeWidth={2.5} strokeLinejoin="round" />
-      <Path d="M104 226q10 14 30 16M238 226q-10 14-30 16" fill="none" stroke="#FFD27A" strokeWidth={1.6} opacity={0.8} />
-      <Circle cx={171} cy={207} r={5} fill="#FFD27A" />
+      {/* feathers rising from the right temple */}
+      <Path d="M250 206C262 160 286 118 312 96C304 140 286 180 258 214Z" fill="url(#feather)" opacity={0.95} />
+      <Path d="M254 212C276 178 304 154 330 146C314 176 290 200 262 220Z" fill="url(#feather)" opacity={0.8} />
+      <Path d="M250 204C252 160 262 120 276 92C282 130 274 172 258 210Z" fill="#C3A2FF" opacity={0.75} />
+      <Path d="M258 214L300 120" stroke="#F4EFEA" strokeWidth={1} opacity={0.5} />
+      <EyeMask fill="url(#velvetViolet)" trim="url(#gold)" shine={0.28} />
+      <Path d="M100 240q16 18 40 20M242 240q-16 18-40 20" fill="none" stroke="url(#gold)" strokeWidth={1.8} opacity={0.9} />
+      <Circle cx={171} cy={206} r={5.5} fill="url(#gold)" />
+      <Circle cx={92} cy={222} r={3} fill="url(#gold)" />
+      <Circle cx={250} cy={222} r={3} fill="url(#gold)" />
     </G>
   );
 }
@@ -55,12 +138,20 @@ function Masquerade() {
 function Kitten() {
   return (
     <G>
-      <Path d="M106 178L116 108L152 150Z" fill="#120A10" stroke="#FF7FB5" strokeWidth={3} strokeLinejoin="round" />
-      <Path d="M118 160L122 126L140 148Z" fill="#FF7FB5" opacity={0.8} />
-      <Path d="M236 178L226 108L190 150Z" fill="#120A10" stroke="#FF7FB5" strokeWidth={3} strokeLinejoin="round" />
-      <Path d="M224 160L220 126L202 148Z" fill="#FF7FB5" opacity={0.8} />
-      <Path d={EYES} fillRule="evenodd" fill="#120A10" stroke="#FF7FB5" strokeWidth={2.5} strokeLinejoin="round" />
-      <Path d="M112 262l-28-5M112 270l-28 4M230 262l28-5M230 270l28 4" fill="none" stroke="#FF7FB5" strokeWidth={1.8} strokeLinecap="round" opacity={0.7} />
+      {/* cat ears on a headband */}
+      <Path d="M100 118L112 36L156 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+      <Path d="M100 118L112 36L156 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
+      <Path d="M112 104L118 60L142 94Z" fill="url(#earInner)" />
+      <Path d="M242 118L230 36L186 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+      <Path d="M242 118L230 36L186 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
+      <Path d="M230 104L224 60L200 94Z" fill="url(#earInner)" />
+      <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
+      <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
+      <EyeMask fill="url(#satin)" trim="url(#trimPink)" />
+      {/* whiskers on the cheeks */}
+      <G stroke="#FF9CC6" strokeWidth={1.8} strokeLinecap="round" opacity={0.75}>
+        <Path d="M104 270l-34-6M106 280l-34 4M238 270l34-6M236 280l34 4" />
+      </G>
     </G>
   );
 }
@@ -69,8 +160,8 @@ function Kitten() {
 function Frost() {
   return (
     <G>
-      <Ellipse cx={171} cy={236} rx={84} ry={106} fill="url(#frost)" />
-      <Ellipse cx={171} cy={236} rx={84} ry={106} fill="none" stroke="#6FA8FF" strokeWidth={1.5} opacity={0.5} />
+      <Ellipse cx={171} cy={258} rx={92} ry={128} fill="url(#frost)" />
+      <Ellipse cx={171} cy={258} rx={92} ry={128} fill="none" stroke="#6FA8FF" strokeWidth={1.5} opacity={0.5} />
     </G>
   );
 }
@@ -100,7 +191,10 @@ function Thumb({ id }) {
     );
   const M = MASKS.find((m) => m.id === id).Comp;
   return (
-    <Svg width={44} height={44} viewBox="86 80 170 190">
+    <Svg width={46} height={46} viewBox="66 -16 210 290">
+      <Defs>
+        <MaskDefs />
+      </Defs>
       <M />
     </Svg>
   );
@@ -129,7 +223,7 @@ function Burner({ uri, place, mask, onDone }) {
     <View style={styles.offscreen} pointerEvents="none">
       <Svg ref={ref} width={OUT_W} height={OUT_H} viewBox={`0 0 ${VW} ${VH}`}>
         <Defs>
-          <FrostGradient />
+          <MaskDefs />
         </Defs>
         <SvgImage href={{ uri }} x={0} y={0} width={VW} height={VH} preserveAspectRatio="xMidYMid slice" onLoad={() => setTimeout(shoot, 120)} />
         {M ? (
@@ -139,16 +233,6 @@ function Burner({ uri, place, mask, onDone }) {
         ) : null}
       </Svg>
     </View>
-  );
-}
-
-function FrostGradient() {
-  return (
-    <RadialGradient id="frost" cx="50%" cy="50%" r="50%">
-      <Stop offset="0" stopColor="#2A2430" stopOpacity="0.98" />
-      <Stop offset="0.75" stopColor="#2A2430" stopOpacity="0.95" />
-      <Stop offset="1" stopColor="#2A2430" stopOpacity="0.7" />
-    </RadialGradient>
   );
 }
 
@@ -277,7 +361,7 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
       <View style={[styles.stage, { width: pw, height: ph }]} {...pan.panHandlers}>
         <Svg width={pw} height={ph} viewBox={`0 0 ${VW} ${VH}`}>
           <Defs>
-            <FrostGradient />
+            <MaskDefs />
           </Defs>
           <SvgImage href={{ uri: photos[idx] }} x={0} y={0} width={VW} height={VH} preserveAspectRatio="xMidYMid slice" />
           {M && status !== 'finding' && status ? (
@@ -343,7 +427,7 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
                   <Thumb id={m.id} />
                 </View>
               )}
-              <T v="small" c={on ? C.ink : C.muted} style={{ fontFamily: on ? F.semi : F.medium }}>
+              <T v="small" c={on ? C.ink : C.muted} numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: on ? F.semi : F.medium, fontSize: 12 }}>
                 {m.label}
               </T>
             </Pressable>
