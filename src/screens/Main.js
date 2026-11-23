@@ -616,7 +616,13 @@ export function Chat({ chat, onSend, onBack, onPlan, live, filterExplicit = true
 
 /* ---------- Plan & safety ---------- */
 
-export function Plan({ chat, onBack }) {
+const QUICK = [
+  { icon: 'clock', label: 'Running late', text: 'Running about 10 minutes late, sorry! See you soon.' },
+  { icon: 'chat', label: 'Fake a call', fake: true },
+  { icon: 'close', label: 'Cancel kindly', text: 'Hey, I can’t make it tonight after all. Sorry for the short notice, hope you have a good night.' },
+];
+
+export function Plan({ chat, onBack, onSend, onFakeCall }) {
   const p = chatPerson(chat);
   return (
     <Screen scroll>
@@ -633,14 +639,35 @@ export function Plan({ chat, onBack }) {
         </View>
       </Card>
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-        {[
-          ['clock', 'Running late'],
-          ['chat', 'Fake a call'],
-          ['close', 'Cancel kindly'],
-        ].map(([ic, l]) => (
-          <Pressable key={l} accessibilityRole="button" onPress={() => Alert.alert(l, 'This sends a friendly message to your match.')} style={styles.quick}>
-            <Icon name={ic} size={20} />
-            <T v="small">{l}</T>
+        {QUICK.map((q) => (
+          <Pressable
+            key={q.label}
+            accessibilityRole="button"
+            onPress={() => {
+              tap();
+              if (q.fake) {
+                Alert.alert('Fake a call', 'Your phone will ring in 20 seconds. Keep the app open.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Start', onPress: onFakeCall },
+                ]);
+                return;
+              }
+              Alert.alert(q.label, `Send this to ${p.name}?\n\n“${q.text}”`, [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Send',
+                  onPress: () => {
+                    success();
+                    onSend(chat.id, { me: true, text: q.text });
+                    onBack();
+                  },
+                },
+              ]);
+            }}
+            style={styles.quick}
+          >
+            <Icon name={q.icon} size={20} />
+            <T v="small">{q.label}</T>
           </Pressable>
         ))}
       </View>

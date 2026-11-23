@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -39,6 +39,7 @@ import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
 import { Privacy, Settings } from './src/screens/Settings';
 import { LockGate } from './src/screens/Lock';
 import { Intro } from './src/screens/Intro';
+import { FakeCall } from './src/screens/FakeCall';
 import { onNotificationTap, registerForPush } from './src/notifications';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
@@ -74,6 +75,7 @@ export default function App() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [intro, setIntro] = useState(true); // opening animation, once per launch
   const endIntro = useCallback(() => setIntro(false), []);
+  const [ringing, setRinging] = useState(false); // the fake incoming call
 
   // Get a new OTA update in right away (restarts the app once when there is one).
   useEffect(() => {
@@ -267,7 +269,7 @@ export default function App() {
           screen = chat ? <Chat key={chat.id} chat={chat} live={!chat.plan && !chat.real} filterExplicit={profile.settings?.filterExplicit !== false} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} /> : null;
           break;
         case 'plan':
-          screen = chat ? <Plan chat={chat} onBack={pop} /> : null;
+          screen = chat ? <Plan chat={chat} onBack={pop} onSend={sendMessage} onFakeCall={() => setTimeout(() => setRinging(true), 20000)} /> : null;
           break;
         case 'compose':
           screen = (
@@ -382,6 +384,11 @@ export default function App() {
         <StatusBar style="light" />
         <LockGate enabled={!!profile.settings?.faceLock}>{screen}</LockGate>
         {intro ? <Intro onDone={endIntro} /> : null}
+        {ringing ? (
+          <View style={StyleSheet.absoluteFill}>
+            <FakeCall onEnd={() => setRinging(false)} />
+          </View>
+        ) : null}
       </View>
     </SafeAreaProvider>
   );
