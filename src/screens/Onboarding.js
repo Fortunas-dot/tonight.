@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Image, Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, Easing, Image, Linking, Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Circle, Defs, LinearGradient as SvgGrad, Path, Stop } from 'react-native-svg';
@@ -631,9 +631,14 @@ export function Verify({ profile, setProfile, next, back }) {
   }, [state, spin]);
 
   const start = async () => {
+    // Shows the iPhone's own camera pop-up. iOS only shows it once: after a "Don't Allow"
+    // the only way back is the Settings app, so we offer a button straight to it.
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Camera needed', 'Allow camera access in Settings to verify that you are a real person.');
+      Alert.alert('Camera needed', 'Turn on Camera for Tonight in Settings to verify that you are a real person.', [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Open Settings', onPress: () => Linking.openSettings() },
+      ]);
       return;
     }
     const res = await ImagePicker.launchCameraAsync({ cameraType: ImagePicker.CameraType.front, quality: 0.5 });
