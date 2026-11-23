@@ -14,7 +14,8 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Choose the photos for your Tonight profile.",
         "NSCameraUsageDescription": "Take a photo or verify that you are a real person.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Unlock Tonight with Face ID."
       }
     },
     "android": {
@@ -45,7 +46,14 @@
           "cameraPermission": "Take a photo or verify that you are a real person."
         }
       ],
-      "expo-image"
+      "expo-image",
+      "expo-notifications",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Unlock Tonight with Face ID."
+        }
+      ]
     ],
     "owner": "fortunascreations",
     "extra": {

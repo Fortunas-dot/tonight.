@@ -188,7 +188,7 @@ function toPerson(row, me, url) {
     real: true,
     name: row.name || 'Someone',
     age: row.age || '',
-    dist: row.city || 'Nearby',
+    dist: (!row.settings?.hideCity && row.city) || 'Nearby',
     country: row.country || null,
     until: time(row.live_until),
     fit: Math.min(7, both.length),

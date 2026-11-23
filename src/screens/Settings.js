@@ -4,7 +4,9 @@ import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from '
 import { LinearGradient } from 'expo-linear-gradient';
 import { C, F } from '../theme';
 import { Icon, Verified } from '../icons';
-import { Card, Header, Photo, Row, Screen, T, Toggle, success, tap } from '../ui';
+import { Card, Header, Photo, Row, Screen, Segmented, T, Toggle, success, tap } from '../ui';
+import { openPhoneSettings, pushStatus, registerForPush } from '../notifications';
+import { canUseFaceId } from './Lock';
 import { versionLabel } from '../version';
 import * as api from '../backend';
 
@@ -31,8 +33,10 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
   const [showBlocks, setShowBlocks] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const [push, setPush] = useState(null);
   useEffect(() => {
     api.myAlias().then(setAlias);
+    pushStatus().then(setPush);
   }, []);
 
   const loadBlocks = useCallback(async () => setBlocks(await api.loadBlocks()), []);
@@ -98,8 +102,28 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
       </Card>
 
       <Label>Notifications</Label>
+      {push && push !== 'granted' ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={async () => {
+            const r = await registerForPush();
+            setPush(r === 'granted' ? 'granted' : r);
+            if (r === 'denied') openPhoneSettings();
+          }}
+          style={styles.pushOff}
+        >
+          <Icon name="bell" size={20} color={C.pinkL} />
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.semi }}>{push === 'unavailable' ? 'Notifications need the latest app version' : 'Notifications are off'}</T>
+            <T v="small" c={C.muted}>
+              {push === 'unavailable' ? 'Install the newest build from TestFlight.' : 'Tap to turn them on for Tonight.'}
+            </T>
+          </View>
+          {push === 'unavailable' ? null : <Icon name="chev" size={16} color={C.muted} />}
+        </Pressable>
+      ) : null}
       <Card style={{ paddingVertical: 0 }}>
-        {NOTIFY.map(([k, title], i) => (
+        {NOTIFY.map(([k, title]) => (
           <Row key={k} title={title} right={<Toggle value={notify[k]} onChange={(v) => setNotify(k, v)} label={title} />} />
         ))}
         <Row
@@ -112,7 +136,7 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
 
       <Label>Privacy & safety</Label>
       <Card style={{ paddingVertical: 0 }}>
-        <Row icon="lock" iconColor={C.blueL} iconBg={C.blueBg} title="Privacy & discretion" sub="App icon, Face ID, quiet mode" onPress={() => go('privacy')} />
+        <Row icon="lock" iconColor={C.blueL} iconBg={C.blueBg} title="Privacy & discretion" sub="Your city, blurring, filters, Face ID lock" onPress={() => go('privacy')} />
         <Row
           icon="shield"
           iconColor={C.blueL}
@@ -185,7 +209,106 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
   );
 }
 
+/* ---------- Privacy & discretion: every switch here is real ---------- */
+
+export function Privacy({ profile, setProfile, onBack }) {
+  const s = profile.settings || {};
+  const set = (patch) => setProfile((p) => ({ ...p, settings: { ...(p.settings || {}), ...patch } }));
+  const [faceId, setFaceId] = useState(null);
+  useEffect(() => {
+    canUseFaceId().then(setFaceId);
+  }, []);
+  const filterOn = s.filterExplicit !== false;
+
+  return (
+    <Screen scroll>
+      <Header title="Privacy & discretion" onBack={onBack} />
+
+      <Label>Your place</Label>
+      <Segmented
+        value={s.hideCity ? 'hidden' : 'city'}
+        onChange={(v) => set({ hideCity: v === 'hidden' })}
+        options={[
+          { value: 'city', label: 'Show my city' },
+          { value: 'hidden', label: 'Hide my city' },
+        ]}
+      />
+      <T v="small" c={C.muted} style={{ marginTop: 8, marginLeft: 4 }}>
+        {s.hideCity ? 'Others see “Nearby” instead of your city.' : 'Others see your city, never your exact location.'}
+      </T>
+
+      <Label>Who sees me</Label>
+      <Card style={{ paddingVertical: 0 }}>
+        <Row
+          icon="pause"
+          iconColor={C.violetL}
+          iconBg={C.violetBg}
+          title="Pause my profile"
+          sub="Hidden from Discover. Matches and chats stay."
+          right={<Toggle value={!!s.paused} onChange={(v) => set({ paused: v })} label="Pause my profile" />}
+          last
+        />
+      </Card>
+
+      <Label>What reaches me</Label>
+      <Card style={{ paddingVertical: 0 }}>
+        <Row
+          icon="eyeOff"
+          iconColor={C.blueL}
+          iconBg={C.blueBg}
+          title="Blur every photo until I tap"
+          sub="Photos in Discover and Likes stay blurred until you open them"
+          right={<Toggle value={!!s.blurAll} onChange={(v) => set({ blurAll: v })} color={C.blue} label="Blur every photo until I tap" />}
+        />
+        <Row
+          icon="shieldCheck"
+          iconColor={C.blueL}
+          iconBg={C.blueBg}
+          title="Filter explicit first messages"
+          sub="Explicit words in a first message stay hidden until you tap"
+          right={<Toggle value={filterOn} onChange={(v) => set({ filterExplicit: v })} color={C.blue} label="Filter explicit first messages" />}
+          last
+        />
+      </Card>
+
+      <Label>Lock</Label>
+      <Card style={{ paddingVertical: 0 }}>
+        <Row
+          icon="lock"
+          iconColor={C.pinkL}
+          iconBg={C.pinkBg}
+          title="Face ID lock"
+          sub={faceId === false ? 'Set up Face ID or a passcode on your iPhone first' : 'Ask for Face ID when Tonight opens'}
+          right={
+            <Toggle
+              value={!!s.faceLock}
+              onChange={async (v) => {
+                if (!v) return set({ faceLock: false });
+                if (!faceId) {
+                  Alert.alert('Face ID not available', 'Set up Face ID or a passcode in your iPhone settings first.');
+                  return null;
+                }
+                const LA = await import('expo-local-authentication');
+                const res = await LA.authenticateAsync({ promptMessage: 'Turn on Face ID lock' });
+                if (res.success) {
+                  success();
+                  set({ faceLock: true });
+                }
+                return null;
+              }}
+              label="Face ID lock"
+            />
+          }
+          last
+        />
+      </Card>
+      <View style={{ height: 30 }} />
+    </Screen>
+  );
+}
+
 const styles = StyleSheet.create({
+  pushOff: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, backgroundColor: C.pinkBg, borderWidth: 1, borderColor: '#4A1A33', marginBottom: 10 },
   account: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: 22, borderWidth: 1, borderColor: C.line, marginTop: 4 },
   blockRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 8 },
   unblock: { height: 32, paddingHorizontal: 14, borderRadius: 16, backgroundColor: C.surf2, justifyContent: 'center' },

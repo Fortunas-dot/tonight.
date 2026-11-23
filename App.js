@@ -29,7 +29,6 @@ import {
   Match,
   Me,
   Plan,
-  Privacy,
   ProfileView,
   Support,
   Likes,
@@ -37,7 +36,9 @@ import {
 import { Compose, Lounge, PostView } from './src/screens/Lounge';
 import { EditProfile } from './src/screens/ProfileFields';
 import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
-import { Settings } from './src/screens/Settings';
+import { Privacy, Settings } from './src/screens/Settings';
+import { LockGate } from './src/screens/Lock';
+import { onNotificationTap, registerForPush } from './src/notifications';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
 const BLOCK_SCREENSHOTS = false;
@@ -131,6 +132,18 @@ export default function App() {
     if (i) setIdeas([...i, ...IDEAS]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.boundaries]);
+
+  // Push notifications: ask once signed in and onboarded; a tap opens the right tab.
+  useEffect(() => {
+    if (!online || !onboarded) return undefined;
+    registerForPush();
+    return onNotificationTap((data) => {
+      setStack([]);
+      if (data.kind === 'likes') setTab('likes');
+      else if (data.kind === 'lounge') setTab('lounge');
+      else setTab('chats');
+    });
+  }, [online, onboarded]);
 
   useEffect(() => {
     if (!online || !onboarded) return;
@@ -306,7 +319,7 @@ export default function App() {
           screen = <EditProfile profile={profile} setProfile={setProfile} onBack={pop} />;
           break;
         case 'privacy':
-          screen = <Privacy onBack={pop} />;
+          screen = <Privacy profile={profile} setProfile={setProfile} onBack={pop} />;
           break;
         case 'support':
           screen = <Support onBack={pop} />;
@@ -335,7 +348,7 @@ export default function App() {
             onLike={like}
           />
         ),
-        likes: <Likes people={[...likesYou, ...PEOPLE]} onOpen={(person) => push('profile', { person })} />,
+        likes: <Likes people={[...likesYou, ...PEOPLE]} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
         chats: <Chats chats={chats} onOpen={(id) => push('chat', { id })} />,
         lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onOpenPost={(post) => push('post', { post })} />,
         me: (
@@ -364,7 +377,7 @@ export default function App() {
     <SafeAreaProvider>
       <View style={{ flex: 1, backgroundColor: C.bg }} onLayout={onLayout}>
         <StatusBar style="light" />
-        {screen}
+        <LockGate enabled={!!profile.settings?.faceLock}>{screen}</LockGate>
       </View>
     </SafeAreaProvider>
   );

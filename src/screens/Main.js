@@ -6,6 +6,8 @@ import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { PEOPLE, VOWS, personById } from '../data';
 import { versionLabel } from '../version';
+import { completeness } from '../completeness';
+import Svg, { Circle as SvgCircle, Defs as SvgDefs, LinearGradient as SvgGrad, Stop as SvgStop } from 'react-native-svg';
 import { FilterSheet, activeCount, applyFilters, filterChips } from './DiscoverFilters';
 import {
   Avatar,
@@ -22,7 +24,6 @@ import {
   Screen,
   Segmented,
   T,
-  Toggle,
   success,
   tap,
   thud,
@@ -31,6 +32,7 @@ import {
 /* ---------- Discover ---------- */
 
 export function Discover({ onOpen, onLike, deck: all, profile, filters, onFilters }) {
+  const blurAll = !!profile?.settings?.blurAll;
   const [i, setI] = useState(0);
   const [fly] = useState(() => new Animated.Value(0));
   const [sheet, setSheet] = useState(false);
@@ -109,7 +111,7 @@ export function Discover({ onOpen, onLike, deck: all, profile, filters, onFilter
         }}
       >
         <Pressable onPress={() => onOpen(person)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`}>
-          <Photo seed={person.seed} uri={person.photo} blur={person.blurred} style={styles.card} label="PHOTO">
+          <Photo seed={person.seed} uri={person.photo} blur={person.blurred || blurAll} style={styles.card} label="PHOTO">
             <View style={styles.bars}>
               {[0, 1, 2, 3].map((b) => (
                 <View key={b} style={[styles.bar, b === 0 && { backgroundColor: C.ink }]} />
@@ -327,7 +329,7 @@ export function Match({ person, me, onChat, onClose }) {
 
 /* ---------- Likes you ---------- */
 
-export function Likes({ people = PEOPLE, onOpen }) {
+export function Likes({ people = PEOPLE, onOpen, blurAll }) {
   return (
     <Screen scroll>
       <T v="title" style={{ marginTop: 8 }}>
@@ -340,7 +342,7 @@ export function Likes({ people = PEOPLE, onOpen }) {
         {people.map((p, i) => (
           <Rise key={p.id} delay={i * 70} style={{ width: '48%' }}>
             <Pressable accessibilityRole="button" onPress={() => onOpen(p)}>
-              <Photo seed={p.seed} uri={p.photo} blur={p.blurred} style={{ height: 200, borderRadius: 18 }}>
+              <Photo seed={p.seed} uri={p.photo} blur={p.blurred || blurAll} style={{ height: 200, borderRadius: 18 }}>
                 <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.9)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10, paddingTop: 30 }}>
                   <T style={{ fontFamily: F.display, fontSize: 16 }}>
                     {p.name}, {p.age}
@@ -652,13 +654,78 @@ function GlowRing({ children, size = 72 }) {
   );
 }
 
+function ProgressRing({ percent, size = 64 }) {
+  const r = (size - 8) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <Svg width={size} height={size}>
+      <SvgDefs>
+        <SvgGrad id="ring" x1="0" y1="0" x2="1" y2="1">
+          <SvgStop offset="0" stopColor={C.pink} />
+          <SvgStop offset="1" stopColor={C.blue} />
+        </SvgGrad>
+      </SvgDefs>
+      <SvgCircle cx={size / 2} cy={size / 2} r={r} stroke="#2A242C" strokeWidth={7} fill="none" />
+      <SvgCircle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        stroke="url(#ring)"
+        strokeWidth={7}
+        fill="none"
+        strokeLinecap="round"
+        strokeDasharray={`${(c * percent) / 100} ${c}`}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+    </Svg>
+  );
+}
+
+function CompletenessCard({ profile, go }) {
+  const { percent, next } = completeness(profile);
+  const target = next && next.id === 'verified' ? null : 'editProfile';
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`Profile ${percent}% complete`} onPress={() => target && go(target)} style={styles.complete}>
+      <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
+        <ProgressRing percent={percent} />
+        <T style={{ position: 'absolute', fontFamily: F.display, fontSize: 16 }}>{percent}%</T>
+      </View>
+      <View style={{ flex: 1 }}>
+        <T style={{ fontFamily: F.semi }}>{percent === 100 ? 'Your profile is complete' : 'Complete your profile'}</T>
+        <T v="small" c={C.muted} style={{ marginTop: 2 }}>
+          {next ? 'Complete profiles get up to 3× more matches.' : 'Nice. You’re showing your best side.'}
+        </T>
+        {next ? (
+          <View style={styles.nextStep}>
+            <T v="small" c={C.pinkL} style={{ fontFamily: F.bold }}>
+              +{next.gain}%
+            </T>
+            <T v="small" c={C.ink}>
+              {next.label}
+            </T>
+          </View>
+        ) : null}
+      </View>
+      {target && next ? <Icon name="chev" size={16} color={C.muted} /> : null}
+    </Pressable>
+  );
+}
+
 export function Me({ profile, go, onRestart }) {
+  const { percent } = completeness(profile);
   return (
     <Screen scroll>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 8 }}>
-        <GlowRing>
-          {profile.photos?.[0] ? <Image source={{ uri: profile.photos[0] }} style={{ width: 62, height: 62, borderRadius: 31 }} /> : <Photo style={{ width: 62, height: 62, borderRadius: 31 }} />}
-        </GlowRing>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Edit profile, ${percent}% complete`} onPress={() => go('editProfile')}>
+          <GlowRing>
+            {profile.photos?.[0] ? <Image source={{ uri: profile.photos[0] }} style={{ width: 62, height: 62, borderRadius: 31 }} /> : <Photo style={{ width: 62, height: 62, borderRadius: 31 }} />}
+          </GlowRing>
+          <View style={styles.pctBadge}>
+            <T c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 11, lineHeight: 14 }}>
+              {percent}%
+            </T>
+          </View>
+        </Pressable>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <T style={{ fontFamily: F.display, fontSize: 24 }}>
@@ -668,26 +735,15 @@ export function Me({ profile, go, onRestart }) {
             {profile.verified ? <Verified size={18} /> : null}
           </View>
           <T v="meta" c={C.muted}>
-            {profile.city ? `${profile.city}${profile.country ? `, ${profile.country}` : ''} · ` : ''}Level 1 · <T v="meta" c={C.violetL}>Verified</T>
+            {profile.city ? `${profile.city}${profile.country ? `, ${profile.country}` : ''} · ` : ''}
+            {profile.verified ? <T v="meta" c={C.blueL}>Verified</T> : 'Not verified yet'}
           </T>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => go('settings')} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="gear" size={20} />
         </Pressable>
       </View>
-      <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
-        {[
-          ['100%', 'Shows up'],
-          ['5', 'Likes you'],
-        ].map(([v, l]) => (
-          <Card key={l} style={{ flex: 1 }}>
-            <T style={{ fontFamily: F.display, fontSize: 20 }}>{v}</T>
-            <T v="small" c={C.muted}>
-              {l}
-            </T>
-          </Card>
-        ))}
-      </View>
+      <CompletenessCard profile={profile} go={go} />
       <T v="label" c={C.muted} style={{ marginTop: 22, marginBottom: 6 }}>
         You
       </T>
@@ -756,51 +812,6 @@ export function CodeView({ onBack }) {
           You sealed these vows when you joined. Ward, our watchdog, guards them for everyone.
         </T>
       </Card>
-    </Screen>
-  );
-}
-
-export function Privacy({ onBack }) {
-  const [dist, setDist] = useState('round');
-  const [s, setS] = useState({ pause: false, incognito: false, contacts: true, blur: true, filter: true });
-  const set = (k) => (v) => setS({ ...s, [k]: v });
-  return (
-    <Screen scroll>
-      <Header title="Privacy & control" onBack={onBack} />
-      <T v="label" c={C.muted} style={{ marginTop: 10, marginBottom: 8 }}>
-        Show my distance as
-      </T>
-      <Segmented
-        value={dist}
-        onChange={setDist}
-        options={[
-          { value: 'round', label: 'About 2 km' },
-          { value: 'area', label: 'Area only' },
-          { value: 'hidden', label: 'Hidden' },
-        ]}
-      />
-      <T v="small" c={C.muted} style={{ marginTop: 8 }}>
-        Your exact location never leaves the phone. It’s snapped to a 1 km grid first.
-      </T>
-      <T v="label" c={C.muted} style={{ marginTop: 20, marginBottom: 6 }}>
-        Who sees me
-      </T>
-      <Card style={{ paddingVertical: 0 }}>
-        <Row title="Pause my profile" right={<Toggle value={s.pause} onChange={set('pause')} label="Pause my profile" />} />
-        <Row title="Hide from my contacts" right={<Toggle value={s.contacts} onChange={set('contacts')} label="Hide from my contacts" />} last />
-      </Card>
-      <T v="label" c={C.muted} style={{ marginTop: 20, marginBottom: 6 }}>
-        What reaches me
-      </T>
-      <Card style={{ paddingVertical: 0 }}>
-        <Row title="Blur every photo until I tap" right={<Toggle value={s.blur} onChange={set('blur')} label="Blur every photo until I tap" />} />
-        <Row title="Filter explicit first messages" right={<Toggle value={s.filter} onChange={set('filter')} label="Filter explicit first messages" />} last />
-      </Card>
-      <Pressable accessibilityRole="button" onPress={() => Alert.alert('Delete account', 'This removes your profile, photos, matches and messages straight away.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive' }])} style={{ marginTop: 24, alignItems: 'center' }}>
-        <T v="label" c={C.red}>
-          Delete account and all chats
-        </T>
-      </Pressable>
     </Screen>
   );
 }
@@ -973,6 +984,9 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
 
 
 const styles = StyleSheet.create({
+  complete: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, padding: 14, borderRadius: 22, backgroundColor: '#151217', borderWidth: 1, borderColor: C.line },
+  nextStep: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8, height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: C.pinkBg },
+  pctBadge: { position: 'absolute', bottom: -6, alignSelf: 'center', minWidth: 40, height: 20, borderRadius: 10, paddingHorizontal: 6, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.bg },
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 48, paddingHorizontal: 8 },
   filterBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
   filterBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
