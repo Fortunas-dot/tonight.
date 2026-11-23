@@ -1,17 +1,17 @@
-// Mask your face: pick a mask, drag it over your face, pinch to resize.
+// Mask your face, like a camera filter: the face is found on the phone and the mask is placed on it
+// (eyes, tilt and size). Drag or pinch only to fine-tune, or when no face is found.
 // The mask is burned into a new image on the phone, so the bare face is never uploaded.
-import { useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import Svg, { Defs, Ellipse, G, Image as SvgImage, Path, RadialGradient, Stop, Circle } from 'react-native-svg';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Dimensions, Image, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Svg, { Circle, Defs, Ellipse, G, Image as SvgImage, Path, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { File, Paths } from 'expo-file-system';
 import { C, F } from '../theme';
 import { Icon } from '../icons';
-import { Screen, T, success, tap } from '../ui';
+import { Screen, T, Toggle, success, tap } from '../ui';
+import { MANUAL, MASK_EYE_X, MASK_EYE_Y, VH, VW, findFace } from '../faces';
 
-// Everything is drawn in the design's 342 × 430 frame; the face centre sits at (171, 222).
-const VW = 342;
-const VH = 430;
+// Everything is drawn in the design's 342 by 430 frame (see faces.js).
 const OUT_W = 1080;
 const OUT_H = Math.round((OUT_W * VH) / VW);
 
@@ -106,73 +106,163 @@ function Thumb({ id }) {
   );
 }
 
-// Screen px to frame units, for the stage width (screen minus the 24 px gutters).
-const pxToFrame = () => VW / (Dimensions.get('window').width - 48);
-
 const dist = (t) => Math.hypot(t[0].pageX - t[1].pageX, t[0].pageY - t[1].pageY);
+const transformFor = (p) => `translate(${p.x} ${p.y}) rotate(${p.r || 0}) scale(${p.s}) translate(${-MASK_EYE_X} ${-MASK_EYE_Y})`;
 
-export function MaskEditor({ uri, onCancel, onDone }) {
+// Draws one photo with its mask, full size and off screen, then hands back the burned-in PNG.
+function Burner({ uri, place, mask, onDone }) {
+  const ref = useRef(null);
+  const sent = useRef(false);
+  const M = MASKS.find((m) => m.id === mask)?.Comp;
+  const shoot = () => {
+    if (sent.current || !ref.current) return;
+    sent.current = true;
+    ref.current.toDataURL((b64) => onDone(b64), { width: OUT_W, height: OUT_H });
+  };
+  useEffect(() => {
+    const t = setTimeout(shoot, 1500); // in case the image's load event never arrives
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <View style={styles.offscreen} pointerEvents="none">
+      <Svg ref={ref} width={VW} height={VH} viewBox={`0 0 ${VW} ${VH}`}>
+        <Defs>
+          <FrostGradient />
+        </Defs>
+        <SvgImage href={{ uri }} x={0} y={0} width={VW} height={VH} preserveAspectRatio="xMidYMid slice" onLoad={() => setTimeout(shoot, 120)} />
+        {M ? (
+          <G transform={transformFor(place)}>
+            <M />
+          </G>
+        ) : null}
+      </Svg>
+    </View>
+  );
+}
+
+function FrostGradient() {
+  return (
+    <RadialGradient id="frost" cx="50%" cy="50%" r="50%">
+      <Stop offset="0" stopColor="#2A2430" stopOpacity="0.98" />
+      <Stop offset="0.75" stopColor="#2A2430" stopOpacity="0.95" />
+      <Stop offset="1" stopColor="#2A2430" stopOpacity="0.7" />
+    </RadialGradient>
+  );
+}
+
+function saveB64(b64) {
+  const f = new File(Paths.cache, `masked-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.png`);
+  f.create();
+  f.write(b64, { encoding: 'base64' });
+  return f.uri;
+}
+
+/**
+ * photos: the original photo uris; start: which one to open on.
+ * onDone(results): results is a list of { index, uri, mask } for every photo that got a mask.
+ */
+export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
   const { width } = useWindowDimensions();
   const pw = width - 48;
   const ph = (pw * VH) / VW;
+  const [idx, setIdx] = useState(start);
   const [mask, setMask] = useState('bunny');
-  const [pos, setPos] = useState({ x: 171, y: 222, s: 1 });
-  const [busy, setBusy] = useState(false);
-  const svg = useRef(null);
-  const [pan] = useState(() => {
-    // Gesture state lives in this closure: where the mask was when the touch started.
-    let start = null;
-    let current = { x: 171, y: 222, s: 1 };
-    const move = (next) => {
-      current = next;
-      setPos(next);
+  const [places, setPlaces] = useState({}); // index → { x, y, s, r, auto }
+  const [found, setFound] = useState({}); // index → 'finding' | 'found' | 'none'
+  const [applyAll, setApplyAll] = useState(photos.length > 1);
+  const [burning, setBurning] = useState(null); // { queue: [index...], done: [{index, uri}] }
+  // The gesture handler reads the open photo and its placement from here.
+  const [live] = useState(() => ({ idx: start, places: {} }));
+  useEffect(() => {
+    // A plain mutable holder, written after render, read only by the gesture callbacks.
+    // eslint-disable-next-line react-hooks/immutability
+    live.idx = idx;
+    live.places = places;
+  }, [live, idx, places]);
+
+  // Find the face in every photo, the open one first.
+  useEffect(() => {
+    let alive = true;
+    const order = [start, ...photos.map((_, i) => i).filter((i) => i !== start)];
+    (async () => {
+      for (const i of order) {
+        if (!alive) return;
+        setFound((f) => ({ ...f, [i]: 'finding' }));
+        const place = await findFace(photos[i]);
+        if (!alive) return;
+        setFound((f) => ({ ...f, [i]: place ? 'found' : 'none' }));
+        setPlaces((p) => (p[i] ? p : { ...p, [i]: place || MANUAL }));
+      }
+    })();
+    return () => {
+      alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const pos = places[idx] || MANUAL;
+
+  // Fine-tuning: drag to move, pinch to resize.
+  const [pan] = useState(() => {
+    let from = null;
+    const set = (next) => setPlaces((p) => ({ ...p, [live.idx]: next }));
     return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        start = { ...current, pinch: null };
+        from = { ...(live.places[live.idx] || MANUAL), pinch: null };
       },
       onPanResponderMove: (e, g) => {
         const t = e.nativeEvent.touches;
+        const k = VW / (Dimensions.get('window').width - 48);
         if (t.length >= 2) {
-          if (!start.pinch) start.pinch = { d: dist(t), s: current.s };
-          move({ ...current, s: Math.max(0.4, Math.min(2.6, (start.pinch.s * dist(t)) / start.pinch.d)) });
-        } else if (!start.pinch) {
-          move({ ...current, x: start.x + g.dx * pxToFrame(), y: start.y + g.dy * pxToFrame() });
+          if (!from.pinch) from.pinch = { d: dist(t) };
+          set({ ...from, pinch: undefined, s: Math.max(0.3, Math.min(3, (from.s * dist(t)) / from.pinch.d)) });
+        } else if (!from.pinch) {
+          set({ ...from, pinch: undefined, x: from.x + g.dx * k, y: from.y + g.dy * k });
         }
       },
     });
   });
 
   const M = MASKS.find((m) => m.id === mask)?.Comp;
+  const status = found[idx];
 
   const done = () => {
     if (!M) {
-      onDone(uri, null);
+      onDone([]);
       return;
     }
-    setBusy(true);
-    svg.current.toDataURL(
-      (b64) => {
-        try {
-          const f = new File(Paths.cache, `masked-${Date.now()}.png`);
-          f.create();
-          f.write(b64, { encoding: 'base64' });
-          success();
-          onDone(f.uri, mask);
-        } catch {
-          setBusy(false);
-        }
-      },
-      { width: OUT_W, height: OUT_H },
-    );
+    // This photo always; with "all photos" on, also every other photo where a face was found.
+    const queue = [idx, ...(applyAll ? photos.map((_, i) => i).filter((i) => i !== idx && found[i] === 'found') : [])];
+    setBurning({ queue, done: [] });
   };
+
+  const onBurned = (b64) => {
+    const [index, ...rest] = burning.queue;
+    let uri = null;
+    try {
+      uri = saveB64(b64);
+    } catch {
+      uri = null;
+    }
+    const doneList = uri ? [...burning.done, { index, uri, mask }] : burning.done;
+    if (rest.length) setBurning({ queue: rest, done: doneList });
+    else {
+      success();
+      setBurning(null);
+      onDone(doneList);
+    }
+  };
+
+  const busy = !!burning;
+  const skipped = applyAll ? photos.filter((_, i) => i !== idx && found[i] === 'none').length : 0;
 
   return (
     <Screen>
       <View style={styles.head}>
-        <Pressable accessibilityRole="button" onPress={onCancel} hitSlop={10}>
+        <Pressable accessibilityRole="button" onPress={onCancel} hitSlop={10} disabled={busy}>
           <T c={C.muted} style={{ fontFamily: F.medium }}>
             Cancel
           </T>
@@ -184,25 +274,47 @@ export function MaskEditor({ uri, onCancel, onDone }) {
       </View>
 
       <View style={[styles.stage, { width: pw, height: ph }]} {...pan.panHandlers}>
-        <Svg ref={svg} width={pw} height={ph} viewBox={`0 0 ${VW} ${VH}`}>
+        <Svg width={pw} height={ph} viewBox={`0 0 ${VW} ${VH}`}>
           <Defs>
-            <RadialGradient id="frost" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor="#2A2430" stopOpacity="0.98" />
-              <Stop offset="0.75" stopColor="#2A2430" stopOpacity="0.95" />
-              <Stop offset="1" stopColor="#2A2430" stopOpacity="0.7" />
-            </RadialGradient>
+            <FrostGradient />
           </Defs>
-          <SvgImage href={{ uri }} x={0} y={0} width={VW} height={VH} preserveAspectRatio="xMidYMid slice" />
-          {M ? (
-            <G transform={`translate(${pos.x} ${pos.y}) scale(${pos.s}) translate(-171 -222)`}>
+          <SvgImage href={{ uri: photos[idx] }} x={0} y={0} width={VW} height={VH} preserveAspectRatio="xMidYMid slice" />
+          {M && status !== 'finding' && status ? (
+            <G transform={transformFor(pos)}>
               <M />
             </G>
           ) : null}
         </Svg>
-        <View style={styles.hint} pointerEvents="none">
-          <T v="small">Drag onto your face · pinch to resize</T>
+        <View style={[styles.pill, { left: 12, top: 12 }]} pointerEvents="none">
+          {status === 'found' ? <View style={[styles.dot, { backgroundColor: '#6FA8FF' }]} /> : null}
+          {status === 'finding' || !status ? <ActivityIndicator size="small" color="#6FA8FF" /> : null}
+          <T v="small" c={status === 'none' ? '#FFD27A' : '#6FA8FF'} style={{ fontFamily: F.semi }}>
+            {status === 'found' ? 'Face found · mask on' : status === 'none' ? 'No face found · drag it into place' : 'Finding your face…'}
+          </T>
         </View>
+        {status && status !== 'finding' ? (
+          <View style={[styles.pill, { right: 12, bottom: 12 }]} pointerEvents="none">
+            <T v="small">{status === 'found' ? 'Drag or pinch to fine-tune' : 'Pinch to resize'}</T>
+          </View>
+        ) : null}
       </View>
+
+      {photos.length > 1 ? (
+        <View style={styles.thumbs}>
+          {photos.map((u, i) => (
+            <Pressable key={u} accessibilityRole="button" accessibilityLabel={`Photo ${i + 1}`} accessibilityState={{ selected: i === idx }} onPress={() => setIdx(i)} disabled={busy}>
+              <View style={[styles.thumb, i === idx && { borderColor: C.pink }]}>
+                <Image source={{ uri: u }} style={StyleSheet.absoluteFill} />
+                {found[i] === 'found' ? (
+                  <View style={styles.thumbTick}>
+                    <Icon name="check" size={9} color="#FFFFFF" stroke={3.4} />
+                  </View>
+                ) : null}
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.row}>
         {MASKS.map((m) => {
@@ -238,6 +350,18 @@ export function MaskEditor({ uri, onCancel, onDone }) {
         })}
       </View>
 
+      {photos.length > 1 ? (
+        <View style={styles.applyCard}>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.medium }}>Apply to all my photos</T>
+            <T v="small" c={C.muted} style={{ marginTop: 2 }}>
+              {skipped ? `${skipped} without a clear face will stay as they are` : 'Placed on each face automatically'}
+            </T>
+          </View>
+          <Toggle value={applyAll} onChange={setApplyAll} label="Apply mask to all my photos" />
+        </View>
+      ) : null}
+
       <View style={{ flex: 1 }} />
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name="lock" size={16} color="#6FA8FF" />
@@ -245,6 +369,8 @@ export function MaskEditor({ uri, onCancel, onDone }) {
           Added on your phone. Your bare face never leaves it.
         </T>
       </View>
+
+      {burning ? <Burner key={burning.queue[0]} uri={photos[burning.queue[0]]} place={places[burning.queue[0]] || MANUAL} mask={mask} onDone={onBurned} /> : null}
     </Screen>
   );
 }
@@ -252,8 +378,14 @@ export function MaskEditor({ uri, onCancel, onDone }) {
 const styles = StyleSheet.create({
   head: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stage: { marginTop: 8, borderRadius: 24, overflow: 'hidden', backgroundColor: C.surf2, alignSelf: 'center' },
-  hint: { position: 'absolute', right: 12, bottom: 12, height: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: 'rgba(14,12,16,0.75)', justifyContent: 'center' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18 },
+  pill: { position: 'absolute', minHeight: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: 'rgba(14,12,16,0.75)', flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 7, height: 7, borderRadius: 4 },
+  thumbs: { flexDirection: 'row', gap: 8, marginTop: 12, justifyContent: 'center' },
+  thumb: { width: 40, height: 50, borderRadius: 10, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', backgroundColor: C.surf2 },
+  thumbTick: { position: 'absolute', right: 2, bottom: 2, width: 14, height: 14, borderRadius: 7, backgroundColor: '#3B7BFF', alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
   ring: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
   bubble: { width: 58, height: 58, borderRadius: 29, backgroundColor: C.surf2, borderWidth: 2, borderColor: '#2E2830', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  applyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, padding: 14, backgroundColor: C.surf, borderRadius: 16 },
+  offscreen: { position: 'absolute', left: -4000, top: 0, width: VW, height: VH },
 });

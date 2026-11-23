@@ -345,12 +345,19 @@ export function Photos({ profile, setProfile, next, back }) {
   if (editing !== null && photos[editing]) {
     return (
       <MaskEditor
-        uri={photos[editing]}
+        photos={photos}
+        start={editing}
         onCancel={() => setEditing(null)}
-        onDone={(uri, mask) => {
-          if (mask) {
-            setPhotos(photos.map((p, j) => (j === editing ? uri : p)));
-            setMasked({ ...masked, [uri]: mask });
+        onDone={(results) => {
+          if (results.length) {
+            const next = [...photos];
+            const nextMasked = { ...masked };
+            for (const r of results) {
+              next[r.index] = r.uri;
+              nextMasked[r.uri] = r.mask;
+            }
+            setPhotos(next);
+            setMasked(nextMasked);
           }
           setEditing(null);
         }}
@@ -438,7 +445,7 @@ export function Photos({ profile, setProfile, next, back }) {
           <View style={{ flex: 1 }}>
             <T style={{ fontFamily: F.semi }}>Hide my face</T>
             <T v="small" c={C.muted} style={{ marginTop: 2 }}>
-              Wear a bunny, masquerade or kitten mask. Added on your phone.
+              A bunny, masquerade or kitten mask, placed on your face automatically.
             </T>
           </View>
           <Pressable
