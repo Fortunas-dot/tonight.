@@ -15,6 +15,9 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } f
 import { C } from './src/theme';
 import { CHATS, IDEAS, PEOPLE } from './src/data';
 import { TabBar } from './src/ui';
+
+// Off during testing so screenshots can be shared. Turn back on before the App Store release.
+const BLOCK_SCREENSHOTS = false;
 import { Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
 import {
   Chat,
@@ -81,10 +84,16 @@ export default function App() {
   }, [ready, profile, onboarded]);
 
   // Discretion: block screenshots / recordings and blur the app switcher preview.
+  // Screenshots are allowed while testing; set BLOCK_SCREENSHOTS to true again before launch.
   useEffect(() => {
     if (Platform.OS === 'web') return;
-    ScreenCapture.preventScreenCaptureAsync('tonight').catch(() => {});
-    ScreenCapture.enableAppSwitcherProtectionAsync(0.6).catch(() => {});
+    if (BLOCK_SCREENSHOTS) {
+      ScreenCapture.preventScreenCaptureAsync('tonight').catch(() => {});
+      ScreenCapture.enableAppSwitcherProtectionAsync(0.6).catch(() => {});
+    } else {
+      ScreenCapture.allowScreenCaptureAsync('tonight').catch(() => {});
+      ScreenCapture.disableAppSwitcherProtectionAsync().catch(() => {});
+    }
   }, []);
 
   const onLayout = useCallback(() => {

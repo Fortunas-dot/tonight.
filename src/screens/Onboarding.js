@@ -15,6 +15,19 @@ const STEPS = 6;
 export function Welcome({ next }) {
   return (
     <Screen strong style={{ justifyContent: 'flex-end' }} bottom={30}>
+      {/* Orb top right, as in the design: a thin ring with a gradient disc inside it */}
+      <View
+        pointerEvents="none"
+        style={{ position: 'absolute', right: -120, top: 90, width: 340, height: 340, borderRadius: 170, borderWidth: 1, borderColor: '#3A2A2E' }}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        colors={GRAD}
+        locations={[0, 0.55, 1]}
+        start={{ x: 0.1, y: 0.1 }}
+        end={{ x: 0.9, y: 0.9 }}
+        style={{ position: 'absolute', right: -60, top: 150, width: 220, height: 220, borderRadius: 110 }}
+      />
       <View style={{ position: 'absolute', top: 70, left: 24 }}>
         <T style={{ fontFamily: F.displayX, fontSize: 26, letterSpacing: -0.5 }}>
           tonight<T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 26 }}>.</T>
