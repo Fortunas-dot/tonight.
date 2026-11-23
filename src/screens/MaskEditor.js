@@ -117,7 +117,8 @@ function Burner({ uri, place, mask, onDone }) {
   const shoot = () => {
     if (sent.current || !ref.current) return;
     sent.current = true;
-    ref.current.toDataURL((b64) => onDone(b64), { width: OUT_W, height: OUT_H });
+    // The Svg itself is laid out at the output size, so the whole photo fills the PNG.
+    ref.current.toDataURL((b64) => onDone(b64));
   };
   useEffect(() => {
     const t = setTimeout(shoot, 1500); // in case the image's load event never arrives
@@ -126,7 +127,7 @@ function Burner({ uri, place, mask, onDone }) {
   }, []);
   return (
     <View style={styles.offscreen} pointerEvents="none">
-      <Svg ref={ref} width={VW} height={VH} viewBox={`0 0 ${VW} ${VH}`}>
+      <Svg ref={ref} width={OUT_W} height={OUT_H} viewBox={`0 0 ${VW} ${VH}`}>
         <Defs>
           <FrostGradient />
         </Defs>
@@ -387,5 +388,5 @@ const styles = StyleSheet.create({
   ring: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
   bubble: { width: 58, height: 58, borderRadius: 29, backgroundColor: C.surf2, borderWidth: 2, borderColor: '#2E2830', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   applyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, padding: 14, backgroundColor: C.surf, borderRadius: 16 },
-  offscreen: { position: 'absolute', left: -4000, top: 0, width: VW, height: VH },
+  offscreen: { position: 'absolute', left: -(OUT_W + 1000), top: 0, width: OUT_W, height: OUT_H },
 });
