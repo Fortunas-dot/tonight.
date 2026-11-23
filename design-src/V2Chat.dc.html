@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chat v2</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.me{align-self:flex-end;max-width:255px;padding:11px 15px;border-radius:22px 22px 6px 22px;background:linear-gradient(135deg,#D81B6A,#9B2BA0);color:#FFFFFF;font-size:15px;line-height:1.4}
+.them{align-self:flex-start;max-width:255px;padding:11px 15px;border-radius:22px 22px 22px 6px;background:#1A171D;font-size:15px;line-height:1.4}
+.ts{align-self:center;font-size:12px;color:#8A828C;margin:4px 0}
+.pop{animation:v2b .55s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes v2b{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.typing i{display:block;width:6px;height:6px;border-radius:50%;background:#8A828C;animation:v2t 1.2s ease-in-out infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes v2t{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+button{transition:transform .3s cubic-bezier(.3,1.5,.5,1)}button:active{transform:scale(.94)}
+@media (prefers-reduced-motion:reduce){*{animation:none !important}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #09080A; color: #F4EFEA; font-family: Inter, sans-serif; padding-top: 50px; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 8px">
+    <a href="V2Inbox.dc.html" aria-label="Back to chats" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4EFEA"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></a>
+    <div style="display: flex; align-items: center; gap: 10px">
+      <span style="width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #3A2B33, #1C171E); box-shadow: 0 0 0 2px #09080A, 0 0 0 3.5px #FF8A3D"></span>
+      <div><div style="font-size: 16px; font-weight: 600">Lina</div><div style="font-size: 12px; color: #2BC48A">Plan at 21:30</div></div>
+    </div>
+    <button aria-label="Safety tools" style="width: 44px; height: 44px; border: 0; background: transparent; color: #6FA8FF; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path></svg></button>
+  </div>
+  <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px 16px 0">
+    <div class="ts">Today, 20:42</div>
+    <div class="me pop">Drink at Bar Mona, 21:30?</div>
+    <div class="pop" style="align-self: stretch; display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 6px 0; border-radius: 20px; background: #141216; animation-delay: .08s">
+      <span style="width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; background: linear-gradient(135deg, #F0287A, #3B7BFF); color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></span>
+      <div style="flex-grow: 1"><div style="font-size: 15px; font-weight: 600">Bar Mona · 21:30</div><div style="font-size: 12px; color: #2BC48A; margin-top: 2px">Both confirmed · match saved</div></div>
+      <button style="border: 0; background: transparent; color: #F4EFEA; font: 500 13px Inter, sans-serif; padding: 8px 4px">Directions</button>
+    </div>
+    <div class="them pop" style="animation-delay: .16s">Yes! I’ll grab a seat at the bar</div>
+    <div class="me pop" style="animation-delay: .24s">Black jacket. Can’t miss me.</div>
+    <div class="pop" style="align-self: flex-start; position: relative; width: 176px; height: 132px; border-radius: 22px 22px 22px 6px; overflow: hidden; background: radial-gradient(circle at 35% 30%, #3A2B33, #1C171E); animation-delay: .32s">
+      <div style="position: absolute; inset: 0; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(9,8,10,.25)"></div>
+      <button style="position: absolute; inset: 0; border: 0; background: transparent; color: #F4EFEA; font: 500 13px Inter, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>Tap to view</button>
+    </div>
+    <div class="pop" style="align-self: center; text-align: center; margin-top: 10px; max-width: 300px; animation-delay: .4s">
+      <div style="font-size: 13px; line-height: 1.45; color: #A39AA2">Lina would like to swap private photos. Explicit photos only unlock if you both say yes.</div>
+      <div style="display: flex; gap: 8px; justify-content: center; margin-top: 10px">
+        <button style="height: 38px; padding: 0 18px; border-radius: 19px; border: 0; background: #3B7BFF; color: #FFFFFF; font: 600 14px Inter, sans-serif">I’m in</button>
+        <button style="height: 38px; padding: 0 18px; border-radius: 19px; border: 1px solid rgba(255,255,255,.14); background: transparent; color: #F4EFEA; font: 500 14px Inter, sans-serif">Not now</button>
+      </div>
+    </div>
+    <div class="typing pop" style="align-self: flex-start; display: flex; gap: 4px; padding: 13px 15px; border-radius: 20px; background: #1A171D; margin-top: 6px; animation-delay: .5s"><i></i><i></i><i></i></div>
+  </div>
+  <div style="padding: 10px 14px 34px">
+    <div style="display: flex; align-items: center; gap: 6px; height: 52px; padding: 0 6px; border-radius: 26px; background: #141216; border: 1px solid rgba(255,255,255,.06)">
+      <button aria-label="Add photo or plan" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; color: #A39AA2; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+      <label for="m2" style="position: absolute; left: -9999px">Message</label>
+      <input id="m2" placeholder="Message" style="flex-grow: 1; min-width: 0; height: 40px; border: 0; background: transparent; color: #F4EFEA; font: 400 15px Inter, sans-serif; outline: none">
+      <button aria-label="Send" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: linear-gradient(135deg, #F0287A, #3B7BFF); color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

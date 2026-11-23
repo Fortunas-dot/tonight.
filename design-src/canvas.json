@@ -326,6 +326,41 @@
       "w": 1440,
       "h": 700,
       "title": "31 · Ward, the watchdog"
+    },
+    "V2Welcome.dc.html": {
+      "x": 0,
+      "y": 15588,
+      "w": 390,
+      "h": 844,
+      "title": "v2 · Welcome"
+    },
+    "V2Discover.dc.html": {
+      "x": 470,
+      "y": 15588,
+      "w": 390,
+      "h": 844,
+      "title": "v2 · Discover"
+    },
+    "V2Profile.dc.html": {
+      "x": 940,
+      "y": 15588,
+      "w": 390,
+      "h": 844,
+      "title": "v2 · Profile"
+    },
+    "V2Inbox.dc.html": {
+      "x": 1410,
+      "y": 15588,
+      "w": 390,
+      "h": 844,
+      "title": "v2 · Chats"
+    },
+    "V2Chat.dc.html": {
+      "x": 1880,
+      "y": 15588,
+      "w": 390,
+      "h": 844,
+      "title": "v2 · Chat"
     }
   },
   "order": [
@@ -373,7 +408,12 @@
     "DiscList.dc.html",
     "PhotoMask.dc.html",
     "SoundKit.dc.html",
-    "Watchdog.dc.html"
+    "Watchdog.dc.html",
+    "V2Welcome.dc.html",
+    "V2Discover.dc.html",
+    "V2Profile.dc.html",
+    "V2Inbox.dc.html",
+    "V2Chat.dc.html"
   ],
   "notes": {
     "t1": {
@@ -536,6 +576,20 @@
       "w": 380,
       "fill": "teal",
       "text": "Liquid motion system (on every phone screen):\n• two colour blobs (pink, blue) slowly morph and drift behind content, like ink in water\n• gradient buttons flow\n• a light flows along the tab bar\n• live dots pulse like sonar\n• the logo’s dot drips\n• taps squish with a springy bounce\n• cards and rows float up into place\n• match screen: rising bubbles + ripples\nRespects ‘reduce motion’ in phone settings."
+    },
+    "t14": {
+      "x": 0,
+      "y": 15308,
+      "text": "13 — Premium pass (v2): compare with the originals",
+      "kind": "title1",
+      "maxW": 2270
+    },
+    "n15": {
+      "x": 2350,
+      "y": 15588,
+      "w": 380,
+      "fill": "gray",
+      "text": "v2 rules:\n• One primary action per screen (the only gradient). Everything else is quiet text or ghost icons.\n• No boxes for grouping: spacing + inset hairlines (6% white).\n• Type scale: 40 display · 28 title · 17 headline · 15 body · 13 meta. Bricolage only ≥28 px.\n• 8-pt grid, 24 px side margins, 32 px radius on hero media.\n• Colour = meaning: pink acts, blue protects, green is live. Nothing decorative.\n• Floating glass tab bar, icon-only, active state = soft gradient dot.\n• Motion is calmer: ambient blobs at half strength, springs instead of bounces."
     }
   },
   "designSystems": []

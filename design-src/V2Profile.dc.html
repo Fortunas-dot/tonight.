@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Profile v2</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.glass{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(20,17,22,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#F4EFEA;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.lbl{font-size:13px;color:#8A828C;margin-bottom:10px}
+.yes{display:flex;align-items:center;gap:12px;font-size:16px;height:32px}
+.dot{width:20px;height:20px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#F0287A,#3B7BFF);display:flex;align-items:center;justify-content:center}
+.sec{animation:v2r .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes v2r{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.photo{animation:v2k 18s ease-in-out infinite alternate}
+@keyframes v2k{from{transform:scale(1)}to{transform:scale(1.06)}}
+.cta{background:linear-gradient(100deg,#F0287A,#7B3CFF 55%,#3B7BFF);background-size:220% 100%;animation:v2f 8s ease-in-out infinite}
+@keyframes v2f{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+button,a{transition:transform .3s cubic-bezier(.3,1.5,.5,1)}button:active,a:active{transform:scale(.95)}
+@media (prefers-reduced-motion:reduce){*{animation:none !important}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #09080A; color: #F4EFEA; font-family: Inter, sans-serif; position: relative; overflow: hidden">
+  <div style="position: absolute; left: 0; right: 0; top: 0; height: 480px; overflow: hidden">
+    <div class="photo" style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 35% 25%, #3A2B33, #1C171E 60%, #141116)"></div>
+    <div style="position: absolute; top: 44%; left: 0; right: 0; text-align: center; font: 500 10px ui-monospace, monospace; letter-spacing: 3px; color: #6F6470">PHOTO 2 / 4</div>
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 220px; background: linear-gradient(180deg, rgba(9,8,10,0), #09080A)"></div>
+  </div>
+  <div style="position: absolute; top: 56px; left: 16px; right: 16px; display: flex; justify-content: space-between">
+    <a class="glass" href="V2Discover.dc.html" aria-label="Close profile"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></a>
+    <button class="glass" aria-label="More: report or block"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></button>
+  </div>
+  <div style="position: absolute; left: 24px; right: 24px; top: 392px">
+    <div class="sec">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <h1 style="margin: 0; font: 700 40px 'Bricolage Grotesque', sans-serif; letter-spacing: -1.4px">Lina</h1>
+        <span style="font: 400 32px 'Bricolage Grotesque', sans-serif; color: rgba(244,239,234,.6)">29</span>
+        <svg role="img" aria-label="Live-verified" width="20" height="20" viewBox="0 0 24 24" style="align-self: center"><circle cx="12" cy="12" r="11" fill="#6FA8FF"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#06142E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px; font-size: 14px; color: #A39AA2">
+        <span>2 km away</span><span style="width: 3px; height: 3px; border-radius: 50%; background: #4A4148"></span><span style="color: #2BC48A">Live until 1:00</span><span style="width: 3px; height: 3px; border-radius: 50%; background: #4A4148"></span><span>Tested Oct</span>
+      </div>
+    </div>
+    <div class="sec" style="margin-top: 28px; animation-delay: .08s">
+      <div class="lbl">You both want</div>
+      <div class="yes"><span class="dot"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"><path d="M5 12l5 5 9-10"></path></svg></span>A drink first</div>
+      <div class="yes"><span class="dot"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"><path d="M5 12l5 5 9-10"></path></svg></span>Protection, always</div>
+      <div class="yes"><span class="dot"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"><path d="M5 12l5 5 9-10"></path></svg></span>A slow build-up</div>
+    </div>
+    <div class="sec" style="margin-top: 26px; animation-delay: .16s">
+      <div class="lbl">Her ideal night</div>
+      <p style="margin: 0; font: 500 21px/1.3 'Bricolage Grotesque', sans-serif; letter-spacing: -0.3px">“One drink, good conversation, no rush. If it clicks, it clicks.”</p>
+    </div>
+  </div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 24px 34px; display: flex; gap: 12px; background: linear-gradient(180deg, rgba(9,8,10,0), #09080A 40%)">
+    <button aria-label="Pass" style="width: 58px; height: 58px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(255,255,255,.12); background: rgba(26,23,29,.8); color: #F4EFEA; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+    <button class="cta" style="flex-grow: 1; height: 58px; border-radius: 29px; border: 0; color: #FFFFFF; font: 600 16px Inter, sans-serif; box-shadow: 0 12px 36px rgba(240,40,122,.3)">Like Lina</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
