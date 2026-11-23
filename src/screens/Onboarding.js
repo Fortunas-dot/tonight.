@@ -7,6 +7,7 @@ import { C, F, FIRE, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { BOUNDARIES, INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS } from '../data';
 import { MaskEditor } from './MaskEditor';
+import { FireBurst } from './FireBurst';
 import { Field, ProfileFields, Section } from './ProfileFields';
 import * as api from '../backend';
 import { versionLabel } from '../version';
@@ -90,8 +91,46 @@ function FlameGlyph({ size = 16 }) {
   );
 }
 
+function NextHint() {
+  const [a] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(a, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(a, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [a]);
+  return (
+    <Animated.View style={[styles.hint, { opacity: a.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }), transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1.03] }) }] }]}>
+      <FlameGlyph size={11} />
+      <T v="small" c="#FFB36B" style={{ fontFamily: F.semi, fontSize: 11 }}>
+        tap to take this vow
+      </T>
+    </Animated.View>
+  );
+}
+
+function VowProgress({ count }) {
+  return (
+    <View style={styles.progress} accessibilityLabel={`${count} of 7 vows taken`}>
+      {VOWS.map((v, i) =>
+        i < count ? (
+          <LinearGradient key={v.n} colors={[FIRE[0], FIRE[1], FIRE[2]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.progSeg} />
+        ) : (
+          <View key={v.n} style={[styles.progSeg, { backgroundColor: '#2A242C' }]} />
+        ),
+      )}
+    </View>
+  );
+}
+
 function Vow({ vow, lit, isNext, onToggle }) {
   const [pop] = useState(() => new Animated.Value(lit ? 1 : 0));
+  const [burst, setBurst] = useState(0); // bumps each time the vow is taken, replaying the fire
+  const [box, setBox] = useState({ w: 0, h: 0 });
   useEffect(() => {
     if (lit) {
       pop.setValue(0);
@@ -103,9 +142,23 @@ function Vow({ vow, lit, isNext, onToggle }) {
       accessibilityRole="button"
       accessibilityState={{ checked: lit }}
       accessibilityLabel={`Vow ${vow.n}: ${vow.text}`}
-      onPress={onToggle}
-      style={{ alignItems: 'center', paddingVertical: 6, opacity: lit ? 1 : 0.45 }}
+      onPress={() => {
+        if (!lit) setBurst((b) => b + 1);
+        onToggle();
+      }}
+      onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
+      style={{ alignItems: 'center', paddingVertical: 6, paddingHorizontal: 8, opacity: lit ? 1 : 0.45 }}
     >
+      {lit ? (
+        <LinearGradient
+          pointerEvents="none"
+          colors={['rgba(255,138,61,0)', 'rgba(255,138,61,0.16)', 'rgba(240,40,122,0)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+        />
+      ) : null}
+      {lit && burst ? <FireBurst key={burst} width={box.w} height={box.h} /> : null}
       {lit ? (
         <Animated.View style={{ transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] }}>
           <FlameGlyph />
@@ -127,11 +180,7 @@ function Vow({ vow, lit, isNext, onToggle }) {
       >
         {vow.text}
       </Animated.Text>
-      {isNext ? (
-        <T v="small" c={C.orange} style={{ marginTop: 2 }}>
-          tap to take this vow
-        </T>
-      ) : null}
+      {isNext ? <NextHint /> : null}
     </Pressable>
   );
 }
@@ -141,6 +190,8 @@ export function Code({ next }) {
   const [sealed, setSealed] = useState(false);
   const [hold] = useState(() => new Animated.Value(0));
   const [fire] = useState(() => new Animated.Value(0));
+  const [breath] = useState(() => new Animated.Value(0));
+  const [holding, setHolding] = useState(false);
   const anim = useRef(null);
   const count = lit.filter(Boolean).length;
   const all = count === VOWS.length;
@@ -149,6 +200,22 @@ export function Code({ next }) {
   useEffect(() => {
     Animated.timing(fire, { toValue: count / VOWS.length, duration: 700, useNativeDriver: false }).start();
   }, [count, fire]);
+
+  // The seal "breathes" once all vows are taken, inviting the press.
+  useEffect(() => {
+    if (!all || sealed) {
+      breath.setValue(0);
+      return undefined;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breath, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(breath, { toValue: 0, duration: 1100, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [all, sealed, breath]);
 
   const toggle = (i) => {
     if (sealed) return;
@@ -162,6 +229,7 @@ export function Code({ next }) {
   const startHold = () => {
     if (!all || sealed) return;
     tap();
+    setHolding(true);
     anim.current = Animated.timing(hold, { toValue: 1, duration: 1300, easing: Easing.linear, useNativeDriver: false });
     anim.current.start(({ finished }) => {
       if (finished) {
@@ -173,6 +241,7 @@ export function Code({ next }) {
   };
   const stopHold = () => {
     if (sealed) return;
+    setHolding(false);
     anim.current?.stop();
     Animated.timing(hold, { toValue: 0, duration: 250, useNativeDriver: false }).start();
   };
@@ -208,6 +277,7 @@ export function Code({ next }) {
       <T v="meta" c={C.muted} style={{ textAlign: 'center', marginTop: 4 }}>
         {sealed ? 'Sealed. Welcome in.' : all ? 'All seven vows taken. Now seal it.' : `${count} of 7 vows taken. Tap each to take it.`}
       </T>
+      <VowProgress count={count} />
       <View style={{ width: '100%', marginTop: 10 }}>
         {VOWS.map((v, i) => (
           <View key={v.n}>
@@ -230,6 +300,16 @@ export function Code({ next }) {
         onPressOut={stopHold}
         style={{ width: 96, height: 96, alignItems: 'center', justifyContent: 'center', opacity: all ? 1 : 0.35 }}
       >
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.sealGlow,
+            {
+              opacity: breath.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] }),
+              transform: [{ scale: breath.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.18] }) }],
+            },
+          ]}
+        />
         <Svg width={96} height={96} viewBox="0 0 104 104" style={{ position: 'absolute' }}>
           <Defs>
             <SvgGrad id="seal" x1="0" y1="0" x2="1" y2="1">
@@ -254,11 +334,11 @@ export function Code({ next }) {
           />
         </Svg>
         <View style={[styles.sealInner, sealed && { backgroundColor: '#5A2412' }]}>
-          <Icon name="fingerprint" size={32} color={C.ink} stroke={1.5} />
+          {sealed ? <Icon name="check" size={34} color="#FFD27A" stroke={2.6} /> : <Icon name="fingerprint" size={32} color={C.ink} stroke={1.5} />}
         </View>
       </Pressable>
       <T v="label" c={C.ink2} style={{ marginTop: 8, letterSpacing: 1 }}>
-        {sealed ? 'Sealed' : all ? 'Press and hold to seal' : 'Take all 7 vows first'}
+        {sealed ? 'Sealed' : holding ? 'Keep holding…' : all ? 'Press and hold to seal' : 'Take all 7 vows first'}
       </T>
       <Card tone="safe" style={{ marginTop: 10, flexDirection: 'row', gap: 10, alignItems: 'center', padding: 10 }}>
         <Icon name="shieldCheck" size={20} color={C.blueL} />
@@ -856,6 +936,10 @@ const styles = StyleSheet.create({
   orn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginVertical: 1 },
   ornLine: { width: 28, height: 1, backgroundColor: C.line2 },
   ornDot: { width: 5, height: 5, transform: [{ rotate: '45deg' }], backgroundColor: '#4A4148' },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6, height: 24, paddingHorizontal: 10, borderRadius: 12, backgroundColor: 'rgba(255,138,61,0.12)', borderWidth: 1, borderColor: 'rgba(255,138,61,0.35)' },
+  progress: { flexDirection: 'row', gap: 5, marginTop: 12, width: '70%' },
+  progSeg: { flex: 1, height: 5, borderRadius: 3 },
+  sealGlow: { position: 'absolute', width: 96, height: 96, borderRadius: 48, backgroundColor: 'rgba(255,138,61,0.35)' },
   sealInner: { width: 76, height: 76, borderRadius: 38, backgroundColor: '#2A1530', alignItems: 'center', justifyContent: 'center' },
   lbl: { marginTop: 20, marginBottom: 8 },
   input: {
