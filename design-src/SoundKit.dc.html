@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sound design kit</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.card{position:relative;border-radius:22px;padding:20px;background:#141116;border:1px solid #221E24;display:flex;gap:16px;align-items:center;transition:box-shadow .3s,border-color .3s}
+.card.on{border-color:#FF8A3D;box-shadow:0 0 0 1px rgba(255,138,61,.4),0 0 30px rgba(240,40,122,.35)}
+.ic{width:56px;height:56px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.nm{font:700 19px 'Bricolage Grotesque',sans-serif}
+.wh{font-size:12px;color:#A39AA2;margin-top:2px}
+.ds{font-size:13px;line-height:1.45;color:#D9D2D6;margin-top:6px}
+.play{margin-left:auto;flex-shrink:0;width:54px;height:54px;border-radius:50%;border:0;background:linear-gradient(135deg,#F0287A,#3B7BFF);color:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.wave{display:flex;gap:3px;align-items:center;height:22px;margin-top:8px}
+.wave i{display:block;width:3px;border-radius:2px;background:#3A3439}
+.card.on .wave i{background:linear-gradient(180deg,#FFD27A,#F0287A);animation:eq .5s ease-in-out infinite alternate}
+.card.on .wave i:nth-child(2n){animation-delay:.15s}.card.on .wave i:nth-child(3n){animation-delay:.3s}
+@keyframes eq{from{transform:scaleY(.4)}to{transform:scaleY(1.2)}}
+</style>
+</helmet>
+<div style="width: 960px; height: 600px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding: 36px 40px">
+  <div style="font-size: 12px; font-weight: 600; letter-spacing: 2px; color: #FF7FB5">SOUND DESIGN · PRESS PLAY</div>
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px">
+    <h1 style="margin: 0; font: 800 34px 'Bricolage Grotesque', sans-serif; letter-spacing: -0.8px">Fire you can hear</h1>
+    <span style="font-size: 14px; color: #A39AA2">Short, warm and quiet. Every sound pairs with a haptic.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px">
+    <sc-for list="{{sounds}}" as="s" hint-placeholder-count="4">
+      <div class="{{s.cls}}">
+        <div class="ic" style="background: {{s.bg}}">
+          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="{{s.color}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{s.icon}}"></path></svg>
+        </div>
+        <div style="min-width: 0">
+          <div class="nm">{{s.name}}</div>
+          <div class="wh">{{s.when}}</div>
+          <div class="ds">{{s.desc}}</div>
+          <div class="wave"><i style="height: 8px"></i><i style="height: 14px"></i><i style="height: 20px"></i><i style="height: 12px"></i><i style="height: 18px"></i><i style="height: 9px"></i><i style="height: 16px"></i><i style="height: 22px"></i><i style="height: 11px"></i><i style="height: 6px"></i></div>
+        </div>
+        <button class="play" onClick="{{s.play}}" aria-label="{{s.label}}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></button>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display: flex; gap: 10px; margin-top: 22px">
+    <span style="flex: 1; padding: 12px 14px; border-radius: 14px; background: #141A2B; font-size: 12px; line-height: 1.4; color: #C9D6F2"><strong style="color: #F4EFEA">Silent by default in public.</strong> Off when the phone is on silent or discreet mode is on.</span>
+    <span style="flex: 1; padding: 12px 14px; border-radius: 14px; background: #17131A; font-size: 12px; line-height: 1.4; color: #D9D2D6"><strong style="color: #F4EFEA">Subtle.</strong> Under 1.5 s, at least 12 dB below system volume, no music beds.</span>
+    <span style="flex: 1; padding: 12px 14px; border-radius: 14px; background: #2A1A12; font-size: 12px; line-height: 1.4; color: #FFD2B0"><strong style="color: #F4EFEA">One family.</strong> Everything is fire: air, crackle, ember, warmth.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":960,"height":600}}'>
+class Component extends DCLogic {
+  ctx() {
+    if (!this.ac) { var AC = window.AudioContext || window.webkitAudioContext; this.ac = new AC(); this.master = this.ac.createGain(); this.master.gain.value = 0.8; this.master.connect(this.ac.destination); }
+    if (this.ac.state === 'suspended') this.ac.resume();
+    return this.ac;
+  }
+  noise(ac, dur) {
+    var len = Math.max(1, Math.floor(ac.sampleRate * dur)); var b = ac.createBuffer(1, len, ac.sampleRate); var d = b.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = ac.createBufferSource(); src.buffer = b; return src;
+  }
+  whoosh(t0, dur, f0, f1, pan0, vol) {
+    var ac = this.ctx(); var src = this.noise(ac, dur + 0.05); var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.1;
+    bp.frequency.setValueAtTime(f0, t0); bp.frequency.exponentialRampToValueAtTime(f1, t0 + dur * 0.6); bp.frequency.exponentialRampToValueAtTime(f0 * 0.8, t0 + dur);
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol || 0.6, t0 + dur * 0.25); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    var node = g;
+    if (ac.createStereoPanner && pan0) { var p = ac.createStereoPanner(); p.pan.setValueAtTime(pan0, t0); p.pan.linearRampToValueAtTime(0, t0 + dur * 0.8); g.connect(p); node = p; }
+    src.connect(bp); bp.connect(g); node.connect(this.master); src.start(t0); src.stop(t0 + dur + 0.05);
+  }
+  tone(t0, freq, dur, vol, type, endFreq) {
+    var ac = this.ctx(); var o = ac.createOscillator(); o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t0);
+    if (endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t0 + dur);
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + Math.min(0.04, dur / 4)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this.master); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  crackle(t0, dur, count) {
+    var ac = this.ctx();
+    for (var i = 0; i < count; i++) {
+      var t = t0 + Math.random() * dur * Math.pow(Math.random(), 0.6); var len = 0.004 + Math.random() * 0.018;
+      var src = this.noise(ac, len); var hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1200 + Math.random() * 2400;
+      var g = ac.createGain(); g.gain.setValueAtTime(0.05 + Math.random() * 0.35, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      src.connect(hp); hp.connect(g); g.connect(this.master); src.start(t); src.stop(t + len + 0.01);
+    }
+    var r = this.noise(ac, dur + 0.1); var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 180;
+    var rg = ac.createGain(); rg.gain.setValueAtTime(0.0001, t0); rg.gain.exponentialRampToValueAtTime(0.35, t0 + dur * 0.5); rg.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    r.connect(lp); lp.connect(rg); rg.connect(this.master); r.start(t0); r.stop(t0 + dur + 0.1);
+  }
+  play(id) {
+    var ac = this.ctx(); var t = ac.currentTime + 0.02; var self = this;
+    if (id === 'ignite') { this.whoosh(t, 0.55, 380, 3200, 0, 0.55); this.tone(t + 0.05, 1800, 0.08, 0.06, 'triangle', 600); this.crackle(t + 0.1, 0.4, 8); }
+    if (id === 'match') { this.whoosh(t, 0.7, 300, 2600, -0.85, 0.5); this.whoosh(t + 0.06, 0.7, 320, 2800, 0.85, 0.5); [261.6, 329.6, 392, 523.3].forEach(function (f, i) { self.tone(t + 0.55 + i * 0.03, f, 1.3, 0.07, 'sine'); }); }
+    if (id === 'seal') { this.crackle(t, 1.2, 70); this.tone(t + 1.15, 120, 0.45, 0.5, 'sine', 50); [196, 293.7, 392].forEach(function (f) { self.tone(t + 1.2, f, 1.1, 0.05, 'sine'); }); }
+    if (id === 'heart') { this.tone(t, 72, 0.18, 0.7, 'sine', 42); this.tone(t + 0.22, 68, 0.2, 0.5, 'sine', 40); }
+    this.setState({ playing: id });
+    clearTimeout(this.pt); this.pt = setTimeout(function () { self.setState({ playing: null }); }, id === 'seal' ? 2300 : id === 'match' ? 1900 : 900);
+  }
+  componentWillUnmount() { clearTimeout(this.pt); if (this.ac) this.ac.close(); }
+  renderVals() {
+    var self = this; var playing = this.state && this.state.playing;
+    var defs = [
+      { id: 'ignite', name: 'Ignite', when: 'Each vow in the Tonight Code · going live', desc: 'A quick airy whoosh with a spark and a few crackles, like a match catching.', color: '#FF8A3D', bg: '#2A1A12', icon: 'M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.3 3 2.5 3-1-3 0-6 0-8z' },
+      { id: 'match', name: 'Match flame', when: '“It’s mutual” screen', desc: 'Two whooshes rush in from left and right and bloom into one warm chord as the flames merge.', color: '#FF7FB5', bg: '#2A1020', icon: 'M12 21s-7.5-4.6-9.3-9.4C1.4 8.2 3.6 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.6 0 5.8 3.7 4.5 7.1C19.5 16.4 12 21 12 21z' },
+      { id: 'seal', name: 'Ember seal', when: 'Holding to seal the Code', desc: 'An ember crackle that builds while you hold, then a soft low thump and warm glow when it seals.', color: '#FFD27A', bg: '#2A1E10', icon: 'M12 11v4M8.5 9.5A4 4 0 0 1 16 11v2c0 2-.5 4-1.5 5.5M8 12c0 3-.5 5-1.5 6.5M12 3a8 8 0 0 0-8 8v1M20 11a8 8 0 0 0-3-6.2M12 7a4 4 0 0 0-4 4' },
+      { id: 'heart', name: 'Heartbeat', when: 'Someone likes you while you’re live', desc: 'Two soft low thumps instead of a buzz. Felt more than heard.', color: '#6FA8FF', bg: '#111B33', icon: 'M3 12h4l2-5 4 10 2-5h6' }
+    ];
+    return {
+      sounds: defs.map(function (d) { return Object.assign({}, d, { cls: playing === d.id ? 'card on' : 'card', label: 'Play ' + d.name, play: function () { self.play(d.id); } }); })
+    };
+  }
+}
+</script>
+</body>
+</html>

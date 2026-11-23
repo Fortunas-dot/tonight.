@@ -86,7 +86,55 @@ body{margin:0}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
-  componentWillUnmount() { clearInterval(this.timer); }
+  componentWillUnmount() { clearInterval(this.timer); if (this.ac) this.ac.close(); }
+  ctx() {
+    if (!this.ac) { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; this.ac = new AC(); this.master = this.ac.createGain(); this.master.gain.value = 0.8; this.master.connect(this.ac.destination); }
+    if (this.ac.state === 'suspended') this.ac.resume();
+    return this.ac;
+  }
+  noise(ac, dur) {
+    var len = Math.max(1, Math.floor(ac.sampleRate * dur)); var b = ac.createBuffer(1, len, ac.sampleRate); var d = b.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = ac.createBufferSource(); src.buffer = b; return src;
+  }
+  tone(t0, freq, dur, vol, type, endFreq) {
+    var ac = this.ac; var o = ac.createOscillator(); o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t0);
+    if (endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t0 + dur);
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + Math.min(0.04, dur / 4)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this.master); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  crackle(t0, dur, count, dest) {
+    var ac = this.ac;
+    for (var i = 0; i < count; i++) {
+      var t = t0 + Math.random() * dur; var len = 0.004 + Math.random() * 0.018;
+      var src = this.noise(ac, len); var hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1200 + Math.random() * 2400;
+      var g = ac.createGain(); g.gain.setValueAtTime(0.04 + Math.random() * 0.3 * (0.4 + (t - t0) / dur), t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      src.connect(hp); hp.connect(g); g.connect(dest); src.start(t); src.stop(t + len + 0.01);
+    }
+    var r = this.noise(ac, dur + 0.1); var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 180;
+    var rg = ac.createGain(); rg.gain.setValueAtTime(0.0001, t0); rg.gain.exponentialRampToValueAtTime(0.3, t0 + dur); rg.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.1);
+    r.connect(lp); lp.connect(rg); rg.connect(dest); r.start(t0); r.stop(t0 + dur + 0.12);
+  }
+  sfxIgnite(n) {
+    var ac = this.ctx(); if (!ac) return; var t = ac.currentTime + 0.01;
+    var src = this.noise(ac, 0.6); var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.1;
+    bp.frequency.setValueAtTime(380 + n * 40, t); bp.frequency.exponentialRampToValueAtTime(3000 + n * 160, t + 0.3); bp.frequency.exponentialRampToValueAtTime(320, t + 0.55);
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    src.connect(bp); bp.connect(g); g.connect(this.master); src.start(t); src.stop(t + 0.6);
+    this.tone(t + 0.04, 1800 + n * 60, 0.08, 0.06, 'triangle', 600);
+    this.crackle(t + 0.1, 0.35, 6, this.master);
+  }
+  sfxHoldStart() {
+    var ac = this.ctx(); if (!ac) return; this.hg = ac.createGain(); this.hg.gain.value = 1; this.hg.connect(this.master);
+    this.crackle(ac.currentTime + 0.01, 1.0, 55, this.hg);
+  }
+  sfxHoldStop() { if (this.hg && this.ac) { this.hg.gain.setTargetAtTime(0.0001, this.ac.currentTime, 0.04); this.hg = null; } }
+  sfxSeal() {
+    var ac = this.ctx(); if (!ac) return; var t = ac.currentTime + 0.01; var self = this; this.hg = null;
+    this.tone(t, 120, 0.45, 0.5, 'sine', 50);
+    [196, 293.7, 392].forEach(function (f) { self.tone(t + 0.05, f, 1.2, 0.05, 'sine'); });
+    this.crackle(t + 0.05, 0.6, 14, this.master);
+  }
   renderVals() {
     var TEXT = ['I only take a clear yes', 'I show up as my real self', 'I send nothing explicit uninvited', 'I respect a no, the first time', 'I show up, or I say so', 'What happens here, stays here', 'I look after the people I meet'];
     var NUMS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
@@ -107,6 +155,7 @@ class Component extends DCLogic {
         toggle: function () {
           if (sealed) return;
           var next = lit.slice(); next[i] = !next[i];
+          if (next[i]) self.sfxIgnite(count);
           self.setState({ lit: next, hold: 0 });
         }
       };
@@ -125,14 +174,16 @@ class Component extends DCLogic {
       startHold: function () {
         if (!all || sealed) return;
         clearInterval(self.timer);
+        self.sfxHoldStart();
         self.timer = setInterval(function () {
           var h = Math.min(100, ((self.state && self.state.hold) || 0) + 4);
-          if (h >= 100) { clearInterval(self.timer); self.setState({ hold: 100, sealed: true }); }
+          if (h >= 100) { clearInterval(self.timer); self.sfxSeal(); self.setState({ hold: 100, sealed: true }); }
           else self.setState({ hold: h });
         }, 40);
       },
       stopHold: function () {
         clearInterval(self.timer);
+        if (!(self.state && self.state.sealed)) self.sfxHoldStop();
         if (!(self.state && self.state.sealed)) self.setState({ hold: 0 });
       }
     };

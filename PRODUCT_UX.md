@@ -75,12 +75,24 @@ Swinburne University (consent/safety), Fast Company (Pure).
 
 - **Glow-up frames** (earned, never bought) around round profile photos everywhere:
   1. Verified – static blue ring (live selfie passed)
-  2. Trusted – pink→blue gradient (+ lab-tested in last 3 months)
+  2. Trusted – pink→blue gradient (+ 3 positive check-ins from matches)
   3. Glowing – slowly rotating duotone ring with soft glow (+ showed up to 5 plans in a row, 90%+ overall)
   4. On fire – rotating fire ring, flicker and flame badge (+ 3 "great communicator" badges, no reports in 90 days)
   Frames step down if conditions lapse (with a warning first). Progress lives in Me › Your glow.
 - **Community promise in onboarding:** the final Preview step says "You're joining a community — we build what members ask
   for", linking to the Ideas board.
+
+## 3f. Discover options, face masks, sound
+
+- **Discover options** (pick one, or combine): A card deck · B live grid · C distance radar (distance bands only,
+  direction shuffled) · D full-screen stack · E nightly drop of 6 at 21:00 · F discreet fit list (faces blurred until tap).
+- **Face masks for photos:** on the Photos step, "Hide my face" → mask editor. On-device face detection places a mask
+  (Bunny lace mask with ears, Masquerade, Kitten, Blur) that follows the face; resize with a pinch; apply to all photos.
+  The mask is burned in on the phone before upload, so the bare face never leaves the device; reveal privately in chat later.
+- **Sound design** (all synthesized, one "fire" family, under 1.5 s, at least 12 dB under system volume, off on silent or
+  in discreet mode, always paired with haptics): Ignite whoosh (each vow, going live), Match flame (two whooshes merging
+  into a warm chord), Ember seal (crackle while holding, low thump on seal), Heartbeat (like while live).
+- Frames level 2 (Trusted) is now earned with 3 positive check-ins from matches (lab-tested removed).
 
 ## 4. Visual system
 

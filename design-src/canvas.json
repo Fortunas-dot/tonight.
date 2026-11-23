@@ -43,7 +43,7 @@
       "y": 1220,
       "w": 390,
       "h": 844,
-      "title": "05 · Discover"
+      "title": "05 · Discover — Option A: card deck"
     },
     "Profile.dc.html": {
       "x": 470,
@@ -269,6 +269,56 @@
       "w": 390,
       "h": 844,
       "title": "29 · Your glow (progress)"
+    },
+    "DiscGrid.dc.html": {
+      "x": 0,
+      "y": 13292,
+      "w": 390,
+      "h": 844,
+      "title": "Discover B · Live grid"
+    },
+    "DiscRadar.dc.html": {
+      "x": 470,
+      "y": 13292,
+      "w": 390,
+      "h": 844,
+      "title": "Discover C · Distance radar"
+    },
+    "DiscStack.dc.html": {
+      "x": 940,
+      "y": 13292,
+      "w": 390,
+      "h": 844,
+      "title": "Discover D · Full-screen stack"
+    },
+    "DiscDrop.dc.html": {
+      "x": 1410,
+      "y": 13292,
+      "w": 390,
+      "h": 844,
+      "title": "Discover E · Nightly drop"
+    },
+    "DiscList.dc.html": {
+      "x": 1880,
+      "y": 13292,
+      "w": 390,
+      "h": 844,
+      "title": "Discover F · Discreet fit list"
+    },
+    "PhotoMask.dc.html": {
+      "x": 2820,
+      "y": 9632,
+      "w": 390,
+      "h": 844,
+      "title": "1b·2b · Mask your face (bunny)"
+    },
+    "SoundKit.dc.html": {
+      "x": 2450,
+      "y": 12072,
+      "w": 960,
+      "h": 600,
+      "title": "30 · Sound design kit (press play)",
+      "is_interactive": true
     }
   },
   "order": [
@@ -308,7 +358,14 @@
     "Support.dc.html",
     "Code.dc.html",
     "Frames.dc.html",
-    "MyGlow.dc.html"
+    "MyGlow.dc.html",
+    "DiscGrid.dc.html",
+    "DiscRadar.dc.html",
+    "DiscStack.dc.html",
+    "DiscDrop.dc.html",
+    "DiscList.dc.html",
+    "PhotoMask.dc.html",
+    "SoundKit.dc.html"
   ],
   "notes": {
     "t1": {
@@ -407,7 +464,7 @@
       "y": 9352,
       "text": "1b — Create your profile",
       "kind": "title1",
-      "maxW": 2730
+      "maxW": 3680
     },
     "n9": {
       "x": 2350,
@@ -433,9 +490,9 @@
     "t11": {
       "x": 0,
       "y": 11792,
-      "text": "10 — Glow-up profile frames",
+      "text": "10 — Glow-up frames & sound",
       "kind": "title1",
-      "maxW": 1910
+      "maxW": 3410
     },
     "n11": {
       "x": 1990,
@@ -443,6 +500,20 @@
       "w": 380,
       "fill": "pink",
       "text": "Frames are EARNED, never bought — Plus can’t buy one. That keeps them a real trust signal.\n\nThey show wherever your photo is round: Discover avatar, chat header, inbox, Lounge posts, Me. Rarer tiers animate, so good behaviour is literally visible from across the room.\n\nLose the conditions (e.g. a no-show streak or a confirmed report) and the frame steps down."
+    },
+    "t12": {
+      "x": 0,
+      "y": 13012,
+      "text": "11 — Discover options: pick one (A = card deck in row 2)",
+      "kind": "title1",
+      "maxW": 2270
+    },
+    "n12": {
+      "x": 2350,
+      "y": 13292,
+      "w": 380,
+      "fill": "blue",
+      "text": "B Live grid: see many at once, fastest for ‘tonight’ energy.\nC Radar: playful sense of who’s near, by distance band only (never direction).\nD Full-screen stack: immersive, one person at a time, swipe up.\nE Nightly drop: 6 hand-picked people at 21:00, scarcity beats endless swiping.\nF Discreet list: fit-first, faces blurred until tapped, safe to open in public.\n\nThey can also combine: e.g. E as the default, B as ‘browse all’."
     }
   },
   "designSystems": []
