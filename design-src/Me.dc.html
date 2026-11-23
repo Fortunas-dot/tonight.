@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Me</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:transparent;font:500 11px Inter,sans-serif;width:68px;padding:8px 0}
+.grp{background:#17131A;border-radius:18px;padding:0 14px}
+.it{display:flex;align-items:center;gap:12px;min-height:54px;border-bottom:1px solid #241F27;text-decoration:none;color:#F4EFEA;font-size:15px}
+.it:last-child{border-bottom:0}
+.ic{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chev{margin-left:auto}
+.ring{position:absolute;inset:0;border-radius:50%;overflow:hidden}
+.spin{position:absolute;inset:-30%;background:conic-gradient(#F0287A,#7B3CFF,#3B7BFF,#7B3CFF,#F0287A);animation:spin 5s linear infinite}
+.rph{position:absolute;inset:4px;border-radius:50%;border:3px solid #0E0C10;background:repeating-linear-gradient(135deg,#2A2228 0 8px,#2F262D 8px 16px)}
+.glow3{animation:breathe 3s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes breathe{0%,100%{box-shadow:0 0 14px rgba(123,60,255,.5)}50%{box-shadow:0 0 24px rgba(123,60,255,.8),0 0 40px rgba(59,123,255,.35)}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding: 54px 20px 0; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 14px; padding: 10px 0 6px">
+    <a href="MyGlow.dc.html" aria-label="Your glow: Glowing, level 3 of 4" style="position: relative; width: 68px; height: 68px; display: block; flex-shrink: 0"><span class="ring glow3"><span class="spin"></span><span class="rph"></span></span></a>
+    <div style="flex-grow: 1">
+      <div style="display: flex; align-items: center; gap: 6px"><span style="font: 700 24px 'Bricolage Grotesque', sans-serif">Lina, 29</span><svg role="img" aria-label="Live-verified" width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#6FA8FF"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#06142E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+      <div style="font-size: 13px; color: #A39AA2; margin-top: 2px">velvet_fox · <a href="MyGlow.dc.html" style="color: #C3A2FF; text-decoration: none; font-weight: 600">Glowing</a></div>
+    </div>
+    <a href="ProfPreview.dc.html" style="height: 38px; padding: 0 14px; border-radius: 19px; border: 1.5px solid #3A3439; color: #F4EFEA; font: 600 13px Inter, sans-serif; display: flex; align-items: center; text-decoration: none">Edit</a>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px">
+    <div style="background: #17131A; border-radius: 16px; padding: 12px"><div style="font: 700 20px 'Bricolage Grotesque', sans-serif">96%</div><div style="font-size: 12px; color: #A39AA2">Shows up</div></div>
+    <div style="background: #17131A; border-radius: 16px; padding: 12px"><div style="font: 700 20px 'Bricolage Grotesque', sans-serif">5</div><div style="font-size: 12px; color: #A39AA2">Likes you</div></div>
+    <div style="background: #17131A; border-radius: 16px; padding: 12px"><div style="font: 700 20px 'Bricolage Grotesque', sans-serif">Oct</div><div style="font-size: 12px; color: #A39AA2">Last tested</div></div>
+  </div>
+  <div style="font-size: 13px; font-weight: 600; color: #A39AA2; margin: 18px 4px 8px">You</div>
+  <div class="grp">
+    <a class="it" href="Boundaries.dc.html"><span class="ic" style="background: #2A1020; color: #FF7FB5"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h6"></path></svg></span>Intent &amp; boundaries<svg class="chev" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A39AA2" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <a class="it" href="Privacy.dc.html"><span class="ic" style="background: #111B33; color: #6FA8FF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>Privacy &amp; discretion<svg class="chev" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A39AA2" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <a class="it" href="Membership.dc.html"><span class="ic" style="background: #1E1433; color: #C3A2FF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>Plus membership<svg class="chev" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A39AA2" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></a>
+  </div>
+  <div style="font-size: 13px; font-weight: 600; color: #A39AA2; margin: 18px 4px 8px">Help shape Tonight</div>
+  <div class="grp">
+    <a class="it" href="Ideas.dc.html"><span class="ic" style="background: #2A1020; color: #FF7FB5"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"></path></svg></span>Ideas board<span style="margin-left: auto; font-size: 12px; color: #2BC48A; font-weight: 600">3 shipped</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A39AA2" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <a class="it" href="Support.dc.html"><span class="ic" style="background: #111B33; color: #6FA8FF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></span>Support chat<span style="margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #2BC48A; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2BC48A"></span>Online</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A39AA2" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <a class="it" href="Code.dc.html"><span class="ic" style="background: #1E1433; color: #C3A2FF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path></svg></span>The Tonight Code<svg class="chev" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A39AA2" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></a>
+  </div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: #0E0C10; border-top: 1px solid #221E24; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 4px">
+    <button class="tab" style="color: #A39AA2"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="3"></rect></svg>Discover</button>
+    <button class="tab" style="color: #A39AA2"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.3-8.6-8.8C2.2 8 4.2 4.8 7.4 4.8c1.9 0 3.4 1 4.6 2.6 1.2-1.6 2.7-2.6 4.6-2.6 3.2 0 5.2 3.2 4 6.4C19 15.7 12 20 12 20z"></path></svg>Likes you</button>
+    <button class="tab" style="color: #A39AA2"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg>Chats</button>
+    <button class="tab" style="color: #A39AA2"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.3 3 2.5 3-1-3 0-6 0-8z"></path></svg>Lounge</button>
+    <button class="tab" style="color: #F0287A"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Me</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

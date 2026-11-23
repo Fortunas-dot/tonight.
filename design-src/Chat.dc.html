@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chat with consent controls</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.them{align-self:flex-start;max-width:260px;background:#1A2440;border-radius:20px 20px 20px 6px;padding:10px 14px;font-size:15px;line-height:1.4}
+.me{align-self:flex-end;max-width:260px;background:#F0287A;color:#FFFFFF;border-radius:20px 20px 6px 20px;padding:10px 14px;font-size:15px;line-height:1.4}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding-top: 54px; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px 10px; border-bottom: 1px solid #221E24">
+    <button aria-label="Back" style="width: 44px; height: 44px; border: 0; background: transparent; color: #F4EFEA"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+    <div style="width: 38px; height: 38px; border-radius: 50%; background: repeating-linear-gradient(135deg,#2A2228 0 8px,#2F262D 8px 16px)"></div>
+    <div style="flex-grow: 1">
+      <div style="font-weight: 600; font-size: 16px">Lina</div>
+      <div style="font-size: 12px; color: #2BC48A">Live · plan set for 21:30</div>
+    </div>
+    <button aria-label="Safety tools" style="width: 44px; height: 44px; border: 0; background: transparent; color: #6FA8FF"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path></svg></button>
+  </div>
+  <div style="flex-grow: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+    <div style="align-self: center; font-size: 12px; color: #A39AA2">Matched 20:42 · open for 48 h</div>
+    <div class="me">Drink at Bar Mona, 21:30?</div>
+    <div style="align-self: stretch; background: #17131A; border: 1.5px solid #2E2830; border-radius: 18px; padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: #3A1028; color: #FF7FB5; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></div>
+      <div style="flex-grow: 1"><div style="font-weight: 600; font-size: 15px">Bar Mona · 21:30</div><div style="font-size: 13px; color: #2BC48A; margin-top: 2px">Lina accepted · match won’t expire</div></div>
+    </div>
+    <div class="them">Yes! I’ll grab a seat at the bar</div>
+    <div class="me">Perfect. Black jacket, can’t miss me.</div>
+    <div style="align-self: flex-start; width: 190px; height: 150px; border-radius: 20px 20px 20px 6px; background: #1F1A21; position: relative; overflow: hidden">
+      <div style="position: absolute; inset: 0; background: repeating-linear-gradient(135deg, #2A2228 0 10px, #2F262D 10px 20px); filter: blur(3px)"></div>
+      <button style="position: absolute; inset: 0; border: 0; background: transparent; color: #F4EFEA; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: 600 13px Inter, sans-serif"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>Photo · tap to view<span style="font-weight: 400; font-size: 11px; color: #C9D6F2">Not explicit</span></button>
+    </div>
+    <div style="align-self: stretch; background: #141A2B; border-radius: 16px; padding: 12px 14px; margin-top: 4px">
+      <div style="font-size: 14px; line-height: 1.4; color: #DCE6FA">Lina wants to swap private photos. Explicit media only unlocks if you both say yes — either of you can switch it off any time.</div>
+      <div style="display: flex; gap: 8px; margin-top: 10px">
+        <button style="flex: 1; height: 44px; border-radius: 22px; border: 0; background: #6FA8FF; color: #06142E; font: 600 14px Inter, sans-serif">I’m in</button>
+        <button style="flex: 1; height: 44px; border-radius: 22px; border: 1.5px solid #3A3439; background: transparent; color: #F4EFEA; font: 600 14px Inter, sans-serif">Not now</button>
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px 34px; border-top: 1px solid #221E24">
+    <button aria-label="Add photo or plan" style="width: 44px; height: 44px; border-radius: 22px; border: 0; background: #1B171D; color: #F4EFEA; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+    <label for="msg" style="position: absolute; left: -9999px">Message</label>
+    <input id="msg" placeholder="Message Lina" style="flex-grow: 1; height: 44px; border-radius: 22px; border: 1.5px solid #2E2830; background: #0E0C10; color: #F4EFEA; padding: 0 16px; font: 400 15px Inter, sans-serif">
+    <button aria-label="Send" style="width: 44px; height: 44px; border-radius: 22px; border: 0; background: #F0287A; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

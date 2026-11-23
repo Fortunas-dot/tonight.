@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glow-up frames</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.card{background:#141116;border:1px solid #221E24;border-radius:26px;padding:28px 24px 24px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.fw{position:relative;width:140px;height:140px}
+.ring{position:absolute;inset:0;border-radius:50%;overflow:hidden}
+.spin{position:absolute;inset:-30%;animation:spin 5s linear infinite}
+.ph{position:absolute;inset:6px;border-radius:50%;border:4px solid #141116;background:repeating-linear-gradient(135deg,#2A2228 0 10px,#2F262D 10px 20px)}
+.lvl{font-size:11px;font-weight:700;letter-spacing:2.5px;color:#A39AA2;margin-top:22px}
+.nm{font:800 26px 'Bricolage Grotesque',sans-serif;letter-spacing:-0.5px;margin-top:4px}
+.rule{font-size:13px;line-height:1.5;color:#D9D2D6;margin-top:8px}
+.tag{margin-top:14px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:10px;background:#1B171D;color:#A39AA2}
+.glow3{animation:breathe 3s ease-in-out infinite}
+.fire{animation:flicker 1.6s ease-in-out infinite}
+.badge{position:absolute;right:2px;bottom:6px;width:38px;height:38px;border-radius:50%;background:linear-gradient(160deg,#FFD27A,#FF8A3D 45%,#F0287A);border:3px solid #141116;display:flex;align-items:center;justify-content:center;animation:bob 1.6s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes breathe{0%,100%{box-shadow:0 0 18px rgba(123,60,255,.45),0 0 40px rgba(240,40,122,.2)}50%{box-shadow:0 0 30px rgba(123,60,255,.7),0 0 60px rgba(59,123,255,.35)}}
+@keyframes flicker{0%,100%{box-shadow:0 0 22px rgba(255,138,61,.7),0 0 50px rgba(240,40,122,.45)}30%{box-shadow:0 0 34px rgba(255,190,90,.9),0 0 70px rgba(240,40,122,.6)}60%{box-shadow:0 0 18px rgba(255,138,61,.6),0 0 44px rgba(240,40,122,.4)}80%{box-shadow:0 0 30px rgba(255,170,80,.85),0 0 64px rgba(255,100,60,.55)}}
+@keyframes bob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.06)}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 760px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding: 48px 56px">
+  <div style="font-size: 12px; font-weight: 600; letter-spacing: 2px; color: #FF7FB5">GLOW-UP FRAMES</div>
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px">
+    <h1 style="margin: 0; font: 800 44px 'Bricolage Grotesque', sans-serif; letter-spacing: -1.2px">Good behaviour, made visible</h1>
+    <p style="margin: 0; max-width: 520px; font-size: 14px; line-height: 1.5; color: #A39AA2; text-align: right">A ring around your photo that you earn by being real, healthy and reliable. Four levels, the rarest ones move. Never for sale.</p>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-top: 36px">
+    <div class="card">
+      <div class="fw"><div class="ring" style="background: #6FA8FF"><div class="ph"></div></div></div>
+      <div class="lvl">LEVEL 1</div>
+      <div class="nm" style="color: #6FA8FF">Verified</div>
+      <div class="rule">Passed the live selfie check. Everyone starts here.</div>
+      <div class="tag">Static blue ring</div>
+    </div>
+    <div class="card">
+      <div class="fw"><div class="ring" style="background: linear-gradient(135deg, #F0287A, #7B3CFF, #3B7BFF)"><div class="ph"></div></div></div>
+      <div class="lvl">LEVEL 2</div>
+      <div class="nm" style="background: linear-gradient(90deg, #FF7FB5, #6FA8FF); -webkit-background-clip: text; background-clip: text; color: transparent">Trusted</div>
+      <div class="rule">Verified + lab-tested in the last 3 months.</div>
+      <div class="tag">Pink-to-blue gradient</div>
+    </div>
+    <div class="card">
+      <div class="fw"><div class="ring glow3"><div class="spin" style="background: conic-gradient(#F0287A, #7B3CFF, #3B7BFF, #7B3CFF, #F0287A)"></div><div class="ph"></div></div></div>
+      <div class="lvl">LEVEL 3</div>
+      <div class="nm" style="color: #C3A2FF">Glowing</div>
+      <div class="rule">Trusted + showed up to 5 plans in a row (90%+ overall).</div>
+      <div class="tag">Slowly rotating · soft glow</div>
+    </div>
+    <div class="card" style="border-color: #4A2A1E; background: linear-gradient(180deg, #1D1210, #141116 60%)">
+      <div class="fw">
+        <div class="ring fire"><div class="spin" style="background: conic-gradient(#FFD27A, #FF8A3D, #F0287A, #FF8A3D, #FFD27A); animation-duration: 2.6s"></div><div class="ph"></div></div>
+        <div class="badge"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2c1.2 4.5 6 6.2 6 11.2A6 6 0 0 1 6 13.2c0-2.8 1.7-4.5 2.9-5.6.3 2.2 1.5 3.4 2.9 3.4-1.1-3.4 0-6.7.2-9z" fill="#FFFFFF"></path></svg></div>
+      </div>
+      <div class="lvl" style="color: #FFB070">LEVEL 4 · RARE</div>
+      <div class="nm" style="background: linear-gradient(90deg, #FFD27A, #FF8A3D, #F0287A); -webkit-background-clip: text; background-clip: text; color: transparent">On fire</div>
+      <div class="rule">Glowing + 3 “great communicator” badges from matches, no reports in 90 days.</div>
+      <div class="tag" style="background: #2A1A12; color: #FFB070">Fire ring · flicker · flame badge</div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 28px; justify-content: center; margin-top: 30px; font-size: 13px; color: #A39AA2">
+    <span>Shown on: Discover · Chats · Inbox · Lounge · Me</span><span style="color: #3A3439">|</span><span>Earned, never bought</span><span style="color: #3A3439">|</span><span>Steps down if conditions lapse</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

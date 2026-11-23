@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ideas board</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.card{display:flex;gap:12px;padding:14px;background:#141116;border:1px solid #221E24;border-radius:18px;margin-bottom:10px}
+.vc{display:flex;flex-direction:column;align-items:center;width:44px;flex-shrink:0}
+.vb{width:38px;height:38px;border-radius:19px;border:1.5px solid #3A3439;background:transparent;color:#A39AA2;display:flex;align-items:center;justify-content:center;padding:0}
+.vb.up{border-color:#F0287A;background:#2A1020;color:#FF7FB5}
+.sc{font:800 18px 'Bricolage Grotesque',sans-serif;margin:5px 0}
+.tt{font:700 16px 'Bricolage Grotesque',sans-serif;line-height:1.25}
+.ds{font-size:13px;line-height:1.4;color:#D9D2D6;margin-top:4px}
+.mr{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:#A39AA2}
+.bd{height:22px;padding:0 8px;border-radius:11px;font-size:11px;font-weight:700;display:flex;align-items:center}
+.tm{margin-top:8px;padding:8px 10px;border-radius:12px;background:#141A2B;font-size:12px;line-height:1.4;color:#C9D6F2}
+.st{flex:1;height:36px;border:0;border-radius:10px;background:transparent;color:#A39AA2;font:500 14px Inter,sans-serif}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding-top: 54px; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 0 8px; height: 52px">
+    <a href="Me.dc.html" aria-label="Back to Me" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4EFEA"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></a>
+    <h1 style="margin: 0; font: 700 26px 'Bricolage Grotesque', sans-serif; letter-spacing: -0.5px">Ideas</h1>
+  </div>
+  <div style="padding: 0 16px">
+    <p style="margin: 0 4px; font-size: 14px; line-height: 1.45; color: #A39AA2">Vote on what we build next. The most wanted ideas go on the roadmap.</p>
+    <a href="IdeaNew.dc.html" style="margin-top: 12px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; text-decoration: none; color: #F4EFEA; background: linear-gradient(#17131A, #17131A) padding-box, linear-gradient(100deg, #F0287A, #7B3CFF, #3B7BFF) border-box; border: 1.5px solid transparent">
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #F0287A, #3B7BFF); display: flex; align-items: center; justify-content: center; color: #FFFFFF; flex-shrink: 0"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+      <span style="flex-grow: 1"><span style="display: block; font-weight: 600; font-size: 15px">Submit an idea</span><span style="display: block; font-size: 12px; color: #2BC48A; margin-top: 2px">3 ideas from this board already shipped</span></span>
+    </a>
+    <div style="display: flex; gap: 4px; padding: 4px; margin-top: 12px; background: #1B171D; border-radius: 13px">
+      <button class="st" style="background: #F4EFEA; color: #0E0C10; font-weight: 600">Top</button><button class="st">New</button><button class="st">Mine</button>
+    </div>
+    <div style="font-size: 12px; color: #A39AA2; margin: 10px 4px 8px">Most wanted first</div>
+    <div class="card">
+      <div class="vc">
+        <button class="vb up" aria-label="Upvote, you upvoted" aria-pressed="true"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg></button>
+        <span class="sc" style="color: #FF7FB5">+142</span>
+        <button class="vb" aria-label="Downvote" aria-pressed="false"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+      </div>
+      <div style="flex-grow: 1; min-width: 0">
+        <div class="tt">Voice intro on profiles</div>
+        <div class="ds">Ten seconds of someone’s voice says more than any bio.</div>
+        <div class="mr"><span>velvet_fox · New features</span><span class="bd" style="background: #111B33; color: #6FA8FF">Planned</span></div>
+        <div class="tm"><strong style="color: #F4EFEA">Tonight team:</strong> building it now, aiming for January.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="vc">
+        <button class="vb" aria-label="Upvote" aria-pressed="false"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg></button>
+        <span class="sc" style="color: #F4EFEA">+97</span>
+        <button class="vb" aria-label="Downvote" aria-pressed="false"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+      </div>
+      <div style="flex-grow: 1; min-width: 0">
+        <div class="tt">Couples: one profile, two logins</div>
+        <div class="ds">So we can both chat and plan without sharing a phone.</div>
+        <div class="mr"><span>Anonymous · Profiles</span><span class="bd" style="background: #241F26; color: #D9D2D6">Open</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="vc">
+        <button class="vb" aria-label="Upvote" aria-pressed="false"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg></button>
+        <span class="sc" style="color: #A39AA2">−12</span>
+        <button class="vb" aria-label="Downvote, you downvoted" aria-pressed="true" style="border-color: #3B7BFF; background: #111B33; color: #6FA8FF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+      </div>
+      <div style="flex-grow: 1; min-width: 0">
+        <div class="tt">Show exact distance</div>
+        <div class="ds">“About 2 km” is too vague when I’m out.</div>
+        <div class="mr"><span>Anonymous · Discover</span><span class="bd" style="background: #2A1A1E; color: #FFB3BD">Not planned</span></div>
+        <div class="tm"><strong style="color: #F4EFEA">Tonight team:</strong> rounding protects everyone’s location, so this stays.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

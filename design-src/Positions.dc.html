@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Positions library</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.chip{height:34px;padding:0 14px;border-radius:17px;border:1.5px solid #3A3439;background:transparent;color:#F4EFEA;font:500 13px Inter,sans-serif;white-space:nowrap;flex-shrink:0}
+.card{display:block;text-decoration:none;color:#F4EFEA;background:#141116;border:1px solid #221E24;border-radius:18px;overflow:hidden}
+.th{display:block;width:100%;height:112px;background:#1B171D}
+.ct{padding:9px 12px 12px}
+.cn{font:700 15px 'Bricolage Grotesque',sans-serif}
+.cm{display:flex;justify-content:space-between;align-items:center;margin-top:3px;font-size:12px;color:#A39AA2}
+.dots{display:flex;gap:3px}.dots i{width:6px;height:6px;border-radius:50%;background:#3A3439;display:block}.dots i.on{background:#F0287A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding-top: 54px; overflow: hidden">
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <defs>
+      <g id="hA"><ellipse cx="0" cy="4" rx="16" ry="18" fill="#3A0B22"></ellipse><circle r="12.5" fill="#E8B394"></circle><path d="M-13-2C-12-14-2-17 6-15C12-13 14-6 13 0C9-8 0-10-6-7C-9-5-11-4-13-2Z" fill="#3A0B22"></path><path d="M-7 1q3-2 6 0M2 1q3-2 6 0" stroke="#1A0B14" stroke-width="1.6" fill="none" stroke-linecap="round"></path><ellipse cx="-6" cy="6" rx="3" ry="1.6" fill="#F0287A" opacity="0.45"></ellipse><ellipse cx="6" cy="6" rx="3" ry="1.6" fill="#F0287A" opacity="0.45"></ellipse></g>
+      <g id="hB"><circle r="12.5" fill="#8D5A3B"></circle><path d="M-13-1C-13-13-4-17 4-16C11-15 14-8 13-1C10-8 4-10-2-9C-7-8-11-5-13-1Z" fill="#1A1530"></path><path d="M-11 3C-10 11-5 14 0 14C5 14 10 11 11 3C8 8 4 9 0 9C-4 9-8 8-11 3Z" fill="#1A1530"></path><path d="M-7 1q3-2 6 0M2 1q3-2 6 0" stroke="#1A0B14" stroke-width="1.6" fill="none" stroke-linecap="round"></path></g>
+    </defs>
+  </svg>
+  <div style="display: flex; align-items: center; gap: 4px; padding: 0 8px; height: 52px">
+    <a href="Guides.dc.html" aria-label="Back to Guides" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4EFEA"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></a>
+    <h1 style="margin: 0; flex-grow: 1; font: 700 26px 'Bricolage Grotesque', sans-serif; letter-spacing: -0.5px">Positions</h1>
+    <span style="font-size: 13px; color: #A39AA2; padding-right: 12px">42 guides</span>
+  </div>
+  <div style="display: flex; gap: 8px; padding: 6px 20px 0; overflow: hidden">
+    <button class="chip" style="background: #F4EFEA; border-color: #F4EFEA; color: #0E0C10; font-weight: 600">All</button>
+    <button class="chip">Beginner</button>
+    <button class="chip">Intimate</button>
+    <button class="chip">Low effort</button>
+    <button class="chip">Adventurous</button>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 14px 16px 0">
+    <a class="card" href="Guide.dc.html">
+      <svg class="th" role="img" aria-label="Illustration: Blaze and Volt spooning on a bed" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid meet">
+        <rect x="8" y="104" width="184" height="16" rx="8" fill="#241F26"></rect><ellipse cx="38" cy="98" rx="26" ry="8" fill="#3A3439"></ellipse>
+        <path d="M108 80L136 70L166 84" stroke="#8D5A3B" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M56 76L108 80" stroke="#3B7BFF" stroke-width="22" stroke-linecap="round"></path>
+        <use href="#hB" transform="translate(40 72) rotate(-90)"></use>
+        <path d="M114 96L142 86L170 100" stroke="#E8B394" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M64 92L114 96" stroke="#F0287A" stroke-width="22" stroke-linecap="round"></path>
+        <use href="#hA" transform="translate(50 92) rotate(-90)"></use>
+        <path d="M64 80L92 88L112 92" stroke="#8D5A3B" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      </svg>
+      <div class="ct"><div class="cn">Spooning</div><div class="cm"><span>Intimate</span><span class="dots"><i class="on"></i><i></i><i></i></span></div></div>
+    </a>
+    <a class="card" href="#">
+      <svg class="th" role="img" aria-label="Illustration: Volt above Blaze, face to face, her arm around him" viewBox="0 0 200 140">
+        <rect x="8" y="108" width="184" height="16" rx="8" fill="#241F26"></rect>
+        <path d="M54 98L104 100" stroke="#F0287A" stroke-width="22" stroke-linecap="round"></path>
+        <path d="M104 100L124 78L146 96" stroke="#E8B394" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <use href="#hA" transform="translate(38 98) rotate(-90)"></use>
+        <path d="M116 86L150 96L180 100" stroke="#8D5A3B" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M68 78L116 86" stroke="#3B7BFF" stroke-width="22" stroke-linecap="round"></path>
+        <path d="M70 80L64 104" stroke="#8D5A3B" stroke-width="10" stroke-linecap="round"></path>
+        <use href="#hB" transform="translate(54 70) rotate(-75)"></use>
+        <path d="M60 96L80 76L98 76" stroke="#E8B394" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      </svg>
+      <div class="ct"><div class="cn">Face to face</div><div class="cm"><span>Classic</span><span class="dots"><i class="on"></i><i></i><i></i></span></div></div>
+    </a>
+    <a class="card" href="#">
+      <svg class="th" role="img" aria-label="Illustration: Blaze sitting upright on top of Volt, who lies on his back" viewBox="0 0 200 140">
+        <rect x="8" y="112" width="184" height="16" rx="8" fill="#241F26"></rect>
+        <path d="M112 104L176 106" stroke="#8D5A3B" stroke-width="11" stroke-linecap="round"></path>
+        <path d="M52 102L112 104" stroke="#3B7BFF" stroke-width="22" stroke-linecap="round"></path>
+        <use href="#hB" transform="translate(36 100) rotate(-90)"></use>
+        <path d="M106 98L130 106L112 112" stroke="#E8B394" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M106 94L102 54" stroke="#F0287A" stroke-width="22" stroke-linecap="round"></path>
+        <path d="M100 60L86 78L76 94M106 60L120 74L112 88" stroke="#E8B394" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <use href="#hA" transform="translate(101 36)"></use>
+      </svg>
+      <div class="ct"><div class="cn">On top</div><div class="cm"><span>They lead</span><span class="dots"><i class="on"></i><i class="on"></i><i></i></span></div></div>
+    </a>
+    <a class="card" href="#">
+      <svg class="th" role="img" aria-label="Illustration: Blaze seated in Volt’s lap, face to face, arms around each other" viewBox="0 0 200 140">
+        <ellipse cx="96" cy="124" rx="74" ry="10" fill="#241F26"></ellipse>
+        <path d="M74 116L118 120M66 120L108 112" stroke="#8D5A3B" stroke-width="11" stroke-linecap="round"></path>
+        <path d="M80 110L84 64" stroke="#3B7BFF" stroke-width="22" stroke-linecap="round"></path>
+        <path d="M110 104L70 112L56 100" stroke="#E8B394" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M110 102L106 62" stroke="#F0287A" stroke-width="22" stroke-linecap="round"></path>
+        <use href="#hB" transform="translate(84 46)"></use>
+        <use href="#hA" transform="translate(106 44)"></use>
+        <path d="M106 68L88 72L80 62" stroke="#E8B394" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M84 72L104 82L116 72" stroke="#8D5A3B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      </svg>
+      <div class="ct"><div class="cn">Lotus</div><div class="cm"><span>Slow &amp; close</span><span class="dots"><i class="on"></i><i class="on"></i><i></i></span></div></div>
+    </a>
+    <a class="card" href="#">
+      <svg class="th" role="img" aria-label="Illustration: Blaze and Volt standing, wrapped in a hug" viewBox="0 0 200 140">
+        <rect x="40" y="132" width="120" height="4" rx="2" fill="#241F26"></rect>
+        <path d="M112 130V92M122 130V92" stroke="#8D5A3B" stroke-width="11" stroke-linecap="round"></path>
+        <path d="M82 130L84 96M92 130L90 96" stroke="#E8B394" stroke-width="11" stroke-linecap="round"></path>
+        <path d="M117 90L115 50" stroke="#3B7BFF" stroke-width="22" stroke-linecap="round"></path>
+        <path d="M86 94L86 58" stroke="#F0287A" stroke-width="22" stroke-linecap="round"></path>
+        <use href="#hB" transform="translate(113 32)"></use>
+        <use href="#hA" transform="translate(88 42)"></use>
+        <path d="M114 56L94 64L82 70" stroke="#8D5A3B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M88 62L108 62L120 56" stroke="#E8B394" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      </svg>
+      <div class="ct"><div class="cn">Standing</div><div class="cm"><span>Adventurous</span><span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i></span></div></div>
+    </a>
+    <a class="card" href="#">
+      <svg class="th" role="img" aria-label="Illustration: Blaze and Volt lying on their sides facing each other, legs entwined" viewBox="0 0 200 140">
+        <rect x="8" y="112" width="184" height="16" rx="8" fill="#241F26"></rect>
+        <path d="M104 94L78 104L56 112" stroke="#8D5A3B" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M148 88L104 94" stroke="#3B7BFF" stroke-width="22" stroke-linecap="round"></path>
+        <use href="#hB" transform="translate(164 84) rotate(90)"></use>
+        <path d="M96 94L124 102L146 112" stroke="#E8B394" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <path d="M52 88L96 94" stroke="#F0287A" stroke-width="22" stroke-linecap="round"></path>
+        <use href="#hA" transform="translate(36 84) rotate(-90)"></use>
+        <path d="M58 88L92 82L138 84" stroke="#E8B394" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      </svg>
+      <div class="ct"><div class="cn">Side by side</div><div class="cm"><span>Low effort</span><span class="dots"><i class="on"></i><i></i><i></i></span></div></div>
+    </a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-23T10:30:00Z"
+  },
+  "title": "Tonight — App Design",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "01 · Welcome → then row 1b"
+    },
+    "Boundaries.dc.html": {
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "1b·5 · Intent & boundaries"
+    },
+    "Verify.dc.html": {
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "1b·6 · Live verification"
+    },
+    "Discretion.dc.html": {
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "1b·7 · Discretion setup"
+    },
+    "Discover.dc.html": {
+      "x": 0,
+      "y": 1220,
+      "w": 390,
+      "h": 844,
+      "title": "05 · Discover"
+    },
+    "Profile.dc.html": {
+      "x": 470,
+      "y": 1220,
+      "w": 390,
+      "h": 844,
+      "title": "06 · Profile & fit"
+    },
+    "Match.dc.html": {
+      "x": 940,
+      "y": 1220,
+      "w": 390,
+      "h": 844,
+      "title": "07 · It’s mutual"
+    },
+    "Tonight.dc.html": {
+      "x": 1410,
+      "y": 1220,
+      "w": 390,
+      "h": 844,
+      "title": "08 · Go live tonight"
+    },
+    "Inbox.dc.html": {
+      "x": 0,
+      "y": 2440,
+      "w": 390,
+      "h": 844,
+      "title": "09 · Inbox"
+    },
+    "Chat.dc.html": {
+      "x": 470,
+      "y": 2440,
+      "w": 390,
+      "h": 844,
+      "title": "10 · Chat & consent"
+    },
+    "Plan.dc.html": {
+      "x": 940,
+      "y": 2440,
+      "w": 390,
+      "h": 844,
+      "title": "11 · Plan & safety"
+    },
+    "Checkin.dc.html": {
+      "x": 1410,
+      "y": 2440,
+      "w": 390,
+      "h": 844,
+      "title": "12 · After check-in"
+    },
+    "Privacy.dc.html": {
+      "x": 0,
+      "y": 3660,
+      "w": 390,
+      "h": 844,
+      "title": "13 · Privacy & control"
+    },
+    "Membership.dc.html": {
+      "x": 470,
+      "y": 3660,
+      "w": 390,
+      "h": 844,
+      "title": "14 · Honest membership"
+    },
+    "Lounge.dc.html": {
+      "x": 0,
+      "y": 4880,
+      "w": 390,
+      "h": 844,
+      "title": "15 · Lounge — community"
+    },
+    "Thread.dc.html": {
+      "x": 470,
+      "y": 4880,
+      "w": 390,
+      "h": 844,
+      "title": "16 · Thread"
+    },
+    "Guides.dc.html": {
+      "x": 940,
+      "y": 4880,
+      "w": 390,
+      "h": 844,
+      "title": "17 · Guides — the wiki"
+    },
+    "Guide.dc.html": {
+      "x": 1410,
+      "y": 4880,
+      "w": 390,
+      "h": 844,
+      "title": "18 · Guide article"
+    },
+    "Characters.dc.html": {
+      "x": 0,
+      "y": 6100,
+      "w": 1440,
+      "h": 1000,
+      "title": "19 · Option A — Blobs (current)"
+    },
+    "EmptyLive.dc.html": {
+      "x": 1520,
+      "y": 6100,
+      "w": 390,
+      "h": 844,
+      "title": "20 · Empty state with Vi"
+    },
+    "CharsB.dc.html": {
+      "x": 0,
+      "y": 7476,
+      "w": 960,
+      "h": 560,
+      "title": "Option B — Cheeky & polished"
+    },
+    "CharsC.dc.html": {
+      "x": 1040,
+      "y": 7476,
+      "w": 960,
+      "h": 560,
+      "title": "Option C — Cartoon people ✓ chosen"
+    },
+    "CharsD.dc.html": {
+      "x": 2080,
+      "y": 7476,
+      "w": 960,
+      "h": 560,
+      "title": "Option D — Flirty animals"
+    },
+    "Cast.dc.html": {
+      "x": 0,
+      "y": 8412,
+      "w": 1440,
+      "h": 700,
+      "title": "21 · The cast (full body)"
+    },
+    "Positions.dc.html": {
+      "x": 1520,
+      "y": 8412,
+      "w": 390,
+      "h": 844,
+      "title": "22 · Positions library"
+    },
+    "ProfBasics.dc.html": {
+      "x": 0,
+      "y": 9632,
+      "w": 390,
+      "h": 844,
+      "title": "1b·1 · Basics"
+    },
+    "ProfPhotos.dc.html": {
+      "x": 470,
+      "y": 9632,
+      "w": 390,
+      "h": 844,
+      "title": "1b·2 · Photos"
+    },
+    "ProfAbout.dc.html": {
+      "x": 940,
+      "y": 9632,
+      "w": 390,
+      "h": 844,
+      "title": "1b·3 · About you"
+    },
+    "ProfHealth.dc.html": {
+      "x": 1410,
+      "y": 9632,
+      "w": 390,
+      "h": 844,
+      "title": "1b·4 · Sexual health"
+    },
+    "ProfPreview.dc.html": {
+      "x": 1880,
+      "y": 9632,
+      "w": 390,
+      "h": 844,
+      "title": "1b·8 · Preview & go"
+    },
+    "Me.dc.html": {
+      "x": 0,
+      "y": 10852,
+      "w": 390,
+      "h": 844,
+      "title": "24 · Me"
+    },
+    "Ideas.dc.html": {
+      "x": 470,
+      "y": 10852,
+      "w": 390,
+      "h": 844,
+      "title": "25 · Ideas board"
+    },
+    "IdeaNew.dc.html": {
+      "x": 940,
+      "y": 10852,
+      "w": 390,
+      "h": 844,
+      "title": "26 · Submit an idea"
+    },
+    "Support.dc.html": {
+      "x": 1410,
+      "y": 10852,
+      "w": 390,
+      "h": 844,
+      "title": "27 · Support — live chat"
+    },
+    "Code.dc.html": {
+      "x": -470,
+      "y": 9632,
+      "w": 390,
+      "h": 844,
+      "title": "1b·0 · The Tonight Code (ritual)",
+      "is_interactive": true
+    },
+    "Frames.dc.html": {
+      "x": 0,
+      "y": 12072,
+      "w": 1440,
+      "h": 760,
+      "title": "28 · Glow-up frames — tiers"
+    },
+    "MyGlow.dc.html": {
+      "x": 1520,
+      "y": 12072,
+      "w": 390,
+      "h": 844,
+      "title": "29 · Your glow (progress)"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Boundaries.dc.html",
+    "Verify.dc.html",
+    "Discretion.dc.html",
+    "Discover.dc.html",
+    "Profile.dc.html",
+    "Match.dc.html",
+    "Tonight.dc.html",
+    "Inbox.dc.html",
+    "Chat.dc.html",
+    "Plan.dc.html",
+    "Checkin.dc.html",
+    "Privacy.dc.html",
+    "Membership.dc.html",
+    "Lounge.dc.html",
+    "Thread.dc.html",
+    "Guides.dc.html",
+    "Guide.dc.html",
+    "Characters.dc.html",
+    "EmptyLive.dc.html",
+    "CharsB.dc.html",
+    "CharsC.dc.html",
+    "CharsD.dc.html",
+    "Cast.dc.html",
+    "Positions.dc.html",
+    "ProfBasics.dc.html",
+    "ProfPhotos.dc.html",
+    "ProfAbout.dc.html",
+    "ProfHealth.dc.html",
+    "ProfPreview.dc.html",
+    "Me.dc.html",
+    "Ideas.dc.html",
+    "IdeaNew.dc.html",
+    "Support.dc.html",
+    "Code.dc.html",
+    "Frames.dc.html",
+    "MyGlow.dc.html"
+  ],
+  "notes": {
+    "t1": {
+      "x": 0,
+      "y": -280,
+      "text": "1 — Trust before anything",
+      "kind": "title1",
+      "maxW": 1800
+    },
+    "t2": {
+      "x": 0,
+      "y": 940,
+      "text": "2 — Discover & match",
+      "kind": "title1",
+      "maxW": 1800
+    },
+    "t3": {
+      "x": 0,
+      "y": 2160,
+      "text": "3 — Talk, meet, stay safe",
+      "kind": "title1",
+      "maxW": 1800
+    },
+    "t4": {
+      "x": 0,
+      "y": 3380,
+      "text": "4 — Control & money",
+      "kind": "title1",
+      "maxW": 1800
+    },
+    "n1": {
+      "x": 1880,
+      "y": 0,
+      "w": 380,
+      "fill": "orange",
+      "text": "Pain: bots & catfish (top complaint on Feeld/Pure reviews).\nFix: live selfie check is the ENTRY TICKET, not an optional badge. No verified face = no swiping.\n\nPain: mismatched intent (‘wanted a date, got a hookup’ and vice-versa).\nFix: everyone sets intent + Yes/Maybe/No boundaries up front; they power matching and are visible before you match."
+    },
+    "n2": {
+      "x": 1880,
+      "y": 1220,
+      "w": 380,
+      "fill": "blue",
+      "text": "Pain: swipe fatigue (≈8/10 report burnout) and paywalled ‘good matches’.\nFix: a short curated deck ranked by boundary fit + availability. ‘Who likes you’ is FREE.\n\nPain: endless chatting that never turns into a meet.\nFix: ‘Go live tonight’ — a 2–6h availability window that only shows you to people also live now."
+    },
+    "n3": {
+      "x": 1880,
+      "y": 2440,
+      "w": 380,
+      "fill": "green",
+      "text": "Pain: unsolicited explicit pics (56% of women under 50 per Pew) and inbox flooding.\nFix: every photo arrives blurred; receiver taps to reveal. Explicit media unlocks only when BOTH say yes.\n\nPain: ghosting & flakes.\nFix: matches expire in 48h unless a plan is made; plans have one-tap safety share + check-in timer; private ‘showed up?’ feedback feeds a reliability signal."
+    },
+    "n4": {
+      "x": 1350,
+      "y": 3660,
+      "w": 380,
+      "fill": "purple",
+      "text": "Pain: location leaks (trilateration attacks on Grindr/Bumble), being outed, surprise billing.\nFix: distance shown in rounded bands from a snapped grid, disguised app icon, quick-hide gesture, PIN lock.\nMembership sells comfort (travel, incognito, more live windows) — never safety or basic matching. Cancel in 2 taps."
+    },
+    "t5": {
+      "x": 0,
+      "y": 4600,
+      "text": "5 — Lounge & Guides",
+      "kind": "title1",
+      "maxW": 1800
+    },
+    "n5": {
+      "x": 1880,
+      "y": 4880,
+      "w": 380,
+      "fill": "pink",
+      "text": "Why a community + wiki: casual apps feel lonely and transactional; people churn after a dry week.\nThe Lounge gives a reason to open the app daily, builds trust, and attracts women (who say they want consent & safety info).\n\nRules that keep it classy: photos allowed, but posters tag spicy ones (plus an AI check) and they arrive blurred until tapped; faces auto-blurred unless you opt in; spicy can be switched off entirely; post under an alias, verified only, expert-reviewed guides.\n\nGuides tie back to matching: ‘Add to wishlist’ shows shared interests to matches — a private, playful icebreaker."
+    },
+    "t6": {
+      "x": 0,
+      "y": 5820,
+      "text": "6 — The crew (characters)",
+      "kind": "title1",
+      "maxW": 1910
+    },
+    "t7": {
+      "x": 0,
+      "y": 7196,
+      "text": "7 — Character options: pick one",
+      "kind": "title1",
+      "maxW": 3040
+    },
+    "t8": {
+      "x": 0,
+      "y": 8132,
+      "text": "8 — Cartoon people in the Guides",
+      "kind": "title1",
+      "maxW": 2380
+    },
+    "t9": {
+      "x": -470,
+      "y": 9352,
+      "text": "1b — Create your profile",
+      "kind": "title1",
+      "maxW": 2730
+    },
+    "n9": {
+      "x": 2350,
+      "y": 9632,
+      "w": 380,
+      "fill": "teal",
+      "text": "Flow: Welcome → The Tonight Code (sign the house rules) → 1 Basics → 2 Photos → 3 About → 4 Sexual health → 5 Boundaries → 6 Verify → 7 Discretion → 8 Preview.\n\nUX choices: one decision per screen, everything but name/age/photos is skippable, ‘You can change this any time’ on every step, and a live preview at the end so people see exactly what others see before going public."
+    },
+    "t10": {
+      "x": 0,
+      "y": 10572,
+      "text": "9 — Me, ideas & support",
+      "kind": "title1",
+      "maxW": 1800
+    },
+    "n10": {
+      "x": 1880,
+      "y": 10852,
+      "w": 380,
+      "fill": "orange",
+      "text": "Ideas: same pattern as our other apps (TimeWell, Passport): up/down votes, Top / New / Mine, status Open → Planned → Shipped / Not planned, team replies, post under your Lounge alias. Members feel heard and we get a free roadmap.\n\nSupport: live chat with a real person (like TimeWell), ‘Seen’ receipts, push when we reply. Safety issues jump the queue with a red ‘Report someone’ shortcut."
+    },
+    "t11": {
+      "x": 0,
+      "y": 11792,
+      "text": "10 — Glow-up profile frames",
+      "kind": "title1",
+      "maxW": 1910
+    },
+    "n11": {
+      "x": 1990,
+      "y": 12072,
+      "w": 380,
+      "fill": "pink",
+      "text": "Frames are EARNED, never bought — Plus can’t buy one. That keeps them a real trust signal.\n\nThey show wherever your photo is round: Discover avatar, chat header, inbox, Lounge posts, Me. Rarer tiers animate, so good behaviour is literally visible from across the room.\n\nLose the conditions (e.g. a no-show streak or a confirmed report) and the frame steps down."
+    }
+  },
+  "designSystems": []
+}

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Intent and boundaries</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.seg{display:flex;background:#1B171D;border-radius:12px;padding:3px;gap:2px}
+.seg button{width:50px;height:38px;border:0;border-radius:10px;background:transparent;color:#A39AA2;font:500 13px Inter,sans-serif}
+.seg button.on-y{background:#2E5E4A;color:#E7FFF3}
+.seg button.on-m{background:#5A4A22;color:#FFF3D1}
+.seg button.on-n{background:#4A2328;color:#FFE1E4}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #221E24}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding: 62px 24px 34px; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 12px">
+    <button aria-label="Back" style="width: 44px; height: 44px; margin-left: -10px; border: 0; background: transparent; color: #F4EFEA"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+    <div style="flex-grow: 1; height: 4px; background: #241F26; border-radius: 2px"><div style="width: 62.5%; height: 4px; background: #F0287A; border-radius: 2px"></div></div>
+    <span style="font-size: 13px; color: #A39AA2">5 of 8</span>
+  </div>
+  <h1 style="margin: 22px 0 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -0.6px; line-height: 1.1">What are you after?</h1>
+  <p style="margin: 0; font-size: 14px; color: #A39AA2">Change this any time. Pick all that fit.</p>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px">
+    <button style="height: 40px; padding: 0 16px; border-radius: 20px; border: 0; background: #F0287A; color: #FFFFFF; font: 600 14px Inter, sans-serif">Tonight</button>
+    <button style="height: 40px; padding: 0 16px; border-radius: 20px; border: 0; background: #F0287A; color: #FFFFFF; font: 600 14px Inter, sans-serif">This week</button>
+    <button style="height: 40px; padding: 0 16px; border-radius: 20px; border: 1.5px solid #3A3439; background: transparent; color: #F4EFEA; font: 500 14px Inter, sans-serif">Regular FWB</button>
+  </div>
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 26px">
+    <h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 20px">Your boundaries</h2>
+    <div style="display: flex; gap: 22px; font-size: 11px; color: #A39AA2; padding-right: 10px"><span>Yes</span><span>Maybe</span><span>No</span></div>
+  </div>
+  <div style="margin-top: 6px">
+    <div class="row"><span style="font-size: 15px">Meet for a drink first</span><div class="seg"><button class="on-y">Yes</button><button>Maybe</button><button>No</button></div></div>
+    <div class="row"><span style="font-size: 15px">Host at my place</span><div class="seg"><button>Yes</button><button class="on-m">Maybe</button><button>No</button></div></div>
+    <div class="row"><span style="font-size: 15px">Go to theirs</span><div class="seg"><button>Yes</button><button>Maybe</button><button class="on-n">No</button></div></div>
+    <div class="row"><span style="font-size: 15px">Stay the night</span><div class="seg"><button>Yes</button><button class="on-m">Maybe</button><button>No</button></div></div>
+    <div class="row"><span style="font-size: 15px">Couples &amp; threesomes</span><div class="seg"><button>Yes</button><button>Maybe</button><button class="on-n">No</button></div></div>
+    <div class="row"><span style="font-size: 15px">Kink-friendly</span><div class="seg"><button>Yes</button><button class="on-m">Maybe</button><button>No</button></div></div>
+    <div class="row" style="border-bottom: 0"><span style="font-size: 15px">Protection, always</span><div class="seg"><button class="on-y">Yes</button><button>Maybe</button><button>No</button></div></div>
+  </div>
+  <div style="display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 12px 14px; background: #141A2B; border-radius: 14px">
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6FA8FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+    <span style="font-size: 13px; line-height: 1.45; color: #C9D6F2">Your No’s are never shown. They quietly filter out anyone who needs them.</span>
+  </div>
+  <div style="flex-grow: 1"></div>
+  <button style="height: 56px; border-radius: 28px; border: 0; background: linear-gradient(100deg, #F0287A, #7B3CFF 55%, #3B7BFF); color: #FFFFFF; font: 600 16px Inter, sans-serif">Continue</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

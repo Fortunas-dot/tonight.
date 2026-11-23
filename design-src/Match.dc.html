@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>It’s mutual</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: linear-gradient(100deg, #F0287A, #7B3CFF 55%, #3B7BFF); color: #FFFFFF; font-family: Inter, sans-serif; padding: 62px 24px 34px; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; justify-content: flex-end">
+    <button aria-label="Close" style="width: 44px; height: 44px; margin-right: -10px; border: 0; background: transparent; color: #FFFFFF"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+  </div>
+  <div style="display: flex; justify-content: center; margin-top: 18px">
+    <div style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #FFFFFF; background: repeating-linear-gradient(135deg, #2A2228 0 12px, #2F262D 12px 24px); position: relative; z-index: 1"></div>
+    <div style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #FFFFFF; background: repeating-linear-gradient(45deg, #2A2228 0 12px, #2F262D 12px 24px); margin-left: -36px"></div>
+  </div>
+  <h1 style="margin: 30px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 52px; letter-spacing: -1.6px; line-height: 0.98; text-align: center">It’s mutual.</h1>
+  <p style="margin: 12px 0 0; font-size: 16px; line-height: 1.45; text-align: center">You and Lina are both live tonight<br>and fit on all 7 boundaries.</p>
+  <div style="margin-top: 26px; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,0.14)">
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2M9 2h6"></path></svg>
+    <span style="font-size: 14px; line-height: 1.4">Open for <strong>48 hours</strong>. Make a plan together and it stays.</span>
+  </div>
+  <div style="margin-top: 18px; font-size: 13px; font-weight: 600">Start with a plan — it beats “hey”</div>
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px">
+    <button style="height: 48px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,0.5); background: transparent; color: #FFFFFF; font: 500 15px Inter, sans-serif; text-align: left; padding: 0 16px">Drink at Bar Mona, 21:30?</button>
+    <button style="height: 48px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,0.5); background: transparent; color: #FFFFFF; font: 500 15px Inter, sans-serif; text-align: left; padding: 0 16px">Free after 22:00 — your call on where</button>
+  </div>
+  <div style="flex-grow: 1"></div>
+  <button style="height: 56px; border-radius: 28px; border: 0; background: #FFFFFF; color: #5B2BD9; font: 600 16px Inter, sans-serif">Write my own message</button>
+  <button style="height: 48px; margin-top: 6px; border: 0; background: transparent; color: #FFFFFF; font: 600 15px Inter, sans-serif">Keep browsing</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F0287A","options":["#F0287A","#E8456B","#A35BFF","#9B7BFF"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#F0287A' };
+  }
+}
+</script>
+</body>
+</html>

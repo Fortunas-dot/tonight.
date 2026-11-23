@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Profile preview</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.tag{height:28px;padding:0 10px;border-radius:14px;background:rgba(244,239,234,0.14);font-size:12px;display:flex;align-items:center}
+.ed{height:40px;padding:0 14px;border-radius:20px;border:1.5px solid #3A3439;background:transparent;color:#F4EFEA;font:500 13px Inter,sans-serif;display:flex;align-items:center;gap:6px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding: 62px 24px 34px; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 12px">
+    <button aria-label="Back" style="width: 44px; height: 44px; margin-left: -10px; border: 0; background: transparent; color: #F4EFEA"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+    <div style="flex-grow: 1; height: 4px; background: linear-gradient(90deg, #F0287A, #7B3CFF, #3B7BFF); border-radius: 2px"></div>
+    <span style="font-size: 13px; color: #A39AA2">8 of 8</span>
+  </div>
+  <h1 style="margin: 18px 0 4px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -0.6px; line-height: 1.1">Looking good, Lina</h1>
+  <p style="margin: 0; font-size: 14px; color: #A39AA2">This is exactly what others will see.</p>
+  <div style="margin-top: 14px; height: 340px; border-radius: 24px; position: relative; overflow: hidden; background: repeating-linear-gradient(135deg, #2A2228 0 16px, #2F262D 16px 32px)">
+    <div style="position: absolute; top: 12px; left: 14px; right: 14px; display: flex; gap: 4px"><span style="flex: 1; height: 3px; border-radius: 2px; background: #F4EFEA"></span><span style="flex: 1; height: 3px; border-radius: 2px; background: rgba(244,239,234,0.35)"></span><span style="flex: 1; height: 3px; border-radius: 2px; background: rgba(244,239,234,0.35)"></span></div>
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 60px 16px 16px; background: linear-gradient(180deg, rgba(14,12,16,0), rgba(14,12,16,0.92) 45%)">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span style="font: 700 26px 'Bricolage Grotesque', sans-serif">Lina, 29</span>
+        <svg role="img" aria-label="Live-verified" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#6FA8FF"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#06142E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <p style="margin: 6px 0 0; font-size: 14px; line-height: 1.4">“One drink, good conversation, no pressure to rush.”</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px">
+        <span class="tag">Tested this month</span><span class="tag">Drink first</span><span class="tag">Confidence</span><span class="tag">Slow build-up</span>
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px">
+    <button class="ed"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"></path></svg>Photos</button>
+    <button class="ed"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"></path></svg>Prompts</button>
+    <button class="ed"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"></path></svg>Boundaries</button>
+  </div>
+  <div style="margin-top: 14px; padding: 12px 14px; background: #17131A; border-radius: 16px">
+    <div style="display: flex; justify-content: space-between; font-size: 13px"><span style="font-weight: 600">Profile 4 of 5 done</span><button style="border: 0; background: transparent; color: #FF7FB5; font: 600 13px Inter, sans-serif; padding: 0">Add a 4th photo</button></div>
+    <div style="height: 6px; border-radius: 3px; background: #241F26; margin-top: 8px"><div style="width: 80%; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #F0287A, #3B7BFF)"></div></div>
+  </div>
+  <a href="Ideas.dc.html" style="margin-top: 10px; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; text-decoration: none; color: #F4EFEA; background: linear-gradient(#141A2B, #141A2B) padding-box, linear-gradient(100deg, #F0287A, #7B3CFF, #3B7BFF) border-box; border: 1.5px solid transparent">
+    <span style="width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; background: linear-gradient(135deg, #F0287A, #3B7BFF); display: flex; align-items: center; justify-content: center; color: #FFFFFF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"></path></svg></span>
+    <span style="flex-grow: 1"><span style="display: block; font-size: 14px; font-weight: 600">You’re joining a community</span><span style="display: block; font-size: 12px; line-height: 1.4; color: #C9D6F2; margin-top: 2px">We build what members ask for. Vote and suggest on the Ideas board.</span></span>
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A39AA2" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+  </a>
+  <div style="flex-grow: 1"></div>
+  <button style="height: 56px; border-radius: 28px; border: 0; background: linear-gradient(100deg, #F0287A, #7B3CFF 55%, #3B7BFF); color: #FFFFFF; font: 600 16px Inter, sans-serif">Start exploring</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

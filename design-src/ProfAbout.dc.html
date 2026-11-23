@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Profile about you</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.lbl{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;color:#A39AA2;margin:18px 0 8px}
+.chip{height:38px;padding:0 13px;border-radius:19px;border:1.5px solid #3A3439;background:transparent;color:#F4EFEA;font:500 13px Inter,sans-serif}
+.chip.on{background:#F0287A;border-color:#F0287A;color:#FFFFFF;font-weight:600}
+.chip.onb{background:#3B7BFF;border-color:#3B7BFF;color:#FFFFFF;font-weight:600}
+.opt{height:36px;padding:0 12px;border-radius:18px;border:0;background:#1B171D;color:#D9D2D6;font:500 13px Inter,sans-serif}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding: 62px 24px 34px; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 12px">
+    <button aria-label="Back" style="width: 44px; height: 44px; margin-left: -10px; border: 0; background: transparent; color: #F4EFEA"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+    <div style="flex-grow: 1; height: 4px; background: #241F26; border-radius: 2px"><div style="width: 37.5%; height: 4px; background: #F0287A; border-radius: 2px"></div></div>
+    <span style="font-size: 13px; color: #A39AA2">3 of 8</span>
+  </div>
+  <h1 style="margin: 20px 0 4px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -0.6px; line-height: 1.1">A little about you</h1>
+  <p style="margin: 0; font-size: 14px; color: #A39AA2">Answers get better openers than “hey”.</p>
+  <div style="margin-top: 16px; padding: 14px 16px; border-radius: 18px; background: #17131A; border: 1.5px solid #F0287A">
+    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600"><span style="color: #FF7FB5">My ideal night</span><button style="border: 0; background: transparent; color: #A39AA2; font: 500 12px Inter, sans-serif; padding: 0">Swap prompt</button></div>
+    <label for="p1" style="position: absolute; left: -9999px">My ideal night</label>
+    <textarea id="p1" rows="2" style="width: 100%; box-sizing: border-box; margin-top: 6px; border: 0; background: transparent; color: #F4EFEA; font: 400 16px/1.4 Inter, sans-serif; resize: none; padding: 0">One drink, good conversation, no pressure to rush. If it clicks, it clicks.</textarea>
+    <div style="text-align: right; font-size: 11px; color: #A39AA2">72 / 150</div>
+  </div>
+  <div style="margin-top: 10px; padding: 12px 14px; border-radius: 18px; border: 1.5px dashed #3A3439">
+    <div style="font-size: 13px; font-weight: 600; color: #A39AA2">Add a second prompt</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px">
+      <button class="opt">Green flags…</button><button class="opt">After dark I…</button><button class="opt">Don’t leave without…</button>
+    </div>
+  </div>
+  <div class="lbl"><span>What turns you on</span><span style="font-weight: 500">3 of 5</span></div>
+  <div style="display: flex; flex-wrap: wrap; gap: 7px">
+    <button class="chip on">Confidence</button>
+    <button class="chip onb">Eye contact</button>
+    <button class="chip on">Slow build-up</button>
+    <button class="chip">Humour</button>
+    <button class="chip">Taking charge</button>
+    <button class="chip">Being spoiled</button>
+    <button class="chip">Massage</button>
+    <button class="chip">Good scent</button>
+  </div>
+  <div style="font-size: 12px; color: #A39AA2; margin-top: 8px">Shown on your profile. Shared ones are highlighted for matches.</div>
+  <div style="flex-grow: 1"></div>
+  <button style="height: 56px; border-radius: 28px; border: 0; background: linear-gradient(100deg, #F0287A, #7B3CFF 55%, #3B7BFF); color: #FFFFFF; font: 600 16px Inter, sans-serif">Continue</button>
+  <button style="height: 44px; margin-top: 4px; border: 0; background: transparent; color: #A39AA2; font: 600 14px Inter, sans-serif">Skip for now</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

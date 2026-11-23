@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Tonight Code</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.vow{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;border:0;background:transparent;color:#F4EFEA;padding:4px 0;font-family:Inter,sans-serif;cursor:pointer;transition:opacity .4s}
+.vow.off{opacity:.42}
+.num{height:16px;font:700 11px/16px Inter,sans-serif;letter-spacing:3px;color:#A39AA2}
+.txt{display:block;font:600 16px 'Bricolage Grotesque',sans-serif;letter-spacing:-0.2px;transition:color .3s}
+.vow.lit .txt{color:#FFF3EA;text-shadow:0 0 10px rgba(255,138,61,.85),0 0 26px rgba(240,40,122,.65);animation:ignite .9s ease-out}
+.flame{display:block;filter:drop-shadow(0 0 6px rgba(255,138,61,.95)) drop-shadow(0 0 14px rgba(240,40,122,.7));animation:spark .5s ease-out,flick 1.4s ease-in-out .5s infinite;transform-origin:50% 90%}
+.hint{font-size:11px;color:#FFB070;margin-top:2px;animation:pulse 1.6s ease-in-out infinite}
+.orn{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 0}
+.orn i{display:block;width:28px;height:1px;background:#3A3439}
+.orn b{display:block;width:5px;height:5px;transform:rotate(45deg);background:#4A4148}
+.orn.hot i{background:linear-gradient(90deg,rgba(255,138,61,0),#FF8A3D)}
+.orn.hot i+b+i{background:linear-gradient(90deg,#FF8A3D,rgba(255,138,61,0))}
+.orn.hot b{background:#FF8A3D;box-shadow:0 0 8px #FF8A3D}
+.emb{animation:breathe 2.4s ease-in-out infinite}
+@keyframes ignite{0%{transform:scale(.94);text-shadow:0 0 0 rgba(255,138,61,0)}35%{transform:scale(1.07);text-shadow:0 0 18px rgba(255,200,110,1),0 0 44px rgba(255,138,61,.95),0 0 70px rgba(240,40,122,.8)}100%{transform:scale(1)}}
+@keyframes spark{0%{transform:scale(0) translateY(6px);opacity:0}60%{transform:scale(1.35);opacity:1}100%{transform:scale(1)}}
+@keyframes flick{0%,100%{transform:scale(1) rotate(-3deg)}25%{transform:scale(1.08,1.14) rotate(2deg)}50%{transform:scale(.96,1.04) rotate(-1deg)}75%{transform:scale(1.06,1.1) rotate(3deg)}}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #08070A; color: #F4EFEA; font-family: Inter, sans-serif; padding: 54px 28px 30px; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden">
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true"><defs>
+    <linearGradient id="fireg" x1="0.5" y1="1" x2="0.5" y2="0"><stop offset="0" stop-color="#F0287A"></stop><stop offset="0.55" stop-color="#FF8A3D"></stop><stop offset="1" stop-color="#FFD27A"></stop></linearGradient>
+    <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF7FB5"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+    <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD27A"></stop><stop offset="0.35" stop-color="#FF8A3D"></stop><stop offset="0.7" stop-color="#F0287A"></stop><stop offset="1" stop-color="#7B3CFF"></stop></linearGradient>
+  </defs></svg>
+  <div style="position: absolute; left: 50%; top: -140px; width: 560px; height: 560px; margin-left: -280px; border-radius: 50%; background: radial-gradient(closest-side, rgba(240,40,122,0.28), rgba(123,60,255,0.16) 45%, rgba(8,7,10,0) 100%)"></div>
+  <div style="position: absolute; left: 50%; top: -140px; width: 560px; height: 560px; margin-left: -280px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,160,70,0.55), rgba(255,100,60,0.2) 40%, rgba(8,7,10,0) 100%); opacity: {{fireAmount}}; transition: opacity .8s"></div>
+  <div style="position: absolute; left: 50%; top: -40px; width: 300px; height: 300px; margin-left: -150px; border-radius: 50%; border: 1px solid rgba(244,239,234,0.06)"></div>
+  <div style="position: absolute; left: 50%; top: -100px; width: 420px; height: 420px; margin-left: -210px; border-radius: 50%; border: 1px solid rgba(244,239,234,0.04)"></div>
+
+  <div class="emb" style="position: relative; width: 78px; height: 78px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, #F0287A, #FF8A3D, #7B3CFF); box-shadow: 0 0 {{glowA}}px rgba(255,138,61,{{glowAlpha}}), 0 0 {{glowB}}px rgba(240,40,122,{{glowAlpha}}); transition: box-shadow .8s">
+    <div style="width: 100%; height: 100%; border-radius: 50%; background: #0E0C10; display: flex; align-items: center; justify-content: center; position: relative">
+      <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="url(#cg)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="position: absolute"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.3 3 2.5 3-1-3 0-6 0-8z"></path></svg>
+      <svg class="flame" aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" style="position: absolute; opacity: {{fireAmount}}; transition: opacity .8s"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.3 3 2.5 3-1-3 0-6 0-8z" fill="url(#fireg)"></path></svg>
+    </div>
+  </div>
+  <div style="position: relative; margin-top: 16px; font-size: 11px; font-weight: 600; letter-spacing: 4px; color: #A39AA2">BEFORE YOU ENTER</div>
+  <h1 style="position: relative; margin: 6px 0 2px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -1px; text-align: center">The Tonight Code</h1>
+  <p style="position: relative; margin: 0; font-size: 14px; color: #A39AA2; text-align: center">{{subline}}</p>
+
+  <div style="position: relative; width: 100%; margin-top: 16px; text-align: center">
+    <sc-for list="{{vows}}" as="v" hint-placeholder-count="7">
+      <sc-if value="{{v.notFirst}}" hint-placeholder-val="{{ true }}"><div class="{{v.ornCls}}"><i></i><b></b><i></i></div></sc-if>
+      <button class="{{v.cls}}" onClick="{{v.toggle}}" aria-pressed="{{v.pressed}}">
+        <sc-if value="{{v.lit}}" hint-placeholder-val="{{ false }}">
+          <svg class="flame" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path d="M12 2c1.2 4.5 6 6.2 6 11.2A6 6 0 0 1 6 13.2c0-2.8 1.7-4.5 2.9-5.6.3 2.2 1.5 3.4 2.9 3.4-1.1-3.4 0-6.7.2-9z" fill="url(#fireg)"></path></svg>
+        </sc-if>
+        <sc-if value="{{v.unlit}}" hint-placeholder-val="{{ true }}"><span class="num">{{v.num}}</span></sc-if>
+        <span class="txt">{{v.text}}</span>
+        <sc-if value="{{v.isNext}}" hint-placeholder-val="{{ false }}"><span class="hint">tap to take this vow</span></sc-if>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+  <button aria-label="Press and hold to seal the Tonight Code" onPointerDown="{{startHold}}" onPointerUp="{{stopHold}}" onPointerLeave="{{stopHold}}" style="position: relative; width: 104px; height: 104px; border-radius: 50%; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; opacity: {{sealOpacity}}; transition: opacity .5s; touch-action: none; cursor: pointer">
+    <svg aria-hidden="true" width="104" height="104" viewBox="0 0 104 104" style="position: absolute; inset: 0">
+      <circle cx="52" cy="52" r="48" fill="none" stroke="#221E24" stroke-width="4"></circle>
+      <circle cx="52" cy="52" r="48" fill="none" stroke="url(#sg)" stroke-width="4" stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="{{ringOffset}}" transform="rotate(-90 52 52)"></circle>
+    </svg>
+    <span style="width: 80px; height: 80px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, {{sealInner}}, #14101A 70%); display: flex; align-items: center; justify-content: center; color: #F4EFEA; box-shadow: inset 0 0 0 1px rgba(244,239,234,0.08), 0 0 {{sealGlow}}px rgba(255,138,61,0.8); transition: box-shadow .4s">
+      <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 11v4M8.5 9.5A4 4 0 0 1 16 11v2c0 2-.5 4-1.5 5.5M8 12c0 3-.5 5-1.5 6.5M12 3a8 8 0 0 0-8 8v1M20 11a8 8 0 0 0-3-6.2M12 7a4 4 0 0 0-4 4"></path></svg>
+    </span>
+  </button>
+  <div style="position: relative; margin-top: 10px; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: #D9D2D6">{{sealLabel}}</div>
+  <div style="position: relative; margin-top: 8px; display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 14px; background: #141A2B">
+    <span style="width: 34px; height: 34px; border-radius: 10px; background: #1A2440; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg role="img" aria-label="Watchdog" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6FA8FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9.5L5.2 2.8L9.6 6.4h4.8l4.4-3.6L17 9.5"></path><path d="M7 9.5c-1 3 0 5.6 2 7.4l3 2.8 3-2.8c2-1.8 3-4.4 2-7.4"></path><path d="M9.6 6.4C8.4 7.2 7.6 8.2 7 9.5M14.4 6.4c1.2.8 2 1.8 2.6 3.1"></path><circle cx="9.7" cy="11.2" r="0.9" fill="#6FA8FF" stroke="none"></circle><circle cx="14.3" cy="11.2" r="0.9" fill="#6FA8FF" stroke="none"></circle><path d="M10.8 15.2h2.4L12 16.6z" fill="#6FA8FF"></path><path d="M10 18.4l2 1.3 2-1.3"></path></svg></span>
+    <span style="font-size: 11px; line-height: 1.4; color: #C9D6F2; text-align: left">We guard this Code like a watchdog to protect our members. Break a vow and you’re out. Anything unsafe is one strike.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  componentWillUnmount() { clearInterval(this.timer); }
+  renderVals() {
+    var TEXT = ['I only take a clear yes', 'I show up as my real self', 'I send nothing explicit uninvited', 'I respect a no, the first time', 'I show up, or I say so', 'What happens here, stays here', 'I look after the people I meet'];
+    var NUMS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+    var s = this.state || {};
+    var lit = s.lit || [true, true, false, false, false, false, false];
+    var hold = s.hold || 0;
+    var sealed = !!s.sealed;
+    var count = lit.filter(function (x) { return x; }).length;
+    var all = count === 7;
+    var nextIdx = lit.indexOf(false);
+    var self = this;
+    var vows = TEXT.map(function (t, i) {
+      return {
+        text: t, num: NUMS[i], lit: lit[i], unlit: !lit[i], pressed: lit[i] ? 'true' : 'false',
+        isNext: i === nextIdx, notFirst: i > 0,
+        cls: lit[i] ? 'vow lit' : 'vow off',
+        ornCls: lit[i] && lit[i - 1] ? 'orn hot' : 'orn',
+        toggle: function () {
+          if (sealed) return;
+          var next = lit.slice(); next[i] = !next[i];
+          self.setState({ lit: next, hold: 0 });
+        }
+      };
+    });
+    var f = count / 7;
+    return {
+      vows: vows,
+      fireAmount: f.toFixed(2),
+      glowA: Math.round(20 + f * 50), glowB: Math.round(40 + f * 80), glowAlpha: (0.25 + f * 0.5).toFixed(2),
+      subline: sealed ? 'Sealed. Welcome in.' : all ? 'All seven vows taken. Now seal it.' : count + ' of 7 vows taken. Tap each to take it.',
+      ringOffset: (301.6 * (1 - (sealed ? 100 : hold) / 100)).toFixed(1),
+      sealOpacity: all ? '1' : '0.35',
+      sealInner: hold > 0 || sealed ? '#5A2412' : '#3A1530',
+      sealGlow: sealed ? 40 : Math.round(hold / 4),
+      sealLabel: sealed ? 'Sealed' : all ? 'Press and hold to seal' : 'Take all 7 vows first',
+      startHold: function () {
+        if (!all || sealed) return;
+        clearInterval(self.timer);
+        self.timer = setInterval(function () {
+          var h = Math.min(100, ((self.state && self.state.hold) || 0) + 4);
+          if (h >= 100) { clearInterval(self.timer); self.setState({ hold: 100, sealed: true }); }
+          else self.setState({ hold: h });
+        }, 40);
+      },
+      stopHold: function () {
+        clearInterval(self.timer);
+        if (!(self.state && self.state.sealed)) self.setState({ hold: 0 });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

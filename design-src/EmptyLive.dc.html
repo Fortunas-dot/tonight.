@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Empty state with Vi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:transparent;font:500 11px Inter,sans-serif;width:68px;padding:8px 0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0E0C10; color: #F4EFEA; font-family: Inter, sans-serif; padding-top: 54px; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 16px 0 20px; height: 52px">
+    <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.5px">tonight<span style="color: #F0287A">.</span></div>
+    <div style="display: flex; background: #1B171D; border-radius: 20px; padding: 3px">
+      <button style="height: 34px; padding: 0 12px; border: 0; border-radius: 17px; background: #F4EFEA; color: #0E0C10; font: 600 13px Inter, sans-serif; display: flex; align-items: center; gap: 6px"><span style="width: 7px; height: 7px; border-radius: 50%; background: #A39AA2"></span>Live now · 0</button>
+      <button style="height: 34px; padding: 0 12px; border: 0; border-radius: 17px; background: transparent; color: #A39AA2; font: 500 13px Inter, sans-serif">This week</button>
+    </div>
+    <button aria-label="Filters" style="width: 44px; height: 44px; border: 0; background: transparent; color: #F4EFEA"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></button>
+  </div>
+  <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 56px 32px 0">
+    <div style="width: 240px; height: 240px; border-radius: 50%; background: #1E1433; display: flex; align-items: center; justify-content: center; position: relative">
+      <svg role="img" aria-label="Vi, the violet mascot, blushing and waiting" width="200" height="200" viewBox="0 0 200 200">
+        <path d="M100 58V36" stroke="#7B3CFF" stroke-width="5" stroke-linecap="round"></path>
+        <path d="M100 28.6c-3.3-7.7-14.3-5.5-13.2 2.2c1.1 6.6 13.2 13.2 13.2 13.2s12.1-6.6 13.2-13.2c1.1-7.7-9.9-9.9-13.2-2.2z" fill="#FF7FB5"></path>
+        <ellipse cx="82" cy="188" rx="15" ry="6" fill="#5B2BD9"></ellipse><ellipse cx="118" cy="188" rx="15" ry="6" fill="#5B2BD9"></ellipse>
+        <circle cx="100" cy="122" r="66" fill="#7B3CFF"></circle>
+        <ellipse cx="100" cy="156" rx="38" ry="22" fill="#A35BFF" opacity="0.5"></ellipse>
+        <path d="M72 116q9-10 18 0M110 116q9-10 18 0" stroke="#1A0B14" stroke-width="4.5" stroke-linecap="round" fill="none"></path>
+        <ellipse cx="70" cy="134" rx="12" ry="7" fill="#FF7FB5" opacity="0.9"></ellipse><ellipse cx="130" cy="134" rx="12" ry="7" fill="#FF7FB5" opacity="0.9"></ellipse>
+        <path d="M93 140q7 6 14 0" stroke="#1A0B14" stroke-width="4" stroke-linecap="round" fill="none"></path>
+        <path d="M52 140q18 22 40 16M148 140q-18 22-40 16" stroke="#5B2BD9" stroke-width="11" stroke-linecap="round" fill="none"></path>
+      </svg>
+      <div style="position: absolute; right: 6px; top: 22px; width: 44px; height: 44px; border-radius: 50%; background: #1B171D; border: 2px solid #3A3439; display: flex; align-items: center; justify-content: center; font: 800 22px 'Bricolage Grotesque', sans-serif">?</div>
+    </div>
+    <h1 style="margin: 28px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -0.5px; line-height: 1.15">Quiet tonight…<br>for now.</h1>
+    <p style="margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: #A39AA2">Nobody who fits your boundaries is live within 5 km. Go live and you’ll be first in line the moment they are.</p>
+  </div>
+  <div style="position: absolute; left: 24px; right: 24px; bottom: 112px; display: flex; flex-direction: column; gap: 10px">
+    <button style="height: 56px; border-radius: 28px; border: 0; background: linear-gradient(100deg, #F0287A, #7B3CFF 55%, #3B7BFF); color: #FFFFFF; font: 600 16px Inter, sans-serif">Go live and be first</button>
+    <button style="height: 52px; border-radius: 26px; border: 1.5px solid #3A3439; background: transparent; color: #F4EFEA; font: 600 15px Inter, sans-serif">Widen to 10 km</button>
+  </div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: #0E0C10; border-top: 1px solid #221E24; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 4px">
+    <button class="tab" style="color: #F0287A"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="3"></rect></svg>Discover</button>
+    <button class="tab" style="color: #A39AA2"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.3-8.6-8.8C2.2 8 4.2 4.8 7.4 4.8c1.9 0 3.4 1 4.6 2.6 1.2-1.6 2.7-2.6 4.6-2.6 3.2 0 5.2 3.2 4 6.4C19 15.7 12 20 12 20z"></path></svg>Likes you</button>
+    <button class="tab" style="color: #A39AA2"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg>Chats</button>
+    <button class="tab" style="color: #A39AA2"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.3 3 2.5 3-1-3 0-6 0-8z"></path></svg>Lounge</button>
+    <button class="tab" style="color: #A39AA2"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Me</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
