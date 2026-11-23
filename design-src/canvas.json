@@ -529,6 +529,13 @@
       "text": "12 — Ward, our watchdog",
       "kind": "title1",
       "maxW": 1440
+    },
+    "n14": {
+      "x": 2350,
+      "y": 1220,
+      "w": 380,
+      "fill": "teal",
+      "text": "Liquid motion system (on every phone screen):\n• two colour blobs (pink, blue) slowly morph and drift behind content, like ink in water\n• gradient buttons flow\n• a light flows along the tab bar\n• live dots pulse like sonar\n• the logo’s dot drips\n• taps squish with a springy bounce\n• cards and rows float up into place\n• match screen: rising bubbles + ripples\nRespects ‘reduce motion’ in phone settings."
     }
   },
   "designSystems": []

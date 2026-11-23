@@ -30,6 +30,30 @@ body{margin:0}
 @keyframes flick{0%,100%{transform:scale(1) rotate(-3deg)}25%{transform:scale(1.08,1.14) rotate(2deg)}50%{transform:scale(.96,1.04) rotate(-1deg)}75%{transform:scale(1.06,1.1) rotate(3deg)}}
 @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+
+/* liquid-motion v1 */
+[style^="width: 390px; height: 844px"]{position:relative;isolation:isolate;overflow:hidden}
+[style^="width: 390px; height: 844px"]::before,[style^="width: 390px; height: 844px"]::after{content:"";position:absolute;z-index:-1;pointer-events:none;filter:blur(34px);will-change:transform}
+[style^="width: 390px; height: 844px"]::before{width:440px;height:440px;left:-170px;top:-150px;background:radial-gradient(circle at 35% 35%,rgba(240,40,122,.34),rgba(123,60,255,.16) 55%,rgba(0,0,0,0) 72%);animation:lq-blob 19s ease-in-out infinite}
+[style^="width: 390px; height: 844px"]::after{width:420px;height:420px;right:-180px;bottom:-130px;background:radial-gradient(circle at 60% 60%,rgba(59,123,255,.30),rgba(123,60,255,.14) 55%,rgba(0,0,0,0) 72%);animation:lq-blob 23s ease-in-out infinite reverse}
+@keyframes lq-blob{0%,100%{transform:translate(0,0) rotate(0) scale(1);border-radius:42% 58% 63% 37%/45% 40% 60% 55%}33%{transform:translate(50px,40px) rotate(50deg) scale(1.12);border-radius:62% 38% 35% 65%/55% 62% 38% 45%}66%{transform:translate(-30px,70px) rotate(-25deg) scale(.94);border-radius:38% 62% 55% 45%/62% 35% 65% 38%}}
+[style*="linear-gradient(100deg, #F0287A"],[style*="linear-gradient(135deg, #F0287A, #3B7BFF)"],[style*="linear-gradient(90deg, #F0287A"]{background-size:240% 240% !important;animation:lq-flow 7s ease-in-out infinite}
+@keyframes lq-flow{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+button,a{transition:transform .35s cubic-bezier(.3,1.7,.45,1),filter .3s}
+button:active,a:active{transform:scale(.94)}
+button:hover,a:hover{filter:brightness(1.08)}
+[style*="border-radius: 50%; background: #2BC48A"]{animation:lq-live 2.2s ease-out infinite}
+@keyframes lq-live{0%{box-shadow:0 0 0 0 rgba(43,196,138,.65)}100%{box-shadow:0 0 0 9px rgba(43,196,138,0)}}
+[style*="height: 84px; background: #0E0C10; border-top: 1px solid #221E24"]::before{content:"";position:absolute;left:0;right:0;top:-1px;height:1.5px;background:linear-gradient(90deg,rgba(240,40,122,0),#F0287A,#7B3CFF,#3B7BFF,rgba(59,123,255,0));background-size:200% 100%;animation:lq-flow 6s ease-in-out infinite;opacity:.85}
+[style="color: #F0287A"]{display:inline-block;transform-origin:50% 0;animation:lq-drip 3.4s ease-in-out infinite}
+@keyframes lq-drip{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(1px) scale(.9,1.25)}55%{transform:translateY(2px) scale(1.1,.9)}}
+.card,.row,.post,.chat,.t,.tile,.it,.ck,.pop,.opt,.fit{animation:lq-rise .8s cubic-bezier(.2,.85,.25,1) both}
+.card:nth-child(2),.row:nth-child(2),.post:nth-child(2),.chat:nth-child(2),.t:nth-child(2),.tile:nth-child(2),.it:nth-child(2),.ck:nth-child(2),.pop:nth-child(2),.opt:nth-child(2){animation-delay:.07s}
+.card:nth-child(3),.row:nth-child(3),.post:nth-child(3),.chat:nth-child(3),.t:nth-child(3),.tile:nth-child(3),.it:nth-child(3),.ck:nth-child(3),.pop:nth-child(3),.opt:nth-child(3){animation-delay:.14s}
+.card:nth-child(4),.row:nth-child(4),.post:nth-child(4),.chat:nth-child(4),.t:nth-child(4),.tile:nth-child(4),.it:nth-child(4),.ck:nth-child(4),.pop:nth-child(4),.opt:nth-child(4){animation-delay:.21s}
+.card:nth-child(n+5),.row:nth-child(n+5),.post:nth-child(n+5),.chat:nth-child(n+5),.t:nth-child(n+5),.tile:nth-child(n+5),.it:nth-child(n+5),.ck:nth-child(n+5),.pop:nth-child(n+5),.opt:nth-child(n+5){animation-delay:.28s}
+@keyframes lq-rise{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
 </style>
 </helmet>
 <div style="width: 390px; height: 844px; box-sizing: border-box; background: #08070A; color: #F4EFEA; font-family: Inter, sans-serif; padding: 54px 28px 30px; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden">

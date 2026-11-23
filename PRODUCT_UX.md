@@ -103,6 +103,14 @@ blue collar with a shield tag. Calm and alert, never scary. Three poses:
 - **I've got this** (serious, holding a shield): reports, blocking, the support safety queue.
 Placed on the Code's watchdog note, the after-check-in banner, and the "Tell Ward" report shortcut in Support.
 
+## 3h. Liquid motion ("the app feels watery")
+
+One shared motion layer on every screen: two blurred colour blobs (pink and blue) that slowly morph and drift behind the
+content; gradient buttons whose colours flow; a light flowing along the tab bar; live dots that pulse like sonar; a
+dripping dot in the logo; springy squish on every tap; cards and rows that float up into place with a short stagger.
+The match screen adds rising bubbles and water ripples. Everything turns off when the phone's "reduce motion" is on.
+Build note: in React Native use Reanimated + Skia for the blobs (cheap GPU shaders) and spring physics for taps.
+
 ## 4. Visual system
 
 Duotone “two energies”: hot pink-red + electric blue, blended through violet.
