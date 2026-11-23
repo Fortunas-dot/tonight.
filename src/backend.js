@@ -188,6 +188,7 @@ function toPerson(row, me, url) {
     both: both.length ? both : (row.intents || []).slice(0, 3),
     maybe: maybe || null,
     photo: url || null,
+    blurred: !!row.blur_face, // shown blurred until you match
   };
 }
 

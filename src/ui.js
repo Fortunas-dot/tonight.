@@ -311,7 +311,8 @@ export function Row({ title, sub, right, onPress, icon, iconColor = C.pinkL, ico
 }
 
 /** Placeholder for a member photo until real photos exist (warm gradient, no fake faces). */
-export function Photo({ style, seed = 0, children, label, uri }) {
+// blur: show the photo blurred (people who chose "Blur my face until we match"), with a small lock tag.
+export function Photo({ style, seed = 0, children, label, uri, blur }) {
   const sets = [
     ['#3A2B33', '#1C171E'],
     ['#2E2440', '#17131F'],
@@ -321,7 +322,16 @@ export function Photo({ style, seed = 0, children, label, uri }) {
   const [a, b] = sets[seed % sets.length];
   return (
     <LinearGradient colors={[a, b]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[{ overflow: 'hidden' }, style]}>
-      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" blurRadius={blur ? 45 : 0} /> : null}
+      {uri && blur ? <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(14,12,16,0.25)' }]} /> : null}
+      {uri && blur ? (
+        <View style={styles.blurTag}>
+          <Icon name="lock" size={12} color="#C9D6F2" />
+          <T v="small" c="#C9D6F2" style={{ fontSize: 11, fontFamily: F.semi }}>
+            Blurred until you match
+          </T>
+        </View>
+      ) : null}
       {label && !uri ? (
         <T v="small" c="#6F6470" style={{ position: 'absolute', alignSelf: 'center', top: '42%', letterSpacing: 2, fontFamily: F.medium }}>
           {label}
@@ -474,4 +484,5 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  blurTag: { position: 'absolute', top: 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 5, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)' },
 });

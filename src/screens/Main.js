@@ -76,7 +76,7 @@ export function Discover({ onOpen, onLike, deck }) {
         }}
       >
         <Pressable onPress={() => onOpen(person)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`}>
-          <Photo seed={person.seed} uri={person.photo} style={styles.card} label="PHOTO">
+          <Photo seed={person.seed} uri={person.photo} blur={person.blurred} style={styles.card} label="PHOTO">
             <View style={styles.bars}>
               {[0, 1, 2, 3].map((b) => (
                 <View key={b} style={[styles.bar, b === 0 && { backgroundColor: C.ink }]} />
@@ -139,7 +139,7 @@ export function ProfileView({ person, onClose, onLike, onReport, onBlock }) {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
-        <Photo seed={person.seed} uri={person.photo} style={{ height: 440 }} label="PHOTO">
+        <Photo seed={person.seed} uri={person.photo} blur={person.blurred} style={{ height: 440 }} label="PHOTO">
           <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 200 }} />
         </Photo>
         <View style={{ paddingHorizontal: 24, marginTop: -70 }}>
@@ -308,7 +308,7 @@ export function Likes({ people = PEOPLE, onOpen }) {
         {people.map((p, i) => (
           <Rise key={p.id} delay={i * 70} style={{ width: '48%' }}>
             <Pressable accessibilityRole="button" onPress={() => onOpen(p)}>
-              <Photo seed={p.seed} uri={p.photo} style={{ height: 200, borderRadius: 18 }}>
+              <Photo seed={p.seed} uri={p.photo} blur={p.blurred} style={{ height: 200, borderRadius: 18 }}>
                 <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.9)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10, paddingTop: 30 }}>
                   <T style={{ fontFamily: F.display, fontSize: 16 }}>
                     {p.name}, {p.age}

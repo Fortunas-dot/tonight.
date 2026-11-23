@@ -393,7 +393,15 @@ export function Photos({ profile, setProfile, next, back }) {
     }
     return (
       <View key={i} style={[styles.slot, size, i === 0 && styles.slotMain]}>
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+        <Image source={{ uri }} style={StyleSheet.absoluteFill} blurRadius={blur ? 30 : 0} />
+        {blur && i === 0 ? (
+          <View style={styles.blurNote}>
+            <Icon name="lock" size={12} color="#C9D6F2" />
+            <T v="small" c="#C9D6F2" style={{ fontSize: 11, fontFamily: F.semi }}>
+              How others see it until you match
+            </T>
+          </View>
+        ) : null}
         <Pressable accessibilityRole="button" accessibilityLabel={`Remove photo ${i + 1}`} onPress={() => remove(i)} hitSlop={8} style={styles.slotX}>
           <Icon name="close" size={12} color={C.ink} stroke={3} />
         </Pressable>
@@ -799,7 +807,7 @@ export function Preview({ profile, next, back }) {
         This is exactly what others will see.
       </T>
       <View style={{ height: 360, borderRadius: 24, overflow: 'hidden', marginTop: 14 }}>
-        {profile.photos?.[0] ? <Image source={{ uri: profile.photos[0] }} style={StyleSheet.absoluteFill} /> : <Photo style={StyleSheet.absoluteFill} label="YOUR PHOTO" />}
+        {profile.photos?.[0] ? <Photo uri={profile.photos[0]} blur={profile.blurFace} style={StyleSheet.absoluteFill} /> : <Photo style={StyleSheet.absoluteFill} label="YOUR PHOTO" />}
         <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.94)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, paddingTop: 70 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <T style={{ fontFamily: F.display, fontSize: 26 }}>
@@ -859,6 +867,7 @@ const styles = StyleSheet.create({
   slot: { borderRadius: 16, overflow: 'hidden', backgroundColor: C.surf },
   slotMain: { borderWidth: 1.5, borderColor: C.pink },
   slotEmpty: { borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#4A4148', backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center' },
+  blurNote: { position: 'absolute', top: 8, left: 8, right: 40, flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 24, paddingHorizontal: 8, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)' },
   maskBtn: { position: 'absolute', right: 6, bottom: 6, width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
   maskCard: { backgroundColor: C.surf, borderRadius: 17.5, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
   maskCta: { height: 38, paddingHorizontal: 14, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
