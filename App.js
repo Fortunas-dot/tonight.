@@ -264,7 +264,7 @@ export default function App() {
           screen = <Match person={p.person} me={profile} onClose={pop} onChat={openChat} />;
           break;
         case 'chat':
-          screen = chat ? <Chat key={chat.id} chat={chat} live={!chat.plan && !chat.real} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} /> : null;
+          screen = chat ? <Chat key={chat.id} chat={chat} live={!chat.plan && !chat.real} filterExplicit={profile.settings?.filterExplicit !== false} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} /> : null;
           break;
         case 'plan':
           screen = chat ? <Plan chat={chat} onBack={pop} /> : null;

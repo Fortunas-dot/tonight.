@@ -506,3 +506,10 @@ export async function deleteAccount() {
   uid = null;
   return true;
 }
+
+/** Comments on my posts and replies to my comments (the Lounge bell). */
+export async function loungeActivity() {
+  if (!uid) return [];
+  const { data } = await supabase.rpc('my_lounge_activity');
+  return (data || []).map((a) => ({ postId: a.post_id, postTitle: a.post_title, alias: a.alias, body: a.body, isReply: a.is_reply, createdAt: a.created_at }));
+}

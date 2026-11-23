@@ -1,6 +1,6 @@
 // The Lounge: a social feed (posts, photos, likes, comments) plus the Guides. Design: canvas artboards 15b–15d.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +19,9 @@ export const TOPICS = [
   { id: 'Health', icon: 'shieldCheck' },
   { id: 'Date night', icon: 'eye' },
 ];
-const POST_TOPICS = TOPICS.slice(1).map((t) => t.id).concat('Stories');
+const POST_TOPICS = TOPICS.slice(1)
+  .map((t) => t.id)
+  .concat('Stories');
 
 /* ---------- small pieces ---------- */
 
@@ -96,7 +98,12 @@ function PostHead({ post, onMore }) {
 
 function SpicyPhoto({ uri, style, revealed, onReveal }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={revealed ? 'Photo' : 'Spicy photo, tap to view'} onPress={onReveal} style={[{ borderRadius: 14, overflow: 'hidden', backgroundColor: C.surf2 }, style]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={revealed ? 'Photo' : 'Spicy photo, tap to view'}
+      onPress={onReveal}
+      style={[{ borderRadius: 14, overflow: 'hidden', backgroundColor: C.surf2 }, style]}
+    >
       <Image source={{ uri }} style={StyleSheet.absoluteFill} blurRadius={revealed ? 0 : 50} />
       {revealed ? null : (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,14,22,0.35)', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
@@ -118,13 +125,15 @@ function Photos({ post }) {
   const two = post.photos.length > 1;
   return (
     <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
-      {post.photos.slice(0, 2).map((u) =>
-        post.spicy ? (
-          <SpicyPhoto key={u} uri={u} revealed={revealed} onReveal={() => setRevealed(true)} style={{ flex: 1, height: two ? 168 : 260 }} />
-        ) : (
-          <Image key={u} source={{ uri: u }} style={{ flex: 1, height: two ? 168 : 260, borderRadius: 14, backgroundColor: C.surf2 }} />
-        ),
-      )}
+      {post.photos
+        .slice(0, 2)
+        .map((u) =>
+          post.spicy ? (
+            <SpicyPhoto key={u} uri={u} revealed={revealed} onReveal={() => setRevealed(true)} style={{ flex: 1, height: two ? 168 : 260 }} />
+          ) : (
+            <Image key={u} source={{ uri: u }} style={{ flex: 1, height: two ? 168 : 260, borderRadius: 14, backgroundColor: C.surf2 }} />
+          ),
+        )}
     </View>
   );
 }
@@ -153,9 +162,7 @@ function Actions({ post, onLike, onComments }) {
 }
 
 function moreMenu(post, { onDelete }) {
-  const buttons = post.mine
-    ? [{ text: 'Delete post', style: 'destructive', onPress: onDelete }]
-    : [{ text: 'Report', onPress: () => success() }];
+  const buttons = post.mine ? [{ text: 'Delete post', style: 'destructive', onPress: onDelete }] : [{ text: 'Report', onPress: () => success() }];
   Alert.alert(post.mine ? 'Your post' : 'Post', post.mine ? '' : 'Ward will review it.', [...buttons, { text: 'Cancel', style: 'cancel' }]);
 }
 
@@ -205,8 +212,70 @@ const samplePosts = () =>
 
 /* ---------- Feed ---------- */
 
+/** The bell: comments on your posts and replies to your comments. */
+function ActivitySheet({ visible, onClose, onOpenPost }) {
+  const insets = useSafeAreaInsets();
+  const [items, setItems] = useState(null);
+  useEffect(() => {
+    if (!visible) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setItems(null);
+    api.loungeActivity().then(setItems);
+  }, [visible]);
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable accessibilityLabel="Close activity" style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }} onPress={onClose} />
+      <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={styles.grab} />
+        <T style={{ fontFamily: F.display, fontSize: 22, marginBottom: 6 }}>Activity</T>
+        <ScrollView style={{ maxHeight: 460 }}>
+          {items === null ? (
+            <T v="meta" c={C.muted} style={{ paddingVertical: 20 }}>
+              Loading…
+            </T>
+          ) : items.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 30, gap: 6 }}>
+              <Icon name="bell" size={26} color={C.muted} />
+              <T style={{ fontFamily: F.semi }}>Nothing yet</T>
+              <T v="small" c={C.muted} style={{ textAlign: 'center' }}>
+                Replies to your posts and comments show up here.
+              </T>
+            </View>
+          ) : (
+            items.map((a, i) => (
+              <Pressable
+                key={`${a.postId}-${i}`}
+                accessibilityRole="button"
+                onPress={async () => {
+                  const post = await api.loadPost(a.postId);
+                  onClose();
+                  if (post) onOpenPost(post);
+                }}
+                style={styles.activity}
+              >
+                <AliasAvatar alias={a.alias} size={36} />
+                <View style={{ flex: 1 }}>
+                  <T style={{ fontSize: 14, lineHeight: 19 }} numberOfLines={2}>
+                    <T style={{ fontFamily: F.semi, fontSize: 14 }}>{a.alias}</T> {a.isReply ? 'replied to you' : 'commented'}: “{a.body}”
+                  </T>
+                  <T v="small" c={C.muted} numberOfLines={1}>
+                    {a.postTitle} · {timeAgo(a.createdAt)}
+                  </T>
+                </View>
+              </Pressable>
+            ))
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
 export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) {
   const [tab, setTab] = useState('feed');
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState('');
+  const [activity, setActivity] = useState(false);
   const [topic, setTopic] = useState('For you');
   const [posts, setPosts] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -253,13 +322,47 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 52 }}>
           <T style={{ flex: 1, fontFamily: F.display, fontSize: 30, letterSpacing: -0.8 }}>The Lounge</T>
-          <Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={() => tap()} style={styles.ib}>
-            <Icon name="search" size={20} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={searching ? 'Close search' : 'Search posts'}
+            onPress={() => {
+              tap();
+              setSearching(!searching);
+              setQuery('');
+              setTab('feed');
+            }}
+            style={[styles.ib, searching && { backgroundColor: C.pinkBg }]}
+          >
+            <Icon name={searching ? 'close' : 'search'} size={20} color={searching ? C.pinkL : C.ink} />
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => tap()} style={styles.ib}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Activity"
+            onPress={() => {
+              tap();
+              setActivity(true);
+            }}
+            style={styles.ib}
+          >
             <Icon name="bell" size={20} />
           </Pressable>
         </View>
+        {searching ? (
+          <View style={[styles.search, { marginTop: 8 }]}>
+            <Icon name="search" size={18} color={C.muted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              autoFocus
+              placeholder="Search posts"
+              placeholderTextColor={C.faint}
+              style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }}
+              accessibilityLabel="Search posts"
+              selectionColor={C.pink}
+            />
+          </View>
+        ) : null}
+        <ActivitySheet visible={activity} onClose={() => setActivity(false)} onOpenPost={onOpenPost} />
         <View style={{ marginTop: 6 }}>
           <Segmented
             value={tab}
@@ -309,7 +412,11 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
             </ScrollView>
 
             <Pressable accessibilityRole="button" accessibilityLabel="Write a post" onPress={onCompose} style={styles.composeBar}>
-              {profile?.photos?.[0] ? <Image source={{ uri: profile.photos[0] }} style={{ width: 36, height: 36, borderRadius: 18 }} blurRadius={profile.blurFace ? 20 : 0} /> : <AliasAvatar alias={profile?.name || 'You'} size={36} />}
+              {profile?.photos?.[0] ? (
+                <Image source={{ uri: profile.photos[0] }} style={{ width: 36, height: 36, borderRadius: 18 }} blurRadius={profile.blurFace ? 20 : 0} />
+              ) : (
+                <AliasAvatar alias={profile?.name || 'You'} size={36} />
+              )}
               <T c={C.muted} style={{ flex: 1 }}>
                 Share something{profile?.name ? `, ${profile.name}` : ''}…
               </T>
@@ -318,7 +425,12 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
               </View>
             </Pressable>
 
-            <LinearGradient colors={['rgba(240,40,122,0.16)', 'rgba(59,123,255,0.12)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, { borderColor: '#2E3A66', flexDirection: 'row', gap: 12, alignItems: 'center', paddingBottom: 12, paddingTop: 12 }]}>
+            <LinearGradient
+              colors={['rgba(240,40,122,0.16)', 'rgba(59,123,255,0.12)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.card, { borderColor: '#2E3A66', flexDirection: 'row', gap: 12, alignItems: 'center', paddingBottom: 12, paddingTop: 12 }]}
+            >
               <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center' }}>
                 <T c="#FFFFFF" style={{ fontFamily: F.semi, fontSize: 10, lineHeight: 12 }}>
                   THU
@@ -353,11 +465,21 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
                 </T>
               </Card>
             ) : (
-              posts.map((p, i) => (
-                <Rise key={p.id} delay={Math.min(i, 5) * 60}>
-                  <PostCard post={p} onOpen={() => (p.real ? onOpenPost(p) : Alert.alert('Example post', 'Example posts are shown while you are offline.'))} onLike={() => like(p)} onDelete={() => remove(p)} />
-                </Rise>
-              ))
+              posts
+                .filter((p) => {
+                  const q = query.trim().toLowerCase();
+                  return !q || `${p.title || ''} ${p.body || ''} ${p.alias} ${p.topic}`.toLowerCase().includes(q);
+                })
+                .map((p, i) => (
+                  <Rise key={p.id} delay={Math.min(i, 5) * 60}>
+                    <PostCard
+                      post={p}
+                      onOpen={() => (p.real ? onOpenPost(p) : Alert.alert('Example post', 'Example posts are shown while you are offline.'))}
+                      onLike={() => like(p)}
+                      onDelete={() => remove(p)}
+                    />
+                  </Rise>
+                ))
             )}
           </>
         ) : (
@@ -398,7 +520,15 @@ function GuidesTab({ onGuide }) {
     <View>
       <View style={styles.search}>
         <Icon name="search" size={18} color={C.muted} />
-        <TextInput value={query} onChangeText={setQuery} placeholder="Tips, health, aftercare…" placeholderTextColor={C.faint} style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }} accessibilityLabel="Search guides" selectionColor={C.pink} />
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Tips, health, aftercare…"
+          placeholderTextColor={C.faint}
+          style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }}
+          accessibilityLabel="Search guides"
+          selectionColor={C.pink}
+        />
         {query ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery('')} hitSlop={8}>
             <Icon name="close" size={14} color={C.muted} stroke={2.4} />
@@ -619,7 +749,16 @@ export function Compose({ onClose, onPosted }) {
           })}
         </View>
         <TextInput value={title} onChangeText={setTitle} placeholder="Title (optional)" placeholderTextColor={C.faint} multiline maxLength={200} style={styles.titleInput} accessibilityLabel="Title" />
-        <TextInput value={body} onChangeText={setBody} placeholder="What's on your mind?" placeholderTextColor={C.faint} multiline maxLength={5000} style={styles.bodyInput} accessibilityLabel="Your post" />
+        <TextInput
+          value={body}
+          onChangeText={setBody}
+          placeholder="What's on your mind?"
+          placeholderTextColor={C.faint}
+          multiline
+          maxLength={5000}
+          style={styles.bodyInput}
+          accessibilityLabel="Your post"
+        />
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           {photos.map((u, i) => (
             <View key={u} style={styles.thumb}>
@@ -799,7 +938,11 @@ export function PostView({ post: initial, onBack }) {
           }
         />
         {post.title ? <T style={{ fontFamily: F.display, fontSize: 21, marginTop: 12 }}>{post.title}</T> : null}
-        {post.body ? <T c="#D9D2D6" style={{ fontSize: 15, lineHeight: 22, marginTop: 8 }}>{post.body}</T> : null}
+        {post.body ? (
+          <T c="#D9D2D6" style={{ fontSize: 15, lineHeight: 22, marginTop: 8 }}>
+            {post.body}
+          </T>
+        ) : null}
         <Photos post={post} />
         <Actions post={post} onLike={likePost} onComments={() => {}} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
@@ -841,7 +984,16 @@ export function PostView({ post: initial, onBack }) {
           </View>
         ) : null}
         <View style={styles.commentPill}>
-          <TextInput value={text} onChangeText={setText} placeholder="Add a comment…" placeholderTextColor={C.faint} style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }} multiline maxLength={2000} accessibilityLabel="Add a comment" />
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Add a comment…"
+            placeholderTextColor={C.faint}
+            style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }}
+            multiline
+            maxLength={2000}
+            accessibilityLabel="Add a comment"
+          />
           <Pressable accessibilityRole="button" accessibilityLabel="Send" onPress={send} disabled={!text.trim() || sending}>
             <LinearGradient colors={[C.pink, C.blue]} style={[styles.send, (!text.trim() || sending) && { opacity: 0.4 }]}>
               <Icon name="send" size={16} color="#FFFFFF" stroke={2.2} />
@@ -854,7 +1006,18 @@ export function PostView({ post: initial, onBack }) {
 }
 
 const styles = StyleSheet.create({
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 48, borderRadius: 24, borderWidth: 1.5, borderColor: '#2E2830', backgroundColor: C.surf3, paddingHorizontal: 16, marginTop: 14 },
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: '#2E2830',
+    backgroundColor: C.surf3,
+    paddingHorizontal: 16,
+    marginTop: 14,
+  },
   featured: { marginTop: 14, borderRadius: 24, padding: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   featuredGlow: { position: 'absolute', right: -60, top: -60, width: 180, height: 180, borderRadius: 90, opacity: 0.35 },
   featuredBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.45)' },
@@ -863,6 +1026,9 @@ const styles = StyleSheet.create({
   tile: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 72, padding: 12, borderRadius: 18, backgroundColor: '#151217', borderWidth: 1.5, borderColor: C.line },
   tileIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   guideRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line },
+  sheet: { backgroundColor: '#141116', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 10, borderWidth: 1, borderColor: C.line },
+  grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#3A3439', marginBottom: 12 },
+  activity: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line },
   ib: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: '#151217', borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 4, marginTop: 10 },
   actions: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: C.line, marginTop: 12 },
@@ -886,7 +1052,17 @@ const styles = StyleSheet.create({
   optRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   maskBtn: { height: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center' },
   composeFoot: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.bg },
-  bubble: { backgroundColor: '#151217', borderWidth: 1, borderColor: C.line, borderTopLeftRadius: 4, borderTopRightRadius: 16, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, paddingHorizontal: 12, paddingVertical: 9 },
+  bubble: {
+    backgroundColor: '#151217',
+    borderWidth: 1,
+    borderColor: C.line,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
   commentBar: { paddingHorizontal: 16, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.bg },
   commentPill: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, borderRadius: 22, backgroundColor: C.surf2, paddingLeft: 14, paddingRight: 6, paddingVertical: 4 },
   send: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },

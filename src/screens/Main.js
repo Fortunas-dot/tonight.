@@ -453,7 +453,37 @@ function Typing() {
 
 const REPLIES = ['Love that. Tell me more 😏', 'Sounds perfect. See you there?', 'Haha okay, you have my attention.', 'I’m in. What time works?'];
 
-export function Chat({ chat, onSend, onBack, onPlan, live }) {
+// Words that make a first message count as explicit (Privacy › Filter explicit first messages).
+const EXPLICIT = /\b(dick|cock|pussy|tits?|boobs?|nudes?|naked|horny|fuck(ing)?|suck|cum|blowjob|bj|anal|sexting|send pics?|dick ?pic)\b/i;
+
+function HiddenMessage({ text }) {
+  const [show, setShow] = useState(false);
+  if (show) {
+    return (
+      <View style={styles.them}>
+        <T>{text}</T>
+      </View>
+    );
+  }
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel="Hidden message, may be explicit. Tap to show." onPress={() => setShow(true)} style={[styles.them, { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#22335C', backgroundColor: C.blueBg }]}>
+      <Icon name="eyeOff" size={16} color={C.blueL} />
+      <View>
+        <T v="small" c={C.safeInk} style={{ fontFamily: F.semi }}>
+          Hidden: may be explicit
+        </T>
+        <T v="small" c={C.muted}>
+          Tap to show
+        </T>
+      </View>
+    </Pressable>
+  );
+}
+
+export function Chat({ chat, onSend, onBack, onPlan, live, filterExplicit = true }) {
+  // Messages they sent before you ever replied count as "first messages".
+  const firstMine = chat.messages.findIndex((m) => m.me);
+  const hide = (m, i) => filterExplicit && !m.me && !m.plan && (firstMine === -1 || i < firstMine) && EXPLICIT.test(m.text || '');
   const insets = useSafeAreaInsets();
   const p = chatPerson(chat);
   const [text, setText] = useState('');
@@ -516,9 +546,13 @@ export function Chat({ chat, onSend, onBack, onPlan, live }) {
                   <T c="#FFFFFF">{m.text}</T>
                 </LinearGradient>
               ) : (
-                <View style={styles.them}>
-                  <T>{m.text}</T>
-                </View>
+                hide(m, i) ? (
+                  <HiddenMessage text={m.text} />
+                ) : (
+                  <View style={styles.them}>
+                    <T>{m.text}</T>
+                  </View>
+                )
               )}
             </Rise>
           ),
