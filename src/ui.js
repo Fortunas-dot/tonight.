@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -311,7 +311,7 @@ export function Row({ title, sub, right, onPress, icon, iconColor = C.pinkL, ico
 }
 
 /** Placeholder for a member photo until real photos exist (warm gradient, no fake faces). */
-export function Photo({ style, seed = 0, children, label }) {
+export function Photo({ style, seed = 0, children, label, uri }) {
   const sets = [
     ['#3A2B33', '#1C171E'],
     ['#2E2440', '#17131F'],
@@ -321,7 +321,8 @@ export function Photo({ style, seed = 0, children, label }) {
   const [a, b] = sets[seed % sets.length];
   return (
     <LinearGradient colors={[a, b]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[{ overflow: 'hidden' }, style]}>
-      {label ? (
+      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+      {label && !uri ? (
         <T v="small" c="#6F6470" style={{ position: 'absolute', alignSelf: 'center', top: '42%', letterSpacing: 2, fontFamily: F.medium }}>
           {label}
         </T>
@@ -331,10 +332,10 @@ export function Photo({ style, seed = 0, children, label }) {
   );
 }
 
-export function Avatar({ size = 52, seed = 0, ring = 'none' }) {
+export function Avatar({ size = 52, seed = 0, ring = 'none', uri }) {
   const rings = { glow: GRAD, fire: ['#FFD27A', '#FF8A3D', '#F0287A'], verified: ['#6FA8FF', '#6FA8FF'] };
-  const inner = <Photo seed={seed} style={{ width: size - 8, height: size - 8, borderRadius: (size - 8) / 2 }} />;
-  if (ring === 'none') return <Photo seed={seed} style={{ width: size, height: size, borderRadius: size / 2 }} />;
+  const inner = <Photo seed={seed} uri={uri} style={{ width: size - 8, height: size - 8, borderRadius: (size - 8) / 2 }} />;
+  if (ring === 'none') return <Photo seed={seed} uri={uri} style={{ width: size, height: size, borderRadius: size / 2 }} />;
   return (
     <LinearGradient colors={rings[ring]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' }}>
       <View style={{ width: size - 4, height: size - 4, borderRadius: (size - 4) / 2, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>{inner}</View>

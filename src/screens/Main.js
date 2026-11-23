@@ -75,7 +75,7 @@ export function Discover({ onOpen, onLike, deck }) {
         }}
       >
         <Pressable onPress={() => onOpen(person)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`}>
-          <Photo seed={person.seed} style={styles.card} label="PHOTO">
+          <Photo seed={person.seed} uri={person.photo} style={styles.card} label="PHOTO">
             <View style={styles.bars}>
               {[0, 1, 2, 3].map((b) => (
                 <View key={b} style={[styles.bar, b === 0 && { backgroundColor: C.ink }]} />
@@ -133,12 +133,12 @@ export function Discover({ onOpen, onLike, deck }) {
 
 /* ---------- Profile ---------- */
 
-export function ProfileView({ person, onClose, onLike }) {
+export function ProfileView({ person, onClose, onLike, onReport, onBlock }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
-        <Photo seed={person.seed} style={{ height: 440 }} label="PHOTO">
+        <Photo seed={person.seed} uri={person.photo} style={{ height: 440 }} label="PHOTO">
           <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 200 }} />
         </Photo>
         <View style={{ paddingHorizontal: 24, marginTop: -70 }}>
@@ -163,16 +163,18 @@ export function ProfileView({ person, onClose, onLike }) {
               <T style={{ fontSize: 16 }}>{b}</T>
             </View>
           ))}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 34 }}>
-            <View style={[styles.check, { backgroundColor: '#5A4A22' }]}>
-              <T v="small" c="#FFF3D1" style={{ fontFamily: F.bold }}>
-                ?
+          {person.maybe ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 34 }}>
+              <View style={[styles.check, { backgroundColor: '#5A4A22' }]}>
+                <T v="small" c="#FFF3D1" style={{ fontFamily: F.bold }}>
+                  ?
+                </T>
+              </View>
+              <T style={{ fontSize: 16 }} c={C.ink2}>
+                Maybe: {person.maybe}
               </T>
             </View>
-            <T style={{ fontSize: 16 }} c={C.ink2}>
-              Maybe: {person.maybe}
-            </T>
-          </View>
+          ) : null}
           <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 8 }}>
             Ideal night
           </T>
@@ -184,7 +186,17 @@ export function ProfileView({ person, onClose, onLike }) {
         <IconButton
           name="dots"
           label="Report or block"
-          onPress={() => Alert.alert('Report or block', `Ward will review ${person.name}'s profile.`, [{ text: 'Report', onPress: success }, { text: 'Block', style: 'destructive' }, { text: 'Cancel', style: 'cancel' }])}
+          onPress={() => Alert.alert('Report or block', `Ward will review ${person.name}'s profile.`, [
+              {
+                text: 'Report',
+                onPress: () => {
+                  success();
+                  onReport?.(person);
+                },
+              },
+              { text: 'Block', style: 'destructive', onPress: () => onBlock?.(person) },
+              { text: 'Cancel', style: 'cancel' },
+            ])}
           style={styles.glass}
         />
       </View>
@@ -227,7 +239,7 @@ function Bubble({ delay, left, size }) {
   );
 }
 
-export function Match({ person, onChat, onClose }) {
+export function Match({ person, me, onChat, onClose }) {
   const insets = useSafeAreaInsets();
   const [pop] = useState(() => new Animated.Value(0));
   useEffect(() => {
@@ -244,10 +256,10 @@ export function Match({ person, onChat, onClose }) {
       </View>
       <Animated.View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 30, transform: [{ scale: pop }] }}>
         <View style={styles.matchPhoto}>
-          <Photo seed={5} style={{ flex: 1 }} />
+          <Photo seed={5} uri={me?.photos?.[0]} style={{ flex: 1 }} />
         </View>
         <View style={[styles.matchPhoto, { marginLeft: -36 }]}>
-          <Photo seed={person.seed} style={{ flex: 1 }} />
+          <Photo seed={person.seed} uri={person.photo} style={{ flex: 1 }} />
         </View>
       </Animated.View>
       <T style={{ fontFamily: F.displayX, fontSize: 52, letterSpacing: -1.6, textAlign: 'center', marginTop: 28 }} c="#FFFFFF">
@@ -282,7 +294,7 @@ export function Match({ person, onChat, onClose }) {
 
 /* ---------- Likes you ---------- */
 
-export function Likes({ onOpen }) {
+export function Likes({ people = PEOPLE, onOpen }) {
   return (
     <Screen scroll>
       <T v="title" style={{ marginTop: 8 }}>
@@ -292,10 +304,10 @@ export function Likes({ onOpen }) {
         Free for everyone, always. Like them back to match.
       </T>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
-        {PEOPLE.map((p, i) => (
+        {people.map((p, i) => (
           <Rise key={p.id} delay={i * 70} style={{ width: '48%' }}>
             <Pressable accessibilityRole="button" onPress={() => onOpen(p)}>
-              <Photo seed={p.seed} style={{ height: 200, borderRadius: 18 }}>
+              <Photo seed={p.seed} uri={p.photo} style={{ height: 200, borderRadius: 18 }}>
                 <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.9)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10, paddingTop: 30 }}>
                   <T style={{ fontFamily: F.display, fontSize: 16 }}>
                     {p.name}, {p.age}
@@ -315,6 +327,8 @@ export function Likes({ onOpen }) {
 
 /* ---------- Chats ---------- */
 
+const chatPerson = (c) => c.person || personById(c.id);
+
 export function Chats({ chats, onOpen }) {
   const plan = chats.find((c) => c.plan);
   return (
@@ -326,13 +340,13 @@ export function Chats({ chats, onOpen }) {
         <Rise>
           <Pressable accessibilityRole="button" onPress={() => onOpen(plan.id)}>
             <Card style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24 }}>
-              <Avatar seed={personById(plan.id).seed} ring="fire" />
+              <Avatar seed={chatPerson(plan).seed} uri={chatPerson(plan).photo} ring="fire" />
               <View style={{ flex: 1 }}>
                 <T v="small" c={C.pinkL} style={{ fontFamily: F.semi, letterSpacing: 0.3 }}>
                   TONIGHT
                 </T>
                 <T style={{ fontFamily: F.semi }}>
-                  {personById(plan.id).name} · {plan.plan.place}, {plan.plan.time}
+                  {chatPerson(plan).name} · {plan.plan.place}, {plan.plan.time}
                 </T>
                 <T v="meta" c={C.muted} numberOfLines={1}>
                   {plan.messages[plan.messages.length - 1]?.text}
@@ -348,12 +362,12 @@ export function Chats({ chats, onOpen }) {
       {chats
         .filter((c) => !c.plan)
         .map((c, i) => {
-          const p = personById(c.id);
+          const p = chatPerson(c);
           const last = c.messages[c.messages.length - 1];
           return (
             <Rise key={c.id} delay={60 * (i + 1)}>
               <Pressable accessibilityRole="button" onPress={() => onOpen(c.id)} style={styles.chatRow}>
-                <Avatar seed={p.seed} ring={p.tier === 'fire' ? 'fire' : p.tier === 'glow' ? 'glow' : 'verified'} />
+                <Avatar seed={p.seed} uri={p.photo} ring={p.tier === 'fire' ? 'fire' : p.tier === 'glow' ? 'glow' : 'verified'} />
                 <View style={{ flex: 1 }}>
                   <T style={{ fontFamily: F.semi }}>{p.name}</T>
                   <T v="meta" c={C.muted} numberOfLines={1}>
@@ -406,7 +420,7 @@ const REPLIES = ['Love that. Tell me more 😏', 'Sounds perfect. See you there?
 
 export function Chat({ chat, onSend, onBack, onPlan, live }) {
   const insets = useSafeAreaInsets();
-  const p = personById(chat.id);
+  const p = chatPerson(chat);
   const [text, setText] = useState('');
   const [typing, setTyping] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -429,7 +443,7 @@ export function Chat({ chat, onSend, onBack, onPlan, live }) {
       <LiquidBg />
       <View style={[styles.chatHead, { paddingTop: insets.top + 4 }]}>
         <IconButton name="back" label="Back to chats" onPress={onBack} />
-        <Avatar size={36} seed={p.seed} ring={p.tier === 'fire' ? 'fire' : 'glow'} />
+        <Avatar size={36} seed={p.seed} uri={p.photo} ring={p.tier === 'fire' ? 'fire' : 'glow'} />
         <View style={{ flex: 1 }}>
           <T style={{ fontFamily: F.semi }}>{p.name}</T>
           <T v="small" c={C.green}>
@@ -515,7 +529,7 @@ export function Chat({ chat, onSend, onBack, onPlan, live }) {
 export function Plan({ chat, onBack }) {
   const [share, setShare] = useState(true);
   const [check, setCheck] = useState(true);
-  const p = personById(chat.id);
+  const p = chatPerson(chat);
   return (
     <Screen scroll>
       <Header title={`Tonight with ${p.name}`} onBack={onBack} />
@@ -928,7 +942,7 @@ export function Support({ onBack }) {
   );
 }
 
-export function Ideas({ ideas, setIdeas, onBack }) {
+export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
   const [sort, setSort] = useState('top');
   const [draft, setDraft] = useState('');
   const vote = (id, dir) => {
@@ -938,6 +952,7 @@ export function Ideas({ ideas, setIdeas, onBack }) {
         if (i.id !== id) return i;
         const was = i.mine || 0;
         const now = was === dir ? 0 : dir;
+        if (i.real) onVote?.(i.id, now);
         return { ...i, mine: now, score: i.score - was + now };
       }),
     );
@@ -946,7 +961,9 @@ export function Ideas({ ideas, setIdeas, onBack }) {
     const t = draft.trim();
     if (!t) return;
     success();
-    setIdeas([{ id: `n${Date.now()}`, title: t, desc: '', by: 'You', cat: 'New', status: 'Open', score: 1, mine: 1 }, ...ideas]);
+    const tempId = `n${Date.now()}`;
+    setIdeas([{ id: tempId, title: t, desc: '', by: 'You', cat: 'New', status: 'Open', score: 1, mine: 1 }, ...ideas]);
+    onPost?.(t).then((id) => id && setIdeas((list) => list.map((i) => (i.id === tempId ? { ...i, id, real: true } : i))));
     setDraft('');
     setSort('new');
   };

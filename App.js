@@ -15,6 +15,7 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } f
 import { C } from './src/theme';
 import { CHATS, IDEAS, PEOPLE } from './src/data';
 import { TabBar } from './src/ui';
+import * as api from './src/backend';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
 const BLOCK_SCREENSHOTS = false;
@@ -59,6 +60,9 @@ export default function App() {
   const [stack, setStack] = useState([]);
   const [chats, setChats] = useState(CHATS);
   const [ideas, setIdeas] = useState(IDEAS);
+  const [online, setOnline] = useState(false);
+  const [deck, setDeck] = useState([]);
+  const [likesYou, setLikesYou] = useState([]);
 
   // Restore saved progress once.
   useEffect(() => {
@@ -72,6 +76,18 @@ export default function App() {
           setOnboarded(!!saved.onboarded);
         }
         setReady(true);
+        // Backend: sign in, and restore the profile from Supabase if this device has none.
+        api.ensureSession().then(async (id) => {
+          if (!alive || !id) return;
+          if (!raw) {
+            const remote = await api.loadMyProfile();
+            if (alive && remote?.onboarded) {
+              setProfile(remote.profile);
+              setOnboarded(true);
+            }
+          }
+          if (alive) setOnline(true);
+        });
       })
       .catch(() => alive && setReady(true));
     return () => {
@@ -82,6 +98,38 @@ export default function App() {
   useEffect(() => {
     if (ready) AsyncStorage.setItem(STORE, JSON.stringify({ profile, onboarded })).catch(() => {});
   }, [ready, profile, onboarded]);
+
+  // Save the profile to Supabase a moment after it changes (uploads new photos too).
+  useEffect(() => {
+    if (!online || !profile.name) return;
+    const t = setTimeout(async () => {
+      const uploaded = await api.saveProfile(profile, onboarded);
+      if (JSON.stringify(uploaded) !== JSON.stringify(profile.uploaded || {})) setProfile((p) => ({ ...p, uploaded }));
+    }, 800);
+    return () => clearTimeout(t);
+  }, [online, profile, onboarded]);
+
+  // Real people, matches and ideas once signed in and onboarded.
+  const refresh = useCallback(async () => {
+    const [d, l, c, i] = await Promise.all([api.loadDeck(profile), api.loadLikesYou(profile), api.loadChats(profile), api.loadIdeas()]);
+    setDeck(d);
+    setLikesYou(l);
+    setChats([...c, ...CHATS]);
+    if (i) setIdeas([...i, ...IDEAS]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.boundaries]);
+
+  useEffect(() => {
+    if (!online || !onboarded) return;
+    // refresh() only sets state after its network calls resolve.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    refresh();
+    return api.subscribe({
+      onMessage: (matchId, msg) =>
+        setChats((cs) => cs.map((c) => (c.matchId === matchId && !c.messages.some((m) => m.id === msg.id) ? { ...c, messages: [...c.messages, msg] } : c))),
+      onMatch: () => refresh(),
+    });
+  }, [online, onboarded, refresh]);
 
   // Discretion: block screenshots / recordings and blur the app switcher preview.
   // Screenshots are allowed while testing; set BLOCK_SCREENSHOTS to true again before launch.
@@ -106,11 +154,34 @@ export default function App() {
   const pop = () => setStack((s) => s.slice(0, -1));
   const replaceTop = (name, params) => setStack((s) => [...s.slice(0, -1), { name, params }]);
 
-  const sendMessage = (id, msg) => setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: [...c.messages, msg] } : c)));
+  const sendMessage = (id, msg) => {
+    const chat = chats.find((c) => c.id === id);
+    if (chat?.real && msg.me) {
+      const tempId = `local-${Date.now()}`;
+      setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: [...c.messages, { ...msg, id: tempId }] } : c)));
+      api.sendMessage(chat.matchId, msg.text).then((realId) => {
+        if (realId) setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: c.messages.filter((m) => m.id !== realId).map((m) => (m.id === tempId ? { ...m, id: realId } : m)) } : c)));
+      });
+      return;
+    }
+    setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: [...c.messages, msg] } : c)));
+  };
 
-  const like = (person) => {
+  // Resolves to true when liking makes a match.
+  const likeIt = async (person) => {
+    if (person.real) {
+      const matched = await api.like(person.id);
+      setDeck((d) => d.filter((p) => p.id !== person.id));
+      setLikesYou((l) => l.filter((p) => p.id !== person.id));
+      if (matched) await refresh();
+      return matched;
+    }
     // Sample data: Lina and Sam already liked you, so liking them is a match.
-    if (person.id === 'lina' || person.id === 'sam') push('match', { person });
+    return person.id === 'lina' || person.id === 'sam';
+  };
+
+  const like = async (person) => {
+    if (await likeIt(person)) push('match', { person });
   };
 
   const openChat = (person, firstMessage) => {
@@ -147,21 +218,27 @@ export default function App() {
             <ProfileView
               person={p.person}
               onClose={pop}
-              onLike={(person) => {
-                if (person.id === 'lina' || person.id === 'sam') replaceTop('match', { person });
+              onLike={async (person) => {
+                if (await likeIt(person)) replaceTop('match', { person });
                 else pop();
+              }}
+              onReport={(person) => person.real && api.report(person.id, 'Reported from profile')}
+              onBlock={(person) => {
+                if (!person.real) return pop();
+                api.block(person.id).then(refresh);
+                pop();
               }}
             />
           );
           break;
         case 'match':
-          screen = <Match person={p.person} onClose={pop} onChat={openChat} />;
+          screen = <Match person={p.person} me={profile} onClose={pop} onChat={openChat} />;
           break;
         case 'chat':
-          screen = <Chat key={chat.id} chat={chat} live={!chat.plan} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} />;
+          screen = chat ? <Chat key={chat.id} chat={chat} live={!chat.plan && !chat.real} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} /> : null;
           break;
         case 'plan':
-          screen = <Plan chat={chat} onBack={pop} />;
+          screen = chat ? <Plan chat={chat} onBack={pop} /> : null;
           break;
         case 'guide':
           screen = <GuideView guide={p.guide} onBack={pop} />;
@@ -173,7 +250,7 @@ export default function App() {
           screen = <Support onBack={pop} />;
           break;
         case 'ideas':
-          screen = <Ideas ideas={ideas} setIdeas={setIdeas} onBack={pop} />;
+          screen = <Ideas ideas={ideas} setIdeas={setIdeas} onPost={api.postIdea} onVote={api.voteIdea} onBack={pop} />;
           break;
         case 'code':
           screen = <CodeView onBack={pop} />;
@@ -183,8 +260,8 @@ export default function App() {
       }
     } else {
       const tabs = {
-        discover: <Discover deck={PEOPLE} onOpen={(person) => push('profile', { person })} onLike={like} />,
-        likes: <Likes onOpen={(person) => push('profile', { person })} />,
+        discover: <Discover deck={[...deck, ...PEOPLE]} onOpen={(person) => push('profile', { person })} onLike={like} />,
+        likes: <Likes people={[...likesYou, ...PEOPLE]} onOpen={(person) => push('profile', { person })} />,
         chats: <Chats chats={chats} onOpen={(id) => push('chat', { id })} />,
         lounge: <Lounge onGuide={(guide) => push('guide', { guide })} />,
         me: (
@@ -203,7 +280,7 @@ export default function App() {
       screen = (
         <View style={{ flex: 1 }}>
           <View style={{ flex: 1 }}>{tabs[tab]}</View>
-          <TabBar tab={tab} onTab={setTab} badges={{ likes: PEOPLE.length }} />
+          <TabBar tab={tab} onTab={setTab} badges={{ likes: likesYou.length + PEOPLE.length }} />
         </View>
       );
     }
