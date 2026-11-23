@@ -328,6 +328,13 @@
       "w": 1440,
       "h": 700,
       "title": "31 · Ward, the watchdog"
+    },
+    "Logos.dc.html": {
+      "x": 0,
+      "y": 15588,
+      "w": 1440,
+      "h": 760,
+      "title": "32 · App icon options"
     }
   },
   "order": [
@@ -375,7 +382,8 @@
     "DiscList.dc.html",
     "PhotoMask.dc.html",
     "SoundKit.dc.html",
-    "Watchdog.dc.html"
+    "Watchdog.dc.html",
+    "Logos.dc.html"
   ],
   "notes": {
     "t1": {
@@ -538,6 +546,13 @@
       "w": 380,
       "fill": "teal",
       "text": "Liquid motion system (on every phone screen):\n• two colour blobs (pink, blue) slowly morph and drift behind content, like ink in water\n• gradient buttons flow\n• a light flows along the tab bar\n• live dots pulse like sonar\n• the logo’s dot drips\n• taps squish with a springy bounce\n• cards and rows float up into place\n• match screen: rising bubbles + ripples\nRespects ‘reduce motion’ in phone settings."
+    },
+    "t15": {
+      "x": 0,
+      "y": 15308,
+      "text": "13 — Logo / app icon options",
+      "kind": "title1",
+      "maxW": 1440
     }
   },
   "designSystems": []
