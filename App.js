@@ -131,7 +131,7 @@ export default function App() {
     const [d, l, c, i] = await Promise.all([api.loadDeck(profile), api.loadLikesYou(profile), api.loadChats(profile), api.loadIdeas()]);
     setDeck(d);
     setLikesYou(l);
-    setChats([...c, ...CHATS]);
+    setChats(c.length ? c : CHATS); // examples only until the first real match
     if (i) setIdeas([...i, ...IDEAS]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.boundaries]);
@@ -351,7 +351,7 @@ export default function App() {
             onLike={like}
           />
         ),
-        likes: <Likes people={[...likesYou, ...PEOPLE]} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
+        likes: <Likes people={likesYou} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
         chats: <Chats chats={chats} onOpen={(id) => push('chat', { id })} />,
         lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onOpenPost={(post) => push('post', { post })} />,
         me: (
@@ -370,7 +370,7 @@ export default function App() {
       screen = (
         <View style={{ flex: 1 }}>
           <View style={{ flex: 1 }}>{tabs[tab]}</View>
-          <TabBar tab={tab} onTab={setTab} badges={{ likes: likesYou.length + PEOPLE.length }} />
+          <TabBar tab={tab} onTab={setTab} badges={{ likes: likesYou.length }} />
         </View>
       );
     }

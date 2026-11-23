@@ -112,6 +112,13 @@ export function Discover({ onOpen, onLike, deck: all, profile, filters, onFilter
       >
         <Pressable onPress={() => onOpen(person)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`}>
           <Photo seed={person.seed} uri={person.photo} blur={person.blurred || blurAll} style={styles.card} label="PHOTO">
+            {!person.real ? (
+              <View style={styles.exampleTag}>
+                <T v="small" c={C.ink2} style={{ fontFamily: F.semi, fontSize: 11 }}>
+                  Example profile
+                </T>
+              </View>
+            ) : null}
             <View style={styles.bars}>
               {[0, 1, 2, 3].map((b) => (
                 <View key={b} style={[styles.bar, b === 0 && { backgroundColor: C.ink }]} />
@@ -329,15 +336,29 @@ export function Match({ person, me, onChat, onClose }) {
 
 /* ---------- Likes you ---------- */
 
-export function Likes({ people = PEOPLE, onOpen, blurAll }) {
+export function Likes({ people: real = [], onOpen, blurAll }) {
+  // Real likes first; the examples only show while nobody has liked you yet.
+  const examples = real.length ? [] : PEOPLE;
+  const people = real.length ? real : examples;
   return (
     <Screen scroll>
       <T v="title" style={{ marginTop: 8 }}>
         Likes you
       </T>
       <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
-        Free for everyone, always. Like them back to match.
+        {real.length ? `${real.length} ${real.length === 1 ? 'person likes' : 'people like'} you. Like them back to match.` : 'Free for everyone, always. Like them back to match.'}
       </T>
+      {!real.length ? (
+        <Card style={{ marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: C.line }}>
+          <Icon name="heart" size={22} color={C.pinkL} />
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.semi }}>No likes yet</T>
+            <T v="small" c={C.muted}>
+              A complete profile gets noticed faster. Below are examples of how likes show up.
+            </T>
+          </View>
+        </Card>
+      ) : null}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
         {people.map((p, i) => (
           <Rise key={p.id} delay={i * 70} style={{ width: '48%' }}>
@@ -1018,6 +1039,7 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
 
 
 const styles = StyleSheet.create({
+  exampleTag: { position: 'absolute', top: 22, right: 14, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)', justifyContent: 'center', zIndex: 2 },
   complete: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, padding: 14, borderRadius: 22, backgroundColor: '#151217', borderWidth: 1, borderColor: C.line },
   nextStep: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8, height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: C.pinkBg },
   pctBadge: { position: 'absolute', bottom: -6, alignSelf: 'center', minWidth: 40, height: 20, borderRadius: 10, paddingHorizontal: 6, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.bg },
