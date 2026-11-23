@@ -3,13 +3,14 @@
 // The mask is burned into a new image on the phone, so the bare face is never uploaded.
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import Svg, { Circle, Defs, Ellipse, G, Image as SvgImage, LinearGradient as SvgLinear, Path, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, Ellipse, G, Image as SvgImage, LinearGradient as SvgLinear, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { File, Paths } from 'expo-file-system';
 import { C, F } from '../theme';
 import { Icon } from '../icons';
 import { Screen, T, Toggle, success, tap } from '../ui';
-import { MANUAL, MASK_EYE_X, MASK_EYE_Y, VH, VW, findFace } from '../faces';
+import { MANUAL, VH, VW, findFace } from '../faces';
+import { ART_BRIDGE_X, ART_EYE_Y, scalePlacement } from '../faceFit';
 
 // Everything is drawn in the design's 342 by 430 frame (see faces.js).
 const OUT_W = 1080;
@@ -56,6 +57,12 @@ function MaskDefs() {
         <Stop offset="0" stopColor="#7B3CFF" />
         <Stop offset="1" stopColor="#E3C8FF" />
       </SvgLinear>
+      <ClipPath id="maskLeftHalf">
+        <Rect x={-800} y={-800} width={971.6} height={2000} />
+      </ClipPath>
+      <ClipPath id="maskRightHalf">
+        <Rect x={170.4} y={-800} width={1000} height={2000} />
+      </ClipPath>
       <RadialGradient id="frost" cx="50%" cy="50%" r="50%">
         <Stop offset="0" stopColor="#2A2430" stopOpacity="0.98" />
         <Stop offset="0.8" stopColor="#2A2430" stopOpacity="0.95" />
@@ -100,16 +107,18 @@ function Bunny() {
   return (
     <G>
       {/* ears on a headband over the top of the head */}
-      <G opacity={0.98}>
-        <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
-        <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
-        <Path d="M116 94C108 64 110 20 120 6C130 20 132 64 128 92Z" fill="url(#earInner)" />
-        <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
-        <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
-        <Path d="M214 92C210 64 212 20 222 6C232 20 234 64 226 94Z" fill="url(#earInner)" />
+      <G transform="translate(0 16)">
+        <G opacity={0.98}>
+          <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+          <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
+          <Path d="M116 94C108 64 110 20 120 6C130 20 132 64 128 92Z" fill="url(#earInner)" />
+          <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+          <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
+          <Path d="M214 92C210 64 212 20 222 6C232 20 234 64 226 94Z" fill="url(#earInner)" />
+        </G>
+        <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
+        <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
       </G>
-      <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
-      <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
       <EyeMask fill="url(#satin)" trim="url(#trimPink)" />
       <Lace color="#FF7FB5" />
       {/* little heart at the temple */}
@@ -139,14 +148,16 @@ function Kitten() {
   return (
     <G>
       {/* cat ears on a headband */}
-      <Path d="M100 118L112 36L156 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
-      <Path d="M100 118L112 36L156 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
-      <Path d="M112 104L118 60L142 94Z" fill="url(#earInner)" />
-      <Path d="M242 118L230 36L186 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
-      <Path d="M242 118L230 36L186 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
-      <Path d="M230 104L224 60L200 94Z" fill="url(#earInner)" />
-      <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
-      <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
+      <G transform="translate(0 16)">
+        <Path d="M100 118L112 36L156 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+        <Path d="M100 118L112 36L156 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
+        <Path d="M112 104L118 60L142 94Z" fill="url(#earInner)" />
+        <Path d="M242 118L230 36L186 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+        <Path d="M242 118L230 36L186 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
+        <Path d="M230 104L224 60L200 94Z" fill="url(#earInner)" />
+        <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
+        <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
+      </G>
       <EyeMask fill="url(#satin)" trim="url(#trimPink)" />
       {/* whiskers on the cheeks */}
       <G stroke="#FF9CC6" strokeWidth={1.8} strokeLinecap="round" opacity={0.75}>
@@ -201,7 +212,25 @@ function Thumb({ id }) {
 }
 
 const dist = (t) => Math.hypot(t[0].pageX - t[1].pageX, t[0].pageY - t[1].pageY);
-const transformFor = (p) => `translate(${p.x} ${p.y}) rotate(${p.r || 0}) scale(${p.s}) translate(${-MASK_EYE_X} ${-MASK_EYE_Y})`;
+// Each half of the mask gets its own width (sl, sr), so it follows a turned head. See faceFit.js.
+const halfTransform = (p, sx) => `translate(${p.x} ${p.y}) rotate(${p.r || 0}) scale(${sx} ${p.sy}) translate(${-ART_BRIDGE_X} ${-ART_EYE_Y})`;
+
+function Fitted({ place, Comp }) {
+  return (
+    <G>
+      <G transform={halfTransform(place, place.sl)}>
+        <G clipPath="url(#maskLeftHalf)">
+          <Comp />
+        </G>
+      </G>
+      <G transform={halfTransform(place, place.sr)}>
+        <G clipPath="url(#maskRightHalf)">
+          <Comp />
+        </G>
+      </G>
+    </G>
+  );
+}
 
 // Draws one photo with its mask, full size and off screen, then hands back the burned-in PNG.
 function Burner({ uri, place, mask, onDone }) {
@@ -226,11 +255,7 @@ function Burner({ uri, place, mask, onDone }) {
           <MaskDefs />
         </Defs>
         <SvgImage href={{ uri }} x={0} y={0} width={VW} height={VH} preserveAspectRatio="xMidYMid slice" onLoad={() => setTimeout(shoot, 120)} />
-        {M ? (
-          <G transform={transformFor(place)}>
-            <M />
-          </G>
-        ) : null}
+        {M ? <Fitted place={place} Comp={M} /> : null}
       </Svg>
     </View>
   );
@@ -303,9 +328,15 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
         const k = VW / (Dimensions.get('window').width - 48);
         if (t.length >= 2) {
           if (!from.pinch) from.pinch = { d: dist(t) };
-          set({ ...from, pinch: undefined, s: Math.max(0.3, Math.min(3, (from.s * dist(t)) / from.pinch.d)) });
+          const zoom = Math.max(0.3, Math.min(3, dist(t) / from.pinch.d));
+          set({ ...scalePlacement(from, zoom), pinch: undefined });
         } else if (!from.pinch) {
-          set({ ...from, pinch: undefined, x: from.x + g.dx * k, y: from.y + g.dy * k });
+          set({
+            ...from,
+            pinch: undefined,
+            x: from.x + g.dx * k,
+            y: from.y + g.dy * k,
+          });
         }
       },
     });
@@ -354,7 +385,13 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
         </Pressable>
         <T style={{ fontFamily: F.semi }}>Mask your face</T>
         <Pressable accessibilityRole="button" onPress={done} disabled={busy} hitSlop={10}>
-          {busy ? <ActivityIndicator color={C.pink} /> : <T c="#FF7FB5" style={{ fontFamily: F.semi }}>Done</T>}
+          {busy ? (
+            <ActivityIndicator color={C.pink} />
+          ) : (
+            <T c="#FF7FB5" style={{ fontFamily: F.semi }}>
+              Done
+            </T>
+          )}
         </Pressable>
       </View>
 
@@ -364,11 +401,7 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
             <MaskDefs />
           </Defs>
           <SvgImage href={{ uri: photos[idx] }} x={0} y={0} width={VW} height={VH} preserveAspectRatio="xMidYMid slice" />
-          {M && status !== 'finding' && status ? (
-            <G transform={transformFor(pos)}>
-              <M />
-            </G>
-          ) : null}
+          {M && status !== 'finding' && status ? <Fitted place={pos} Comp={M} /> : null}
         </Svg>
         <View style={[styles.pill, { left: 12, top: 12 }]} pointerEvents="none">
           {status === 'found' ? <View style={[styles.dot, { backgroundColor: '#6FA8FF' }]} /> : null}
@@ -418,7 +451,17 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
             >
               {on ? (
                 <LinearGradient colors={[C.pink, C.blue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ring}>
-                  <View style={[styles.bubble, { width: 56, height: 56, borderRadius: 28, borderWidth: 0 }]}>
+                  <View
+                    style={[
+                      styles.bubble,
+                      {
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        borderWidth: 0,
+                      },
+                    ]}
+                  >
                     <Thumb id={m.id} />
                   </View>
                 </LinearGradient>
@@ -448,7 +491,14 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
       ) : null}
 
       <View style={{ flex: 1 }} />
-      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 8,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Icon name="lock" size={16} color="#6FA8FF" />
         <T v="small" c={C.safeInk}>
           Added on your phone. Your bare face never leaves it.
@@ -461,16 +511,89 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
 }
 
 const styles = StyleSheet.create({
-  head: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stage: { marginTop: 8, borderRadius: 24, overflow: 'hidden', backgroundColor: C.surf2, alignSelf: 'center' },
-  pill: { position: 'absolute', minHeight: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: 'rgba(14,12,16,0.75)', flexDirection: 'row', alignItems: 'center', gap: 6 },
+  head: {
+    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  stage: {
+    marginTop: 8,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: C.surf2,
+    alignSelf: 'center',
+  },
+  pill: {
+    position: 'absolute',
+    minHeight: 28,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(14,12,16,0.75)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   dot: { width: 7, height: 7, borderRadius: 4 },
-  thumbs: { flexDirection: 'row', gap: 8, marginTop: 12, justifyContent: 'center' },
-  thumb: { width: 40, height: 50, borderRadius: 10, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', backgroundColor: C.surf2 },
-  thumbTick: { position: 'absolute', right: 2, bottom: 2, width: 14, height: 14, borderRadius: 7, backgroundColor: '#3B7BFF', alignItems: 'center', justifyContent: 'center' },
+  thumbs: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    justifyContent: 'center',
+  },
+  thumb: {
+    width: 40,
+    height: 50,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: C.surf2,
+  },
+  thumbTick: {
+    position: 'absolute',
+    right: 2,
+    bottom: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#3B7BFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
-  ring: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
-  bubble: { width: 58, height: 58, borderRadius: 29, backgroundColor: C.surf2, borderWidth: 2, borderColor: '#2E2830', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  applyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, padding: 14, backgroundColor: C.surf, borderRadius: 16 },
-  offscreen: { position: 'absolute', left: -(OUT_W + 1000), top: 0, width: OUT_W, height: OUT_H },
+  ring: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bubble: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: C.surf2,
+    borderWidth: 2,
+    borderColor: '#2E2830',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  applyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 16,
+    padding: 14,
+    backgroundColor: C.surf,
+    borderRadius: 16,
+  },
+  offscreen: {
+    position: 'absolute',
+    left: -(OUT_W + 1000),
+    top: 0,
+    width: OUT_W,
+    height: OUT_H,
+  },
 });

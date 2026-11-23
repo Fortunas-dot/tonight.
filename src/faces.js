@@ -1,21 +1,25 @@
 // On-device face finding (Google ML Kit). Nothing leaves the phone.
-// Turns a detected face into where the mask goes in the editor's 342 × 430 frame.
+// Finds the face outline, eyes and nose bridge, and turns them into where the mask goes (see faceFit.js).
 import { Image } from 'react-native';
+import { MANUAL, facePartsFromMlKit, fitMask } from './faceFit';
 
+export { MANUAL };
 export const VW = 342;
 export const VH = 430;
-// In the mask artwork the eye holes sit 72 units apart, centred on (171, 225).
-const MASK_EYE_GAP = 72;
-export const MASK_EYE_X = 171;
-export const MASK_EYE_Y = 225;
-// How far (in eye-gaps) the mask's eye line sits below the detected eye centres.
-const DROP = 0.2;
 
 let detector = null;
 async function getDetector() {
   if (detector) return detector;
   const { RNMLKitFaceDetector } = await import('@infinitered/react-native-mlkit-face-detection');
-  const d = new RNMLKitFaceDetector({ performanceMode: 'accurate', landmarkMode: true, classificationMode: false, contourMode: false }, true);
+  const d = new RNMLKitFaceDetector(
+    {
+      performanceMode: 'accurate',
+      landmarkMode: true,
+      contourMode: true,
+      classificationMode: false,
+    },
+    true,
+  );
   await d.initialize();
   detector = d;
   return d;
@@ -35,7 +39,7 @@ async function localCopy(uri) {
   return file.uri;
 }
 
-/** Where the mask should sit on this photo: { x, y, s, r, auto: true }, or null when no face is found. */
+/** Where the mask should sit on this photo (see fitMask), or null when no face is found. */
 export async function findFace(uri) {
   try {
     const local = await localCopy(uri);
@@ -52,37 +56,9 @@ export async function findFace(uri) {
     const oy = (VH - size.height * f) / 2;
     const toFrame = (p) => ({ x: ox + p.x * f, y: oy + p.y * f });
 
-    const eyes = (face.landmarks || []).filter((l) => (l.type === 'leftEye' || l.type === 'rightEye') && l.position).map((l) => toFrame(l.position));
-    let a;
-    let b;
-    if (eyes.length === 2) {
-      [a, b] = eyes[0].x <= eyes[1].x ? eyes : [eyes[1], eyes[0]];
-    } else {
-      // No eye landmarks: estimate them from the face box.
-      const fr = face.frame;
-      const tl = toFrame(fr.origin);
-      const w = fr.size.x * f;
-      const h = fr.size.y * f;
-      a = { x: tl.x + w * 0.3, y: tl.y + h * 0.4 };
-      b = { x: tl.x + w * 0.7, y: tl.y + h * 0.4 };
-    }
-    const gap = Math.hypot(b.x - a.x, b.y - a.y);
-    if (gap < 4) return null;
-    const angle = Math.atan2(b.y - a.y, b.x - a.x);
-    // Nudge the mask down the face a little so it rests on the eyes and the bridge of the nose.
-    const down = gap * DROP;
-    return {
-      x: (a.x + b.x) / 2 - Math.sin(angle) * down,
-      y: (a.y + b.y) / 2 + Math.cos(angle) * down,
-      s: gap / MASK_EYE_GAP,
-      r: (angle * 180) / Math.PI,
-      auto: true,
-    };
+    return fitMask(facePartsFromMlKit(face, toFrame));
   } catch (e) {
     console.warn('[faces] detection failed', e?.message || e);
     return null;
   }
 }
-
-/** Default spot when no face was found: centred, upright. */
-export const MANUAL = { x: MASK_EYE_X, y: MASK_EYE_Y, s: 1, r: 0, auto: false };
