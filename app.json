@@ -44,7 +44,8 @@
           "microphonePermission": false,
           "cameraPermission": "Take a photo or verify that you are a real person."
         }
-      ]
+      ],
+      "expo-image"
     ],
     "owner": "fortunascreations",
     "extra": {
