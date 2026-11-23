@@ -35,6 +35,7 @@ import {
   Likes,
 } from './src/screens/Main';
 import { Compose, Lounge, PostView } from './src/screens/Lounge';
+import { EditProfile } from './src/screens/ProfileFields';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
 const BLOCK_SCREENSHOTS = false;
@@ -273,6 +274,9 @@ export default function App() {
           break;
         case 'guide':
           screen = <GuideView guide={p.guide} onBack={pop} />;
+          break;
+        case 'editProfile':
+          screen = <EditProfile profile={profile} setProfile={setProfile} onBack={pop} />;
           break;
         case 'privacy':
           screen = <Privacy onBack={pop} />;

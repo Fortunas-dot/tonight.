@@ -646,7 +646,7 @@ export function Me({ profile, go, onRestart }) {
             {profile.verified ? <Verified size={18} /> : null}
           </View>
           <T v="meta" c={C.muted}>
-            Level 1 · <T v="meta" c={C.violetL}>Verified</T>
+            {profile.city ? `${profile.city}${profile.country ? `, ${profile.country}` : ''} · ` : ''}Level 1 · <T v="meta" c={C.violetL}>Verified</T>
           </T>
         </View>
       </View>
@@ -667,7 +667,15 @@ export function Me({ profile, go, onRestart }) {
       <T v="label" c={C.muted} style={{ marginTop: 22, marginBottom: 6 }}>
         You
       </T>
+      {profile.bio ? (
+        <Card style={{ marginBottom: 10 }}>
+          <T c={C.ink2} style={{ lineHeight: 21 }}>
+            “{profile.bio}”
+          </T>
+        </Card>
+      ) : null}
       <Card style={{ paddingVertical: 0 }}>
+        <Row icon="pin" iconColor={C.pinkL} iconBg={C.pinkBg} title="Edit profile" onPress={() => go('editProfile')} />
         <Row icon="lock" iconColor={C.blueL} iconBg={C.blueBg} title="Privacy & discretion" onPress={() => go('privacy')} />
         <Row icon="flame" iconColor={C.violetL} iconBg={C.violetBg} title="The Tonight Code" onPress={() => go('code')} last />
       </Card>

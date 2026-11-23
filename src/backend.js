@@ -13,8 +13,13 @@ export async function ensureSession() {
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session) {
-      uid = data.session.user.id;
-      return uid;
+      // Check the saved login still exists on the server (an account can be removed); otherwise start fresh.
+      const { data: who, error: whoErr } = await supabase.auth.getUser();
+      if (!whoErr && who?.user) {
+        uid = who.user.id;
+        return uid;
+      }
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
     }
     const { data: signed, error } = await supabase.auth.signInAnonymously();
     if (error) throw error;
@@ -85,7 +90,9 @@ async function saveProfileNow(profile, onboarded) {
     intents: profile.intents ?? [],
     boundaries: profile.boundaries ?? {},
     turn_ons: profile.turnOns ?? [],
-    bio: profile.bio ?? null,
+    bio: profile.bio || null,
+    country: profile.country || null,
+    city: profile.city || null,
     prompt: profile.prompt ?? null,
     photos: paths,
     blur_face: !!profile.blurFace,
@@ -128,6 +135,8 @@ export async function loadMyProfile() {
       boundaries: data.boundaries,
       turnOns: data.turn_ons,
       bio: data.bio,
+      country: data.country,
+      city: data.city,
       prompt: data.prompt,
       photos: urls,
       uploaded: Object.fromEntries(urls.map((u, i) => [u, data.photos[i]])),
@@ -176,7 +185,8 @@ function toPerson(row, me, url) {
     real: true,
     name: row.name || 'Someone',
     age: row.age || '',
-    dist: 'Nearby',
+    dist: row.city || 'Nearby',
+    country: row.country || null,
     until: time(row.live_until),
     fit: Math.min(7, both.length),
     tier: row.verified ? 'verified' : 'glow',

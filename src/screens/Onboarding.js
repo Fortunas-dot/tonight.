@@ -7,6 +7,7 @@ import { C, F, FIRE, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { BOUNDARIES, INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS } from '../data';
 import { MaskEditor } from './MaskEditor';
+import { ProfileFields } from './ProfileFields';
 import * as api from '../backend';
 import { versionLabel } from '../version';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
@@ -280,6 +281,9 @@ export function Basics({ profile, setProfile, next, back }) {
   const [age, setAge] = useState(profile.age ? String(profile.age) : '');
   const [gender, setGender] = useState(profile.gender || 'Woman');
   const [show, setShow] = useState(profile.show || ['Men']);
+  const [bio, setBio] = useState(profile.bio || '');
+  const [country, setCountry] = useState(profile.country || '');
+  const [city, setCity] = useState(profile.city || '');
   const ageNum = parseInt(age, 10);
   const valid = name.trim().length > 0 && ageNum >= 18 && ageNum < 100;
   const toggleShow = (s) => setShow(show.includes(s) ? show.filter((x) => x !== s) : [...show, s]);
@@ -290,7 +294,7 @@ export function Basics({ profile, setProfile, next, back }) {
         Let’s start with you
       </T>
       <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
-        Only your first name and age are shown.
+        Only your first name, age and city are shown.
       </T>
       <T v="label" c={C.muted} style={styles.lbl}>
         First name or nickname
@@ -321,11 +325,12 @@ export function Basics({ profile, setProfile, next, back }) {
           <Chip key={g} label={g} tone="blue" on={show.includes(g)} onPress={() => toggleShow(g)} />
         ))}
       </View>
+      <ProfileFields bio={bio} setBio={setBio} country={country} setCountry={setCountry} city={city} setCity={setCity} />
       <View style={{ height: 30 }} />
       <Next
         disabled={!valid}
         onPress={() => {
-          setProfile({ ...profile, name: name.trim(), age: ageNum, gender, show });
+          setProfile({ ...profile, name: name.trim(), age: ageNum, gender, show, bio: bio.trim(), country: country.trim(), city: city.trim() });
           next();
         }}
       />
@@ -815,6 +820,17 @@ export function Preview({ profile, next, back }) {
             </T>
             {profile.verified ? <Verified /> : null}
           </View>
+          {profile.city ? (
+            <T v="meta" c={C.ink2}>
+              {profile.city}
+              {profile.country ? `, ${profile.country}` : ''}
+            </T>
+          ) : null}
+          {profile.bio ? (
+            <T c={C.ink2} numberOfLines={2} style={{ marginTop: 6, fontSize: 14, lineHeight: 20 }}>
+              “{profile.bio}”
+            </T>
+          ) : null}
           <View style={[styles.wrap, { marginTop: 10, gap: 6 }]}>
             {(profile.intents || []).concat(profile.turnOns || []).slice(0, 4).map((t) => (
               <View key={t} style={styles.tag}>
