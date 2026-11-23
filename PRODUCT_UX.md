@@ -94,6 +94,15 @@ Swinburne University (consent/safety), Fast Company (Pure).
   into a warm chord), Ember seal (crackle while holding, low thump on seal), Heartbeat (like while live).
 - Frames level 2 (Trusted) is now earned with 3 positive check-ins from matches (lab-tested removed).
 
+## 3g. Ward, the watchdog
+
+Safety mascot in the cartoon-people style: a Doberman with tall pointy ears, blue-black coat with tan markings, amber eyes,
+blue collar with a shield tag. Calm and alert, never scary. Three poses:
+- **On watch** (alert): the Tonight Code, Welcome, Privacy. "I guard the Code. You enjoy the night."
+- **All good?** (wink, paw up): check-ins, plan safety, arrival check. "Tap if you're safe. I'll tell Sanne."
+- **I've got this** (serious, holding a shield): reports, blocking, the support safety queue.
+Placed on the Code's watchdog note, the after-check-in banner, and the "Tell Ward" report shortcut in Support.
+
 ## 4. Visual system
 
 Duotone “two energies”: hot pink-red + electric blue, blended through violet.

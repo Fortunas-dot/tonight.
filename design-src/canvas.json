@@ -319,6 +319,13 @@
       "h": 600,
       "title": "30 · Sound design kit (press play)",
       "is_interactive": true
+    },
+    "Watchdog.dc.html": {
+      "x": 0,
+      "y": 14512,
+      "w": 1440,
+      "h": 700,
+      "title": "31 · Ward, the watchdog"
     }
   },
   "order": [
@@ -365,7 +372,8 @@
     "DiscDrop.dc.html",
     "DiscList.dc.html",
     "PhotoMask.dc.html",
-    "SoundKit.dc.html"
+    "SoundKit.dc.html",
+    "Watchdog.dc.html"
   ],
   "notes": {
     "t1": {
@@ -514,6 +522,13 @@
       "w": 380,
       "fill": "blue",
       "text": "B Live grid: see many at once, fastest for ‘tonight’ energy.\nC Radar: playful sense of who’s near, by distance band only (never direction).\nD Full-screen stack: immersive, one person at a time, swipe up.\nE Nightly drop: 6 hand-picked people at 21:00, scarcity beats endless swiping.\nF Discreet list: fit-first, faces blurred until tapped, safe to open in public.\n\nThey can also combine: e.g. E as the default, B as ‘browse all’."
+    },
+    "t13": {
+      "x": 0,
+      "y": 14232,
+      "text": "12 — Ward, our watchdog",
+      "kind": "title1",
+      "maxW": 1440
     }
   },
   "designSystems": []
