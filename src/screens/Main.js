@@ -1,0 +1,1062 @@
+import { useEffect, useState } from 'react';
+import { Alert, Animated, Easing, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { C, F, GRAD } from '../theme';
+import { Icon, Verified } from '../icons';
+import { GUIDES, PEOPLE, POSTS, VOWS, personById } from '../data';
+import {
+  Avatar,
+  Card,
+  GhostButton,
+  GradientButton,
+  Header,
+  IconButton,
+  LiquidBg,
+  LiveDot,
+  Photo,
+  Rise,
+  Row,
+  Screen,
+  Segmented,
+  T,
+  Toggle,
+  success,
+  tap,
+  thud,
+} from '../ui';
+
+/* ---------- Discover ---------- */
+
+export function Discover({ onOpen, onLike, deck }) {
+  const [mode, setMode] = useState('live');
+  const [i, setI] = useState(0);
+  const [fly] = useState(() => new Animated.Value(0));
+  const person = deck[i % deck.length];
+
+  const go = (dir) => {
+    if (dir > 0) thud();
+    else tap();
+    Animated.timing(fly, { toValue: dir, duration: 260, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
+      if (dir > 0) onLike(person);
+      fly.setValue(0);
+      setI((x) => x + 1);
+    });
+  };
+
+  return (
+    <Screen pad={12} bottom={8}>
+      <View style={styles.topbar}>
+        <T style={{ fontFamily: F.displayX, fontSize: 24, letterSpacing: -0.5 }}>
+          tonight<T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 24 }}>.</T>
+        </T>
+        <View style={styles.modeSeg}>
+          <Pressable onPress={() => setMode('live')} style={[styles.modeBtn, mode === 'live' && { backgroundColor: C.ink }]} accessibilityRole="button" accessibilityState={{ selected: mode === 'live' }}>
+            <LiveDot />
+            <T v="label" c={mode === 'live' ? C.bg : C.muted} style={{ fontSize: 13 }}>
+              Live now · {deck.length}
+            </T>
+          </Pressable>
+          <Pressable onPress={() => setMode('week')} style={[styles.modeBtn, mode === 'week' && { backgroundColor: C.ink }]} accessibilityRole="button" accessibilityState={{ selected: mode === 'week' }}>
+            <T v="label" c={mode === 'week' ? C.bg : C.muted} style={{ fontSize: 13 }}>
+              This week
+            </T>
+          </Pressable>
+        </View>
+      </View>
+      <Animated.View
+        style={{
+          flex: 1,
+          marginTop: 6,
+          transform: [
+            { translateX: fly.interpolate({ inputRange: [-1, 0, 1], outputRange: [-420, 0, 420] }) },
+            { rotate: fly.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-14deg', '0deg', '14deg'] }) },
+          ],
+        }}
+      >
+        <Pressable onPress={() => onOpen(person)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`}>
+          <Photo seed={person.seed} style={styles.card} label="PHOTO">
+            <View style={styles.bars}>
+              {[0, 1, 2, 3].map((b) => (
+                <View key={b} style={[styles.bar, b === 0 && { backgroundColor: C.ink }]} />
+              ))}
+            </View>
+            <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.94)']} style={styles.cardInfo}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <T style={{ fontFamily: F.display, fontSize: 32, letterSpacing: -0.6 }}>
+                  {person.name}, {person.age}
+                </T>
+                <Verified size={22} />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                <T v="meta" c={C.ink2}>
+                  {person.dist}
+                </T>
+                <T v="meta" c={C.green}>
+                  Live until {person.until}
+                </T>
+              </View>
+              <T style={{ marginTop: 10 }}>“{person.bio}”</T>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+                <View style={[styles.pill, { backgroundColor: C.pink }]}>
+                  <T v="small" c="#FFFFFF" style={{ fontFamily: F.semi }}>
+                    {person.fit} of 7 boundaries fit
+                  </T>
+                </View>
+                <View style={styles.pill}>
+                  <T v="small">Tested {person.tested}</T>
+                </View>
+                <View style={styles.pill}>
+                  <T v="small">Shows up {person.showsUp}%</T>
+                </View>
+              </View>
+            </LinearGradient>
+          </Photo>
+        </Pressable>
+      </Animated.View>
+      <View style={styles.actions}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Pass" onPress={() => go(-1)} style={styles.roundGhost}>
+          <Icon name="close" size={24} stroke={2.2} />
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Like" onPress={() => go(1)}>
+          <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.roundLike}>
+            <Icon name="heart" size={28} color="#FFFFFF" fill="#FFFFFF" stroke={1} />
+          </LinearGradient>
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open profile" onPress={() => onOpen(person)} style={styles.roundGhost}>
+          <Icon name="up" size={24} stroke={2.2} />
+        </Pressable>
+      </View>
+    </Screen>
+  );
+}
+
+/* ---------- Profile ---------- */
+
+export function ProfileView({ person, onClose, onLike }) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
+        <Photo seed={person.seed} style={{ height: 440 }} label="PHOTO">
+          <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 200 }} />
+        </Photo>
+        <View style={{ paddingHorizontal: 24, marginTop: -70 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
+            <T style={{ fontFamily: F.display, fontSize: 38, letterSpacing: -1.2 }}>{person.name}</T>
+            <T style={{ fontFamily: F.displayM, fontSize: 30 }} c="rgba(244,239,234,0.6)">
+              {person.age}
+            </T>
+            <Verified />
+          </View>
+          <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
+            {person.dist} · <T v="meta" c={C.green}>Live until {person.until}</T> · Tested {person.tested}
+          </T>
+          <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 8 }}>
+            You both want
+          </T>
+          {person.both.map((b) => (
+            <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 34 }}>
+              <LinearGradient colors={GRAD} style={styles.check}>
+                <Icon name="check" size={11} color="#FFFFFF" stroke={4} />
+              </LinearGradient>
+              <T style={{ fontSize: 16 }}>{b}</T>
+            </View>
+          ))}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 34 }}>
+            <View style={[styles.check, { backgroundColor: '#5A4A22' }]}>
+              <T v="small" c="#FFF3D1" style={{ fontFamily: F.bold }}>
+                ?
+              </T>
+            </View>
+            <T style={{ fontSize: 16 }} c={C.ink2}>
+              Maybe: {person.maybe}
+            </T>
+          </View>
+          <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 8 }}>
+            Ideal night
+          </T>
+          <T style={{ fontFamily: F.displayM, fontSize: 21, lineHeight: 28 }}>“{person.prompt}”</T>
+        </View>
+      </ScrollView>
+      <View style={[styles.closeWrap, { top: insets.top + 8 }]}>
+        <IconButton name="down" label="Close profile" onPress={onClose} style={styles.glass} />
+        <IconButton
+          name="dots"
+          label="Report or block"
+          onPress={() => Alert.alert('Report or block', `Ward will review ${person.name}'s profile.`, [{ text: 'Report', onPress: success }, { text: 'Block', style: 'destructive' }, { text: 'Cancel', style: 'cancel' }])}
+          style={styles.glass}
+        />
+      </View>
+      <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} locations={[0, 0.4]} style={[styles.stickyBar, { paddingBottom: insets.bottom + 14 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Pass" onPress={onClose} style={styles.roundGhost}>
+          <Icon name="close" size={22} stroke={2.2} />
+        </Pressable>
+        <GradientButton title={`Like ${person.name}`} onPress={() => onLike(person)} style={{ flex: 1 }} />
+      </LinearGradient>
+    </View>
+  );
+}
+
+/* ---------- Match ---------- */
+
+function Bubble({ delay, left, size }) {
+  const [y] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(y, { toValue: 1, duration: 7000, delay, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [y, delay]);
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        bottom: -40,
+        left,
+        width: size,
+        height: size,
+        borderRadius: size,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.4)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        opacity: y.interpolate({ inputRange: [0, 0.1, 0.8, 1], outputRange: [0, 0.9, 0.6, 0] }),
+        transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [0, -900] }) }],
+      }}
+    />
+  );
+}
+
+export function Match({ person, onChat, onClose }) {
+  const insets = useSafeAreaInsets();
+  const [pop] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    success();
+    Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 8, bounciness: 12 }).start();
+  }, [pop]);
+  return (
+    <LinearGradient colors={[C.pink, C.violet, C.blue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 20, paddingHorizontal: 24 }}>
+      {[[30, 14, 0], [90, 22, 1500], [170, 10, 3000], [250, 18, 900], [320, 12, 2400], [200, 26, 4200]].map(([l, s, d]) => (
+        <Bubble key={l} left={l} size={s} delay={d} />
+      ))}
+      <View style={{ alignItems: 'flex-end' }}>
+        <IconButton name="close" label="Close" onPress={onClose} color="#FFFFFF" />
+      </View>
+      <Animated.View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 30, transform: [{ scale: pop }] }}>
+        <View style={styles.matchPhoto}>
+          <Photo seed={5} style={{ flex: 1 }} />
+        </View>
+        <View style={[styles.matchPhoto, { marginLeft: -36 }]}>
+          <Photo seed={person.seed} style={{ flex: 1 }} />
+        </View>
+      </Animated.View>
+      <T style={{ fontFamily: F.displayX, fontSize: 52, letterSpacing: -1.6, textAlign: 'center', marginTop: 28 }} c="#FFFFFF">
+        It’s mutual.
+      </T>
+      <T c="#FFFFFF" style={{ textAlign: 'center', fontSize: 16, marginTop: 10 }}>
+        You and {person.name} are both live tonight{'\n'}and fit on {person.fit} of 7 boundaries.
+      </T>
+      <View style={styles.matchNote}>
+        <Icon name="clock" size={20} color="#FFFFFF" />
+        <T c="#FFFFFF" style={{ flex: 1, fontSize: 14 }}>
+          Open for 48 hours. Make a plan together and it stays.
+        </T>
+      </View>
+      <View style={{ flex: 1 }} />
+      <Pressable accessibilityRole="button" onPress={() => onChat(person, 'Drink at Bar Mona, 21:30?')} style={styles.matchOpt}>
+        <T c="#FFFFFF">Drink at Bar Mona, 21:30?</T>
+      </Pressable>
+      <Pressable accessibilityRole="button" onPress={() => onChat(person)} style={[styles.matchCta]}>
+        <T v="label" c="#5B2BD9" style={{ fontSize: 16 }}>
+          Write my own message
+        </T>
+      </Pressable>
+      <Pressable onPress={onClose} style={{ alignItems: 'center', paddingVertical: 14 }}>
+        <T v="label" c="#FFFFFF">
+          Keep browsing
+        </T>
+      </Pressable>
+    </LinearGradient>
+  );
+}
+
+/* ---------- Likes you ---------- */
+
+export function Likes({ onOpen }) {
+  return (
+    <Screen scroll>
+      <T v="title" style={{ marginTop: 8 }}>
+        Likes you
+      </T>
+      <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
+        Free for everyone, always. Like them back to match.
+      </T>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
+        {PEOPLE.map((p, i) => (
+          <Rise key={p.id} delay={i * 70} style={{ width: '48%' }}>
+            <Pressable accessibilityRole="button" onPress={() => onOpen(p)}>
+              <Photo seed={p.seed} style={{ height: 200, borderRadius: 18 }}>
+                <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.9)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10, paddingTop: 30 }}>
+                  <T style={{ fontFamily: F.display, fontSize: 16 }}>
+                    {p.name}, {p.age}
+                  </T>
+                  <T v="small" c={C.ink2}>
+                    {p.fit}/7 fit · {p.dist}
+                  </T>
+                </LinearGradient>
+              </Photo>
+            </Pressable>
+          </Rise>
+        ))}
+      </View>
+    </Screen>
+  );
+}
+
+/* ---------- Chats ---------- */
+
+export function Chats({ chats, onOpen }) {
+  const plan = chats.find((c) => c.plan);
+  return (
+    <Screen scroll>
+      <T v="title" style={{ marginTop: 8 }}>
+        Chats
+      </T>
+      {plan ? (
+        <Rise>
+          <Pressable accessibilityRole="button" onPress={() => onOpen(plan.id)}>
+            <Card style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24 }}>
+              <Avatar seed={personById(plan.id).seed} ring="fire" />
+              <View style={{ flex: 1 }}>
+                <T v="small" c={C.pinkL} style={{ fontFamily: F.semi, letterSpacing: 0.3 }}>
+                  TONIGHT
+                </T>
+                <T style={{ fontFamily: F.semi }}>
+                  {personById(plan.id).name} · {plan.plan.place}, {plan.plan.time}
+                </T>
+                <T v="meta" c={C.muted} numberOfLines={1}>
+                  {plan.messages[plan.messages.length - 1]?.text}
+                </T>
+              </View>
+            </Card>
+          </Pressable>
+        </Rise>
+      ) : null}
+      <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 4 }}>
+        Make a plan to keep these
+      </T>
+      {chats
+        .filter((c) => !c.plan)
+        .map((c, i) => {
+          const p = personById(c.id);
+          const last = c.messages[c.messages.length - 1];
+          return (
+            <Rise key={c.id} delay={60 * (i + 1)}>
+              <Pressable accessibilityRole="button" onPress={() => onOpen(c.id)} style={styles.chatRow}>
+                <Avatar seed={p.seed} ring={p.tier === 'fire' ? 'fire' : p.tier === 'glow' ? 'glow' : 'verified'} />
+                <View style={{ flex: 1 }}>
+                  <T style={{ fontFamily: F.semi }}>{p.name}</T>
+                  <T v="meta" c={C.muted} numberOfLines={1}>
+                    {last ? last.text : 'New match. Your move.'}
+                  </T>
+                </View>
+                <T v="small" c={C.pinkL}>
+                  {c.left}
+                </T>
+              </Pressable>
+            </Rise>
+          );
+        })}
+      <Card tone="safe" style={{ marginTop: 20, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+        <Icon name="shieldCheck" size={20} color={C.blueL} />
+        <T v="small" c={C.safeInk} style={{ flex: 1 }}>
+          We filtered 1 request with explicit language before you saw it.
+        </T>
+      </Card>
+    </Screen>
+  );
+}
+
+function Typing() {
+  const [a] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(a, { toValue: 1, duration: 1000, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [a]);
+  return (
+    <View style={[styles.them, { flexDirection: 'row', gap: 4, paddingVertical: 14 }]}>
+      {[0, 0.33, 0.66].map((o) => (
+        <Animated.View
+          key={o}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: C.muted,
+            opacity: a.interpolate({ inputRange: [0, o, Math.min(o + 0.33, 1), 1], outputRange: [0.3, 1, 0.3, 0.3] }),
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+const REPLIES = ['Love that. Tell me more 😏', 'Sounds perfect. See you there?', 'Haha okay, you have my attention.', 'I’m in. What time works?'];
+
+export function Chat({ chat, onSend, onBack, onPlan, live }) {
+  const insets = useSafeAreaInsets();
+  const p = personById(chat.id);
+  const [text, setText] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const send = () => {
+    const t = text.trim();
+    if (!t) return;
+    tap();
+    onSend(chat.id, { me: true, text: t });
+    setText('');
+    if (live) {
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        onSend(chat.id, { me: false, text: REPLIES[Math.floor(Math.random() * REPLIES.length)] });
+      }, 1600);
+    }
+  };
+  return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
+      <LiquidBg />
+      <View style={[styles.chatHead, { paddingTop: insets.top + 4 }]}>
+        <IconButton name="back" label="Back to chats" onPress={onBack} />
+        <Avatar size={36} seed={p.seed} ring={p.tier === 'fire' ? 'fire' : 'glow'} />
+        <View style={{ flex: 1 }}>
+          <T style={{ fontFamily: F.semi }}>{p.name}</T>
+          <T v="small" c={C.green}>
+            {chat.plan ? `Plan at ${chat.plan.time}` : `Live until ${p.until}`}
+          </T>
+        </View>
+        <IconButton name="shield" label="Safety tools" color={C.blueL} onPress={() => onPlan(chat.id)} />
+      </View>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 8 }}>
+        <T v="small" c={C.faint} style={{ alignSelf: 'center' }}>
+          Matched today · open for 48 hours
+        </T>
+        {chat.messages.map((m, i) =>
+          m.plan ? (
+            <Pressable key={i} accessibilityRole="button" onPress={() => onPlan(chat.id)}>
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20 }}>
+                <LinearGradient colors={GRAD} style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="pin" size={18} color="#FFFFFF" />
+                </LinearGradient>
+                <View style={{ flex: 1 }}>
+                  <T style={{ fontFamily: F.semi }}>
+                    {chat.plan.place} · {chat.plan.time}
+                  </T>
+                  <T v="small" c={C.green}>
+                    Both confirmed · match saved
+                  </T>
+                </View>
+                <Icon name="chev" size={16} color={C.muted} />
+              </Card>
+            </Pressable>
+          ) : (
+            <Rise key={i} style={m.me ? { alignSelf: 'flex-end', maxWidth: '78%' } : { alignSelf: 'flex-start', maxWidth: '78%' }}>
+              {m.me ? (
+                <LinearGradient colors={['#D81B6A', '#9B2BA0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.me}>
+                  <T c="#FFFFFF">{m.text}</T>
+                </LinearGradient>
+              ) : (
+                <View style={styles.them}>
+                  <T>{m.text}</T>
+                </View>
+              )}
+            </Rise>
+          ),
+        )}
+        {chat.id === 'lina' ? (
+          <Pressable accessibilityRole="button" accessibilityLabel={revealed ? 'Photo' : 'Blurred photo, tap to view'} onPress={() => setRevealed(true)} style={styles.photoMsg}>
+            <Photo seed={2} style={StyleSheet.absoluteFill} />
+            {revealed ? null : (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,17,22,0.88)', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
+                <Icon name="eye" size={20} />
+                <T v="small">Tap to view</T>
+              </View>
+            )}
+          </Pressable>
+        ) : null}
+        {typing ? <Typing /> : null}
+      </ScrollView>
+      <View style={[styles.composer, { paddingBottom: insets.bottom + 10 }]}>
+        <View style={styles.composerPill}>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder={`Message ${p.name}`}
+            placeholderTextColor={C.faint}
+            style={styles.composerInput}
+            onSubmitEditing={send}
+            returnKeyType="send"
+            accessibilityLabel="Message"
+          />
+          <Pressable accessibilityRole="button" accessibilityLabel="Send" onPress={send}>
+            <LinearGradient colors={[C.pink, C.blue]} style={styles.sendBtn}>
+              <Icon name="send" size={18} color="#FFFFFF" stroke={2.2} />
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+/* ---------- Plan & safety ---------- */
+
+export function Plan({ chat, onBack }) {
+  const [share, setShare] = useState(true);
+  const [check, setCheck] = useState(true);
+  const p = personById(chat.id);
+  return (
+    <Screen scroll>
+      <Header title={`Tonight with ${p.name}`} onBack={onBack} />
+      <Card style={{ padding: 0, overflow: 'hidden', borderRadius: 22, marginTop: 6 }}>
+        <View style={{ height: 120, backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="pin" size={34} color={C.pink} />
+        </View>
+        <View style={{ padding: 14 }}>
+          <T v="h">{chat.plan ? `${chat.plan.place} · ${chat.plan.time}` : 'No plan yet'}</T>
+          <T v="meta" c={C.muted}>
+            Public venue first. Always.
+          </T>
+        </View>
+      </Card>
+      <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+        {[
+          ['clock', 'Running late'],
+          ['chat', 'Fake a call'],
+          ['close', 'Cancel kindly'],
+        ].map(([ic, l]) => (
+          <Pressable key={l} accessibilityRole="button" onPress={() => Alert.alert(l, 'This sends a friendly message to your match.')} style={styles.quick}>
+            <Icon name={ic} size={20} />
+            <T v="small">{l}</T>
+          </Pressable>
+        ))}
+      </View>
+      <Card tone="safe" style={{ marginTop: 14 }}>
+        <Row title="Share with a friend" sub="Their first name, photo, place and time" right={<Toggle value={share} onChange={setShare} color={C.blue} label="Share plan with a friend" />} />
+        <Row title="Check-in at 23:00" sub="No tap on “I’m good”? Your friend gets your location." right={<Toggle value={check} onChange={setCheck} color={C.blue} label="Safety check-in" />} />
+        <Row last title="Panic button" sub="Hold the side button 3 s to call 112 and alert your friend" />
+      </Card>
+      <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 14 }}>
+        Safety features are free for everyone, always.
+      </T>
+    </Screen>
+  );
+}
+
+/* ---------- Lounge & Guides ---------- */
+
+export function Lounge({ onGuide }) {
+  const [tab, setTab] = useState('talk');
+  const [liked, setLiked] = useState({});
+  const [revealed, setRevealed] = useState({});
+  return (
+    <Screen scroll>
+      <T v="title" style={{ marginTop: 8 }}>
+        The Lounge
+      </T>
+      <View style={{ marginTop: 12 }}>
+        <Segmented
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'talk', label: 'Talk' },
+            { value: 'guides', label: 'Guides' },
+          ]}
+        />
+      </View>
+      {tab === 'talk' ? (
+        <>
+          <LinearGradient colors={[C.pinkBg, C.violetBg]} style={{ borderRadius: 18, padding: 14, marginTop: 14, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+            <View style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center' }}>
+              <T v="small" c="#FFFFFF" style={{ fontFamily: F.semi, fontSize: 10 }}>
+                THU
+              </T>
+              <T c="#FFFFFF" style={{ fontFamily: F.display, fontSize: 18, lineHeight: 20 }}>
+                27
+              </T>
+            </View>
+            <View style={{ flex: 1 }}>
+              <T v="small" c={C.pinkL} style={{ fontFamily: F.semi }}>
+                LIVE Q&A · 20:00
+              </T>
+              <T style={{ fontFamily: F.medium }}>Ask a sex therapist anything, anonymously</T>
+            </View>
+          </LinearGradient>
+          {POSTS.map((p, i) => (
+            <Rise key={p.id} delay={i * 70}>
+              <View style={styles.post}>
+                <View style={{ flex: 1 }}>
+                  <T v="small" c={C.muted}>
+                    {p.by} · {p.topic}
+                  </T>
+                  <T style={{ fontFamily: F.displayM, fontSize: 19, lineHeight: 24, marginTop: 4 }}>{p.title}</T>
+                  <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, alignItems: 'center' }}>
+                    <Pressable accessibilityRole="button" accessibilityLabel="Like post" onPress={() => { tap(); setLiked({ ...liked, [p.id]: !liked[p.id] }); }} style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+                      <Icon name="heart" size={16} color={liked[p.id] ? C.pink : C.muted} fill={liked[p.id] ? C.pink : 'none'} />
+                      <T v="small" c={C.muted}>
+                        {p.likes + (liked[p.id] ? 1 : 0)}
+                      </T>
+                    </Pressable>
+                    <T v="small" c={C.muted}>
+                      {p.replies} replies
+                    </T>
+                    {p.expert ? (
+                      <T v="small" c={C.blueL}>
+                        Educator replied
+                      </T>
+                    ) : null}
+                  </View>
+                </View>
+                {p.spicy ? (
+                  <Pressable accessibilityRole="button" accessibilityLabel="Spicy photo, tap to view" onPress={() => setRevealed({ ...revealed, [p.id]: true })} style={styles.spicy}>
+                    <Photo seed={1} style={StyleSheet.absoluteFill} />
+                    {revealed[p.id] ? null : (
+                      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(30,20,30,0.9)', alignItems: 'center', justifyContent: 'center', gap: 4 }]}>
+                        <Icon name="eye" size={16} />
+                        <View style={{ backgroundColor: C.pink, borderRadius: 5, paddingHorizontal: 5 }}>
+                          <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 9 }}>
+                            SPICY
+                          </T>
+                        </View>
+                      </View>
+                    )}
+                  </Pressable>
+                ) : null}
+              </View>
+            </Rise>
+          ))}
+        </>
+      ) : (
+        <View style={{ marginTop: 14, gap: 10 }}>
+          {GUIDES.map((g, i) => (
+            <Rise key={g.id} delay={i * 60}>
+              <Pressable accessibilityRole="button" onPress={() => onGuide(g)}>
+                <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: i % 2 ? '#22335C' : '#4A1A33', borderWidth: 1, backgroundColor: i % 2 ? C.blueBg : C.pinkBg }}>
+                  <Icon name="book" size={22} color={i % 2 ? C.blueL : C.pinkL} />
+                  <View style={{ flex: 1 }}>
+                    <T v="small" c={C.muted}>
+                      {g.cat} · {g.mins} min
+                    </T>
+                    <T style={{ fontFamily: F.display, fontSize: 16 }}>{g.title}</T>
+                  </View>
+                  <Icon name="chev" size={16} color={C.muted} />
+                </Card>
+              </Pressable>
+            </Rise>
+          ))}
+        </View>
+      )}
+    </Screen>
+  );
+}
+
+export function GuideView({ guide, onBack }) {
+  const [saved, setSaved] = useState(false);
+  return (
+    <Screen scroll>
+      <Header title="" onBack={onBack} />
+      <T v="small" c={C.pinkL} style={{ fontFamily: F.semi, letterSpacing: 1 }}>
+        {guide.cat.toUpperCase()} · {guide.mins} MIN READ
+      </T>
+      <T v="title" style={{ marginTop: 6 }}>
+        {guide.title}
+      </T>
+      <View style={{ marginTop: 16, gap: 14 }}>
+        {guide.body.map((b, i) => (
+          <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
+            <LinearGradient colors={[GRAD[i % 3], GRAD[(i + 1) % 3]]} style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+              <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold }}>
+                {i + 1}
+              </T>
+            </LinearGradient>
+            <T style={{ flex: 1 }} c={C.ink2}>
+              {b}
+            </T>
+          </View>
+        ))}
+      </View>
+      <Card tone="safe" style={{ marginTop: 20, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+        <Icon name="shieldCheck" size={18} color={C.blueL} />
+        <T v="small" c={C.safeInk}>
+          Reviewed by a certified sex educator
+        </T>
+      </Card>
+      <View style={{ height: 20 }} />
+      <GradientButton title={saved ? 'Added to your wishlist' : 'Add to my wishlist'} onPress={() => { success(); setSaved(true); }} />
+      <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 8 }}>
+        Matches only see wishlist items you both added
+      </T>
+    </Screen>
+  );
+}
+
+/* ---------- Me & settings ---------- */
+
+function GlowRing({ children, size = 72 }) {
+  const [r] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(r, { toValue: 1, duration: 5000, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [r]);
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View style={{ position: 'absolute', width: size * 1.5, height: size * 1.5, transform: [{ rotate: r.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+        <LinearGradient colors={[C.pink, C.violet, C.blue, C.violet, C.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }} />
+      </Animated.View>
+      <View style={{ width: size - 6, height: size - 6, borderRadius: (size - 6) / 2, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>{children}</View>
+    </View>
+  );
+}
+
+export function Me({ profile, go, onRestart }) {
+  return (
+    <Screen scroll>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 8 }}>
+        <GlowRing>
+          {profile.photos?.[0] ? <Image source={{ uri: profile.photos[0] }} style={{ width: 62, height: 62, borderRadius: 31 }} /> : <Photo style={{ width: 62, height: 62, borderRadius: 31 }} />}
+        </GlowRing>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <T style={{ fontFamily: F.display, fontSize: 24 }}>
+              {profile.name || 'You'}
+              {profile.age ? `, ${profile.age}` : ''}
+            </T>
+            {profile.verified ? <Verified size={18} /> : null}
+          </View>
+          <T v="meta" c={C.muted}>
+            Level 1 · <T v="meta" c={C.violetL}>Verified</T>
+          </T>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+        {[
+          ['100%', 'Shows up'],
+          ['5', 'Likes you'],
+          ['—', 'Last tested'],
+        ].map(([v, l]) => (
+          <Card key={l} style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.display, fontSize: 20 }}>{v}</T>
+            <T v="small" c={C.muted}>
+              {l}
+            </T>
+          </Card>
+        ))}
+      </View>
+      <T v="label" c={C.muted} style={{ marginTop: 22, marginBottom: 6 }}>
+        You
+      </T>
+      <Card style={{ paddingVertical: 0 }}>
+        <Row icon="lock" iconColor={C.blueL} iconBg={C.blueBg} title="Privacy & discretion" onPress={() => go('privacy')} />
+        <Row icon="flame" iconColor={C.violetL} iconBg={C.violetBg} title="The Tonight Code" onPress={() => go('code')} last />
+      </Card>
+      <T v="label" c={C.muted} style={{ marginTop: 22, marginBottom: 6 }}>
+        Help shape Tonight
+      </T>
+      <Card style={{ paddingVertical: 0 }}>
+        <Row icon="bulb" title="Ideas board" onPress={() => go('ideas')} />
+        <Row
+          icon="chat"
+          iconColor={C.blueL}
+          iconBg={C.blueBg}
+          title="Support chat"
+          onPress={() => go('support')}
+          right={
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LiveDot />
+              <T v="small" c={C.green}>
+                Online
+              </T>
+            </View>
+          }
+          last
+        />
+      </Card>
+      <GhostButton title="Restart onboarding (test build)" onPress={onRestart} border={false} color={C.muted} style={{ marginTop: 18 }} />
+      <T v="small" c={C.faint} style={{ textAlign: 'center' }}>
+        Tonight 1.0 · test build with sample members
+      </T>
+    </Screen>
+  );
+}
+
+export function CodeView({ onBack }) {
+  return (
+    <Screen scroll bg={C.bgDeep}>
+      <Header title="The Tonight Code" onBack={onBack} />
+      {VOWS.map((v) => (
+        <View key={v.n} style={{ alignItems: 'center', paddingVertical: 10 }}>
+          <T v="small" c={C.orange} style={{ fontFamily: F.bold, letterSpacing: 3 }}>
+            {v.n}
+          </T>
+          <T style={{ fontFamily: F.display, fontSize: 18, textShadowColor: 'rgba(255,138,61,0.7)', textShadowRadius: 10 }} c="#FFF3EA">
+            {v.text}
+          </T>
+        </View>
+      ))}
+      <Card tone="safe" style={{ marginTop: 16 }}>
+        <T v="small" c={C.safeInk}>
+          You sealed these vows when you joined. Ward, our watchdog, guards them for everyone.
+        </T>
+      </Card>
+    </Screen>
+  );
+}
+
+export function Privacy({ onBack }) {
+  const [dist, setDist] = useState('round');
+  const [s, setS] = useState({ pause: false, incognito: false, contacts: true, blur: true, filter: true });
+  const set = (k) => (v) => setS({ ...s, [k]: v });
+  return (
+    <Screen scroll>
+      <Header title="Privacy & control" onBack={onBack} />
+      <T v="label" c={C.muted} style={{ marginTop: 10, marginBottom: 8 }}>
+        Show my distance as
+      </T>
+      <Segmented
+        value={dist}
+        onChange={setDist}
+        options={[
+          { value: 'round', label: 'About 2 km' },
+          { value: 'area', label: 'Area only' },
+          { value: 'hidden', label: 'Hidden' },
+        ]}
+      />
+      <T v="small" c={C.muted} style={{ marginTop: 8 }}>
+        Your exact location never leaves the phone. It’s snapped to a 1 km grid first.
+      </T>
+      <T v="label" c={C.muted} style={{ marginTop: 20, marginBottom: 6 }}>
+        Who sees me
+      </T>
+      <Card style={{ paddingVertical: 0 }}>
+        <Row title="Pause my profile" right={<Toggle value={s.pause} onChange={set('pause')} label="Pause my profile" />} />
+        <Row title="Hide from my contacts" right={<Toggle value={s.contacts} onChange={set('contacts')} label="Hide from my contacts" />} last />
+      </Card>
+      <T v="label" c={C.muted} style={{ marginTop: 20, marginBottom: 6 }}>
+        What reaches me
+      </T>
+      <Card style={{ paddingVertical: 0 }}>
+        <Row title="Blur every photo until I tap" right={<Toggle value={s.blur} onChange={set('blur')} label="Blur every photo until I tap" />} />
+        <Row title="Filter explicit first messages" right={<Toggle value={s.filter} onChange={set('filter')} label="Filter explicit first messages" />} last />
+      </Card>
+      <Pressable accessibilityRole="button" onPress={() => Alert.alert('Delete account', 'This removes your profile, photos, matches and messages straight away.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive' }])} style={{ marginTop: 24, alignItems: 'center' }}>
+        <T v="label" c={C.red}>
+          Delete account and all chats
+        </T>
+      </Pressable>
+    </Screen>
+  );
+}
+
+export function Support({ onBack }) {
+  const insets = useSafeAreaInsets();
+  const [msgs, setMsgs] = useState([{ me: false, text: 'Hi! Ask us anything: billing, verification, a bug. A real person reads every message.' }]);
+  const [text, setText] = useState('');
+  const [typing, setTyping] = useState(false);
+  const send = () => {
+    const t = text.trim();
+    if (!t) return;
+    tap();
+    setMsgs((m) => [...m, { me: true, text: t }]);
+    setText('');
+    setTyping(true);
+    setTimeout(() => {
+      setTyping(false);
+      setMsgs((m) => [...m, { me: false, text: 'Thanks! In this test build a teammate will follow up by email at info@fortunas.nl.' }]);
+    }, 1500);
+  };
+  return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={[styles.chatHead, { paddingTop: insets.top + 4 }]}>
+        <IconButton name="back" label="Back" onPress={onBack} />
+        <LinearGradient colors={[C.pink, C.blue]} style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' }}>
+          <T c="#FFFFFF" style={{ fontFamily: F.displayX }}>
+            t.
+          </T>
+        </LinearGradient>
+        <View style={{ flex: 1 }}>
+          <T style={{ fontFamily: F.semi }}>Support</T>
+          <T v="small" c={C.green}>
+            Real people · usually reply in minutes
+          </T>
+        </View>
+      </View>
+      <Pressable accessibilityRole="button" onPress={() => setText('I want to report someone: ')} style={styles.report}>
+        <Icon name="shield" size={18} color="#FFC9CE" />
+        <T v="small" c="#FFC9CE" style={{ flex: 1 }}>
+          Someone made you feel unsafe? <T v="small" c="#FFC9CE" style={{ fontFamily: F.bold }}>Tell Ward. It jumps the queue.</T>
+        </T>
+      </Pressable>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 8 }}>
+        {msgs.map((m, i) => (
+          <Rise key={i} style={m.me ? { alignSelf: 'flex-end', maxWidth: '80%' } : { alignSelf: 'flex-start', maxWidth: '80%' }}>
+            {m.me ? (
+              <LinearGradient colors={['#D81B6A', '#9B2BA0']} style={styles.me}>
+                <T c="#FFFFFF">{m.text}</T>
+              </LinearGradient>
+            ) : (
+              <View style={[styles.them, { backgroundColor: '#1A2440' }]}>
+                <T>{m.text}</T>
+              </View>
+            )}
+          </Rise>
+        ))}
+        {typing ? <Typing /> : null}
+      </ScrollView>
+      <View style={[styles.composer, { paddingBottom: insets.bottom + 10 }]}>
+        <View style={styles.composerPill}>
+          <TextInput value={text} onChangeText={setText} placeholder="Write a message…" placeholderTextColor={C.faint} style={styles.composerInput} onSubmitEditing={send} returnKeyType="send" accessibilityLabel="Message support" />
+          <Pressable accessibilityRole="button" accessibilityLabel="Send" onPress={send}>
+            <LinearGradient colors={[C.pink, C.blue]} style={styles.sendBtn}>
+              <Icon name="send" size={18} color="#FFFFFF" stroke={2.2} />
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+export function Ideas({ ideas, setIdeas, onBack }) {
+  const [sort, setSort] = useState('top');
+  const [draft, setDraft] = useState('');
+  const vote = (id, dir) => {
+    tap();
+    setIdeas(
+      ideas.map((i) => {
+        if (i.id !== id) return i;
+        const was = i.mine || 0;
+        const now = was === dir ? 0 : dir;
+        return { ...i, mine: now, score: i.score - was + now };
+      }),
+    );
+  };
+  const post = () => {
+    const t = draft.trim();
+    if (!t) return;
+    success();
+    setIdeas([{ id: `n${Date.now()}`, title: t, desc: '', by: 'You', cat: 'New', status: 'Open', score: 1, mine: 1 }, ...ideas]);
+    setDraft('');
+    setSort('new');
+  };
+  const list = sort === 'top' ? [...ideas].sort((a, b) => b.score - a.score) : sort === 'mine' ? ideas.filter((i) => i.by === 'You') : ideas;
+  const statusColor = { Planned: [C.blueBg, C.blueL], Open: ['#241F26', C.ink2], 'Not planned': ['#2A1A1E', '#FFB3BD'], Shipped: [C.greenBg, C.green] };
+  return (
+    <Screen scroll>
+      <Header title="Ideas" onBack={onBack} />
+      <T v="meta" c={C.muted}>
+        Vote on what we build next. The most wanted ideas go on the roadmap.
+      </T>
+      <View style={styles.ideaInput}>
+        <TextInput value={draft} onChangeText={setDraft} placeholder="Suggest an idea…" placeholderTextColor={C.faint} style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }} accessibilityLabel="Suggest an idea" />
+        <Pressable accessibilityRole="button" accessibilityLabel="Post idea" onPress={post}>
+          <LinearGradient colors={GRAD} style={styles.sendBtn}>
+            <Icon name="plus" size={18} color="#FFFFFF" stroke={2.4} />
+          </LinearGradient>
+        </Pressable>
+      </View>
+      <View style={{ marginTop: 12 }}>
+        <Segmented
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: 'top', label: 'Top' },
+            { value: 'new', label: 'New' },
+            { value: 'mine', label: 'Mine' },
+          ]}
+        />
+      </View>
+      {list.map((i) => (
+        <View key={i.id} style={styles.idea}>
+          <View style={{ alignItems: 'center', width: 44 }}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Upvote" accessibilityState={{ selected: i.mine === 1 }} onPress={() => vote(i.id, 1)} style={[styles.vote, i.mine === 1 && { borderColor: C.pink, backgroundColor: C.pinkBg }]}>
+              <Icon name="up" size={18} color={i.mine === 1 ? C.pinkL : C.muted} stroke={2.4} />
+            </Pressable>
+            <T style={{ fontFamily: F.displayX, fontSize: 17, marginVertical: 4 }} c={i.score > 0 ? C.ink : C.muted}>
+              {i.score > 0 ? `+${i.score}` : i.score}
+            </T>
+            <Pressable accessibilityRole="button" accessibilityLabel="Downvote" accessibilityState={{ selected: i.mine === -1 }} onPress={() => vote(i.id, -1)} style={[styles.vote, i.mine === -1 && { borderColor: C.blue, backgroundColor: C.blueBg }]}>
+              <Icon name="down" size={18} color={i.mine === -1 ? C.blueL : C.muted} stroke={2.4} />
+            </Pressable>
+          </View>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.display, fontSize: 16 }}>{i.title}</T>
+            {i.desc ? (
+              <T v="meta" c={C.ink2} style={{ marginTop: 2 }}>
+                {i.desc}
+              </T>
+            ) : null}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+              <T v="small" c={C.muted}>
+                {i.by} · {i.cat}
+              </T>
+              <View style={{ backgroundColor: statusColor[i.status][0], borderRadius: 11, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <T v="small" c={statusColor[i.status][1]} style={{ fontFamily: F.bold, fontSize: 11 }}>
+                  {i.status}
+                </T>
+              </View>
+            </View>
+            {i.reply ? (
+              <View style={{ backgroundColor: C.safeBg, borderRadius: 12, padding: 8, marginTop: 8 }}>
+                <T v="small" c={C.safeInk}>
+                  <T v="small" style={{ fontFamily: F.semi }}>Tonight team: </T>
+                  {i.reply}
+                </T>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      ))}
+    </Screen>
+  );
+}
+
+
+const styles = StyleSheet.create({
+  topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 48, paddingHorizontal: 8 },
+  modeSeg: { flexDirection: 'row', backgroundColor: C.surf2, borderRadius: 20, padding: 3 },
+  modeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 12, borderRadius: 17 },
+  card: { flex: 1, borderRadius: 28 },
+  bars: { position: 'absolute', top: 12, left: 16, right: 16, flexDirection: 'row', gap: 4 },
+  bar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(244,239,234,0.3)' },
+  cardInfo: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 20, paddingTop: 80 },
+  pill: { height: 30, paddingHorizontal: 12, borderRadius: 15, backgroundColor: 'rgba(244,239,234,0.14)', justifyContent: 'center' },
+  actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 22, paddingVertical: 14 },
+  roundGhost: { width: 58, height: 58, borderRadius: 29, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center' },
+  roundLike: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
+  check: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  closeWrap: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
+  glass: { backgroundColor: 'rgba(20,17,22,0.6)', borderRadius: 22 },
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 30, paddingHorizontal: 24, flexDirection: 'row', gap: 12, alignItems: 'center' },
+  matchPhoto: { width: 150, height: 150, borderRadius: 75, borderWidth: 4, borderColor: '#FFFFFF', overflow: 'hidden' },
+  matchNote: { flexDirection: 'row', gap: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 18, padding: 14, marginTop: 26 },
+  matchOpt: { height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)', justifyContent: 'center', paddingHorizontal: 16, marginBottom: 10 },
+  matchCta: { height: 56, borderRadius: 28, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  chatRow: { flexDirection: 'row', alignItems: 'center', gap: 14, height: 76, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  chatHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.line },
+  me: { paddingVertical: 11, paddingHorizontal: 15, borderRadius: 22, borderBottomRightRadius: 6 },
+  them: { paddingVertical: 11, paddingHorizontal: 15, borderRadius: 22, borderBottomLeftRadius: 6, backgroundColor: '#1F1A21', alignSelf: 'flex-start' },
+  photoMsg: { width: 180, height: 140, borderRadius: 22, borderBottomLeftRadius: 6, overflow: 'hidden' },
+  composer: { paddingHorizontal: 14, paddingTop: 10 },
+  composerPill: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 52, paddingLeft: 16, paddingRight: 6, borderRadius: 26, backgroundColor: C.surf3, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  composerInput: { flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 },
+  sendBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  quick: { flex: 1, height: 64, borderRadius: 16, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center', gap: 5 },
+  post: { flexDirection: 'row', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line },
+  spicy: { width: 76, height: 92, borderRadius: 14, overflow: 'hidden' },
+  report: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: '#2A1A1E', borderRadius: 14, padding: 12, margin: 16, marginBottom: 0 },
+  ideaInput: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 52, paddingLeft: 16, paddingRight: 6, borderRadius: 26, backgroundColor: C.surf3, borderWidth: 1.5, borderColor: C.line2, marginTop: 14 },
+  idea: { flexDirection: 'row', gap: 12, padding: 14, backgroundColor: C.surf3, borderRadius: 18, borderWidth: 1, borderColor: C.line, marginTop: 10 },
+  vote: { width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: C.line2, alignItems: 'center', justifyContent: 'center' },
+});

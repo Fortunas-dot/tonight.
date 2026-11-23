@@ -1,0 +1,77 @@
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
+
+// Stroke icons in one family (24px grid, 1.8 stroke), filled ones marked with fill.
+const PATHS = {
+  back: ['M15 18l-6-6 6-6'],
+  close: ['M6 6l12 12M18 6L6 18'],
+  down: ['M6 9l6 6 6-6'],
+  up: ['M6 15l6-6 6 6'],
+  chev: ['M9 6l6 6-6 6'],
+  plus: ['M12 5v14M5 12h14'],
+  check: ['M5 12l5 5 9-10'],
+  chat: ['M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z'],
+  heart: ['M12 20s-7-4.3-8.6-8.8C2.2 8 4.2 4.8 7.4 4.8c1.9 0 3.4 1 4.6 2.6 1.2-1.6 2.7-2.6 4.6-2.6 3.2 0 5.2 3.2 4 6.4C19 15.7 12 20 12 20z'],
+  flame: ['M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.3 3 2.5 3-1-3 0-6 0-8z'],
+  shield: ['M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z'],
+  shieldCheck: ['M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z', 'M9 12l2 2 4-4'],
+  lock: ['M8 11V7a4 4 0 0 1 8 0v4'],
+  eye: ['M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z'],
+  eyeOff: ['M3 3l18 18', 'M10.6 6.1A9.8 9.8 0 0 1 12 6c5 0 9 6 9 6a17 17 0 0 1-2.6 3.2M6.6 6.6C4.3 8.1 3 12 3 12s4 6 9 6c1.4 0 2.7-.4 3.8-1'],
+  send: ['M12 19V5M6 11l6-6 6 6'],
+  filter: ['M4 7h10M18 7h2M4 17h4M12 17h8'],
+  pin: ['M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z'],
+  bulb: ['M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z'],
+  book: ['M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z', 'M4 21a2 2 0 0 1 2-2h13'],
+  clock: ['M12 9v4l2.5 2'],
+  dots: [],
+  search: ['M20 20l-3.5-3.5'],
+  camera: ['M4 8h3l2-3h6l2 3h3v11H4z'],
+  fingerprint: ['M12 11v4M8.5 9.5A4 4 0 0 1 16 11v2c0 2-.5 4-1.5 5.5M8 12c0 3-.5 5-1.5 6.5M12 3a8 8 0 0 0-8 8v1M20 11a8 8 0 0 0-3-6.2M12 7a4 4 0 0 0-4 4'],
+};
+
+export function Icon({ name, size = 22, color = '#F4EFEA', stroke = 1.8, fill = 'none' }) {
+  const paths = PATHS[name] || [];
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {name === 'lock' && <Rect x={4} y={11} width={16} height={10} rx={2} stroke={color} strokeWidth={stroke} />}
+      {name === 'eye' && <Circle cx={12} cy={12} r={3} stroke={color} strokeWidth={stroke} />}
+      {name === 'clock' && <Circle cx={12} cy={13} r={8} stroke={color} strokeWidth={stroke} />}
+      {name === 'search' && <Circle cx={11} cy={11} r={7} stroke={color} strokeWidth={stroke} />}
+      {name === 'pin' && <Circle cx={12} cy={10} r={2.5} stroke={color} strokeWidth={stroke} />}
+      {name === 'camera' && <Circle cx={12} cy={13} r={3.5} stroke={color} strokeWidth={stroke} />}
+      {name === 'filter' && (
+        <>
+          <Circle cx={16} cy={7} r={2} stroke={color} strokeWidth={stroke} />
+          <Circle cx={10} cy={17} r={2} stroke={color} strokeWidth={stroke} />
+        </>
+      )}
+      {name === 'dots' && (
+        <>
+          <Circle cx={5} cy={12} r={1.8} fill={color} />
+          <Circle cx={12} cy={12} r={1.8} fill={color} />
+          <Circle cx={19} cy={12} r={1.8} fill={color} />
+        </>
+      )}
+      {name === 'user' && (
+        <>
+          <Circle cx={12} cy={8} r={4} stroke={color} strokeWidth={stroke} />
+          <Path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" stroke={color} strokeWidth={stroke} strokeLinecap="round" />
+        </>
+      )}
+      {name === 'card' && <Rect x={5} y={3} width={14} height={18} rx={3.5} stroke={color} strokeWidth={stroke} />}
+      {paths.map((d) => (
+        <Path key={d} d={d} stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" fill={fill} />
+      ))}
+    </Svg>
+  );
+}
+
+/** The verified badge: a filled blue circle with a check. */
+export function Verified({ size = 20 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityLabel="Live-verified">
+      <Circle cx={12} cy={12} r={11} fill="#6FA8FF" />
+      <Path d="M7.5 12.5l3 3 6-6.5" stroke="#06142E" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </Svg>
+  );
+}

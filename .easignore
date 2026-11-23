@@ -1,0 +1,4 @@
+node_modules/
+.expo/
+design-src/
+*.md

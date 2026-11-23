@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Tonight",
+    "slug": "tonight",
+    "scheme": "tonight",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E0C10",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fortunas.tonight",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Choose the photos for your Tonight profile.",
+        "NSCameraUsageDescription": "Take a photo or verify that you are a real person.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.fortunas.tonight",
+      "adaptiveIcon": {
+        "backgroundColor": "#0E0C10",
+        "foregroundImage": "./assets/icon.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0E0C10",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose the photos for your Tonight profile.",
+          "microphonePermission": false,
+          "cameraPermission": "Take a photo or verify that you are a real person."
+        }
+      ]
+    ],
+    "owner": "fortunascreations"
+  }
+}
