@@ -381,6 +381,7 @@ const toPost = (r, urls = {}) => ({
   liked: r.liked,
   mine: r.mine,
   expert: r.expert_reply || null,
+  poll: r.poll_options ? { options: r.poll_options, counts: r.poll_counts || r.poll_options.map(() => 0), mine: r.my_vote ?? null } : null,
 });
 
 async function postPhotoUrls(rows) {
@@ -415,7 +416,7 @@ export async function likePost(id, on) {
 }
 
 /** Creates a post; photos are local uris (already masked if the member chose that). */
-export async function createPost({ topic, title, body, photos = [], spicy }) {
+export async function createPost({ topic, title, body, photos = [], spicy, poll }) {
   if (!uid) return null;
   const paths = [];
   for (const uri of photos) {
@@ -427,7 +428,7 @@ export async function createPost({ topic, title, body, photos = [], spicy }) {
   }
   const { data, error } = await supabase
     .from('posts')
-    .insert({ author: uid, topic, title: title || null, body: body || '', photos: paths, spicy: !!spicy })
+    .insert({ author: uid, topic, title: title || null, body: body || '', photos: paths, spicy: !!spicy, poll_options: poll && poll.length >= 2 ? poll : null })
     .select('id')
     .single();
   if (error) {
@@ -512,4 +513,11 @@ export async function loungeActivity() {
   if (!uid) return [];
   const { data } = await supabase.rpc('my_lounge_activity');
   return (data || []).map((a) => ({ postId: a.post_id, postTitle: a.post_title, alias: a.alias, body: a.body, isReply: a.is_reply, createdAt: a.created_at }));
+}
+
+/** Votes in a poll (option index), or removes my vote with null. */
+export async function votePoll(postId, option) {
+  if (!uid) return;
+  if (option === null) await supabase.from('poll_votes').delete().eq('post_id', postId).eq('user_id', uid);
+  else await supabase.from('poll_votes').upsert({ post_id: postId, user_id: uid, option });
 }

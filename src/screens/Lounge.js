@@ -119,6 +119,46 @@ function SpicyPhoto({ uri, style, revealed, onReveal }) {
   );
 }
 
+/** A poll on a post: tap an option to vote; results show once you voted. */
+function Poll({ post }) {
+  const [poll, setPoll] = useState(post.poll);
+  if (!poll) return null;
+  const total = poll.counts.reduce((a, b) => a + b, 0);
+  const vote = (i) => {
+    tap();
+    const prev = poll.mine;
+    const next = prev === i ? null : i;
+    const counts = poll.counts.map((c, j) => c - (j === prev ? 1 : 0) + (j === next ? 1 : 0));
+    setPoll({ ...poll, counts, mine: next });
+    if (post.real) api.votePoll(post.id, next);
+  };
+  const voted = poll.mine !== null && poll.mine !== undefined;
+  return (
+    <View style={{ gap: 6, marginTop: 10 }}>
+      {poll.options.map((o, i) => {
+        const pct = total ? Math.round((poll.counts[i] / total) * 100) : 0;
+        const on = poll.mine === i;
+        return (
+          <Pressable key={o} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={voted ? `${o}, ${pct} percent` : `Vote ${o}`} onPress={() => vote(i)} style={[styles.pollOpt, on && { borderColor: C.pink }]}>
+            {voted ? <View style={[styles.pollFill, { width: `${pct}%` }, on && { backgroundColor: 'rgba(240,40,122,0.22)' }]} /> : null}
+            <T style={{ flex: 1, fontFamily: on ? F.semi : F.medium, fontSize: 14 }}>{o}</T>
+            {voted ? (
+              <T v="small" c={on ? C.pinkL : C.muted} style={{ fontFamily: F.semi }}>
+                {pct}%
+              </T>
+            ) : null}
+            {on ? <Icon name="check" size={14} color={C.pinkL} stroke={2.6} /> : null}
+          </Pressable>
+        );
+      })}
+      <T v="small" c={C.muted}>
+        {total} {total === 1 ? 'vote' : 'votes'}
+        {voted ? ' · tap again to change' : ''}
+      </T>
+    </View>
+  );
+}
+
 function Photos({ post }) {
   const [revealed, setRevealed] = useState(false);
   if (!post.photos?.length) return null;
@@ -177,6 +217,7 @@ export function PostCard({ post, onOpen, onLike, onDelete }) {
         </T>
       ) : null}
       <Photos post={post} />
+      <Poll post={post} />
       {post.expert ? (
         <View style={styles.expert}>
           <AliasAvatar alias={post.expert.alias} size={24} />
@@ -646,6 +687,7 @@ export function Compose({ onClose, onPosted }) {
   const [body, setBody] = useState('');
   const [photos, setPhotos] = useState([]);
   const [spicy, setSpicy] = useState(false);
+  const [poll, setPoll] = useState(null); // null, or a list of option texts
   const [masking, setMasking] = useState(false);
   const [busy, setBusy] = useState(false);
   const insets = useSafeAreaInsets();
@@ -659,11 +701,12 @@ export function Compose({ onClose, onPosted }) {
     if (!res.canceled) setPhotos([...photos, ...res.assets.map((a) => a.uri)].slice(0, 4));
   };
 
-  const canPost = (title.trim() || body.trim() || photos.length) && !busy;
+  const pollOk = !poll || poll.filter((o) => o.trim()).length >= 2;
+  const canPost = (title.trim() || body.trim() || photos.length) && pollOk && !busy;
   const post = async () => {
     if (!canPost) return;
     setBusy(true);
-    const id = await api.createPost({ topic, title: title.trim(), body: body.trim(), photos, spicy });
+    const id = await api.createPost({ topic, title: title.trim(), body: body.trim(), photos, spicy, poll: poll ? poll.map((o) => o.trim()).filter(Boolean) : null });
     setBusy(false);
     if (!id) {
       Alert.alert('Could not post', 'Check your connection and try again.');
@@ -774,6 +817,37 @@ export function Compose({ onClose, onPosted }) {
             </Pressable>
           ) : null}
         </View>
+        {poll ? (
+          <View style={styles.pollEdit}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <T style={{ flex: 1, fontFamily: F.semi }}>Poll</T>
+              <Pressable accessibilityRole="button" onPress={() => setPoll(null)} hitSlop={8}>
+                <T v="small" c={C.pinkL} style={{ fontFamily: F.semi }}>
+                  Remove poll
+                </T>
+              </Pressable>
+            </View>
+            {poll.map((o, i) => (
+              <TextInput
+                key={i}
+                value={o}
+                onChangeText={(t) => setPoll(poll.map((x, j) => (j === i ? t.slice(0, 60) : x)))}
+                placeholder={`Option ${i + 1}`}
+                placeholderTextColor={C.faint}
+                style={styles.pollInput}
+                accessibilityLabel={`Poll option ${i + 1}`}
+              />
+            ))}
+            {poll.length < 4 ? (
+              <Pressable accessibilityRole="button" onPress={() => setPoll([...poll, ''])} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 }}>
+                <Icon name="plus" size={14} color={C.pinkL} stroke={2.4} />
+                <T v="small" c={C.pinkL} style={{ fontFamily: F.semi }}>
+                  Add option
+                </T>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
         <View style={styles.optCard}>
           <View style={[styles.optRow, { borderBottomWidth: 1, borderBottomColor: C.line }]}>
             <View style={{ flex: 1 }}>
@@ -814,6 +888,17 @@ export function Compose({ onClose, onPosted }) {
       <View style={[styles.composeFoot, { paddingBottom: insets.bottom + 10 }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Add photo" onPress={add} style={styles.ib}>
           <Icon name="image" size={20} color={C.blueL} />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={poll ? 'Remove poll' : 'Add a poll'}
+          onPress={() => {
+            tap();
+            setPoll(poll ? null : ['', '']);
+          }}
+          style={[styles.ib, poll && { backgroundColor: C.violetBg }]}
+        >
+          <Icon name="poll" size={20} color={C.violetL} stroke={2.2} />
         </Pressable>
         <View style={{ flex: 1 }} />
         <Icon name="shieldCheck" size={14} color={C.blueL} />
@@ -944,6 +1029,7 @@ export function PostView({ post: initial, onBack }) {
           </T>
         ) : null}
         <Photos post={post} />
+        <Poll post={post} />
         <Actions post={post} onLike={likePost} onComments={() => {}} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
           <T style={{ fontFamily: F.semi }}>{post.comments === 1 ? '1 comment' : `${post.comments} comments`}</T>
@@ -1029,6 +1115,10 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: '#141116', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 10, borderWidth: 1, borderColor: C.line },
   grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#3A3439', marginBottom: 12 },
   activity: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line },
+  pollOpt: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 42, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#3A3439', overflow: 'hidden' },
+  pollFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.06)' },
+  pollEdit: { marginTop: 14, padding: 14, borderRadius: 16, backgroundColor: '#151217', borderWidth: 1, borderColor: C.line },
+  pollInput: { height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line2, backgroundColor: C.surf3, color: C.ink, paddingHorizontal: 12, fontFamily: F.body, fontSize: 15, marginBottom: 6 },
   ib: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: '#151217', borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 4, marginTop: 10 },
   actions: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: C.line, marginTop: 12 },
