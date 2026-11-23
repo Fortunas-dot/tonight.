@@ -38,6 +38,7 @@ import { EditProfile } from './src/screens/ProfileFields';
 import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
 import { Privacy, Settings } from './src/screens/Settings';
 import { LockGate } from './src/screens/Lock';
+import { Intro } from './src/screens/Intro';
 import { onNotificationTap, registerForPush } from './src/notifications';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
@@ -71,6 +72,8 @@ export default function App() {
   const [likesYou, setLikesYou] = useState([]);
   const [feedKey, setFeedKey] = useState(0); // bump to reload the Lounge feed
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [intro, setIntro] = useState(true); // opening animation, once per launch
+  const endIntro = useCallback(() => setIntro(false), []);
 
   // Get a new OTA update in right away (restarts the app once when there is one).
   useEffect(() => {
@@ -378,6 +381,7 @@ export default function App() {
       <View style={{ flex: 1, backgroundColor: C.bg }} onLayout={onLayout}>
         <StatusBar style="light" />
         <LockGate enabled={!!profile.settings?.faceLock}>{screen}</LockGate>
+        {intro ? <Intro onDone={endIntro} /> : null}
       </View>
     </SafeAreaProvider>
   );
