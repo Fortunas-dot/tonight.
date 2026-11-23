@@ -63,8 +63,17 @@ async function uploadPhotos(photos = [], uploaded = {}) {
 
 /* ---------- My profile ---------- */
 
+// Saves run one at a time, so a cleanup never removes a photo another save just uploaded.
+let saving = Promise.resolve();
+
 /** Saves the local profile to Supabase. Returns the updated `uploaded` map for photos. */
-export async function saveProfile(profile, onboarded) {
+export function saveProfile(profile, onboarded) {
+  const run = saving.then(() => saveProfileNow(profile, onboarded));
+  saving = run.catch(() => {});
+  return run;
+}
+
+async function saveProfileNow(profile, onboarded) {
   if (!uid) return profile.uploaded || {};
   const { paths, uploaded } = await uploadPhotos(profile.photos, profile.uploaded);
   const row = {
@@ -86,7 +95,19 @@ export async function saveProfile(profile, onboarded) {
     live_until: onboarded ? new Date(Date.now() + 6 * 3600 * 1000).toISOString() : null,
   };
   const { error } = await supabase.from('profiles').upsert(row);
-  if (error) console.warn('[backend] save profile failed', error.message);
+  if (error) {
+    console.warn('[backend] save profile failed', error.message);
+    return uploaded;
+  }
+  // Delete photos that are no longer on the profile, such as the bare-face original of a photo that now wears a mask.
+  try {
+    const { data: files } = await supabase.storage.from(BUCKET).list(uid, { limit: 100 });
+    const stale = (files || []).map((f) => `${uid}/${f.name}`).filter((p) => !paths.includes(p));
+    if (stale.length) await supabase.storage.from(BUCKET).remove(stale);
+    for (const [k, v] of Object.entries(uploaded)) if (stale.includes(v)) delete uploaded[k];
+  } catch (e) {
+    console.warn('[backend] photo cleanup failed', e?.message || e);
+  }
   return uploaded;
 }
 

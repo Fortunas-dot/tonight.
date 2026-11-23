@@ -24,11 +24,21 @@ const imageSize = (uri) =>
     Image.getSize(uri, (width, height) => resolve({ width, height }), reject);
   });
 
+// Face detection reads a file on the phone, so an uploaded photo (a web link) is fetched into the cache first.
+async function localCopy(uri) {
+  if (!/^https?:/.test(uri)) return uri;
+  const { File, Paths } = await import('expo-file-system');
+  const dest = new File(Paths.cache, `face-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`);
+  const file = await File.downloadFileAsync(uri, dest);
+  return file.uri;
+}
+
 /** Where the mask should sit on this photo: { x, y, s, r, auto: true }, or null when no face is found. */
 export async function findFace(uri) {
   try {
-    const [d, size] = await Promise.all([getDetector(), imageSize(uri)]);
-    const res = await d.detectFaces(uri);
+    const local = await localCopy(uri);
+    const [d, size] = await Promise.all([getDetector(), imageSize(local)]);
+    const res = await d.detectFaces(local);
     const faces = res?.faces || [];
     if (!faces.length) return null;
     // The biggest face is the person in the photo.
