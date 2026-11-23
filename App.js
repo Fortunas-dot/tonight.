@@ -36,6 +36,8 @@ import {
 } from './src/screens/Main';
 import { Compose, Lounge, PostView } from './src/screens/Lounge';
 import { EditProfile } from './src/screens/ProfileFields';
+import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
+import { Settings } from './src/screens/Settings';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
 const BLOCK_SCREENSHOTS = false;
@@ -67,6 +69,7 @@ export default function App() {
   const [deck, setDeck] = useState([]);
   const [likesYou, setLikesYou] = useState([]);
   const [feedKey, setFeedKey] = useState(0); // bump to reload the Lounge feed
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   // Get a new OTA update in right away (restarts the app once when there is one).
   useEffect(() => {
@@ -83,6 +86,7 @@ export default function App() {
           const saved = JSON.parse(raw);
           setProfile(saved.profile || {});
           setOnboarded(!!saved.onboarded);
+          if (saved.filters) setFilters({ ...DEFAULT_FILTERS, ...saved.filters });
         }
         setReady(true);
         // Backend: sign in, and restore the profile from Supabase if this device has none.
@@ -105,8 +109,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (ready) AsyncStorage.setItem(STORE, JSON.stringify({ profile, onboarded })).catch(() => {});
-  }, [ready, profile, onboarded]);
+    if (ready) AsyncStorage.setItem(STORE, JSON.stringify({ profile, onboarded, filters })).catch(() => {});
+  }, [ready, profile, onboarded, filters]);
 
   // Save the profile to Supabase a moment after it changes (uploads new photos too).
   useEffect(() => {
@@ -275,6 +279,29 @@ export default function App() {
         case 'guide':
           screen = <GuideView guide={p.guide} onBack={pop} />;
           break;
+        case 'settings':
+          screen = (
+            <Settings
+              profile={profile}
+              setProfile={setProfile}
+              go={(name) => push(name)}
+              onBack={pop}
+              onDeleted={() => {
+                AsyncStorage.removeItem(STORE).catch(() => {});
+                setProfile({});
+                setOnboarded(false);
+                setStep(0);
+                setStack([]);
+                setTab('discover');
+                setChats(CHATS);
+                setDeck([]);
+                setLikesYou([]);
+                setOnline(false);
+                api.ensureSession().then((id) => id && setOnline(true));
+              }}
+            />
+          );
+          break;
         case 'editProfile':
           screen = <EditProfile profile={profile} setProfile={setProfile} onBack={pop} />;
           break;
@@ -295,7 +322,19 @@ export default function App() {
       }
     } else {
       const tabs = {
-        discover: <Discover deck={[...deck, ...PEOPLE]} onOpen={(person) => push('profile', { person })} onLike={like} />,
+        discover: (
+          <Discover
+            deck={[...deck, ...PEOPLE]}
+            profile={profile}
+            filters={filters}
+            onFilters={(f, show) => {
+              setFilters(f);
+              if (show && show.join() !== (profile.show || []).join()) setProfile((p) => ({ ...p, show }));
+            }}
+            onOpen={(person) => push('profile', { person })}
+            onLike={like}
+          />
+        ),
         likes: <Likes people={[...likesYou, ...PEOPLE]} onOpen={(person) => push('profile', { person })} />,
         chats: <Chats chats={chats} onOpen={(id) => push('chat', { id })} />,
         lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onOpenPost={(post) => push('post', { post })} />,

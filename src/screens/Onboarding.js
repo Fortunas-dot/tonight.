@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Image, Linking, Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, Easing, Image, Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Circle, Defs, LinearGradient as SvgGrad, Path, Stop } from 'react-native-svg';
@@ -7,7 +7,7 @@ import { C, F, FIRE, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { BOUNDARIES, INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS } from '../data';
 import { MaskEditor } from './MaskEditor';
-import { ProfileFields } from './ProfileFields';
+import { Field, ProfileFields, Section } from './ProfileFields';
 import * as api from '../backend';
 import { versionLabel } from '../version';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
@@ -296,19 +296,10 @@ export function Basics({ profile, setProfile, next, back }) {
       <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
         Only your first name, age and city are shown.
       </T>
-      <T v="label" c={C.muted} style={styles.lbl}>
-        First name or nickname
-      </T>
-      <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor={C.faint} style={styles.input} accessibilityLabel="First name" />
-      <T v="label" c={C.muted} style={styles.lbl}>
-        Age
-      </T>
-      <TextInput value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" maxLength={2} placeholder="18+" placeholderTextColor={C.faint} style={styles.input} accessibilityLabel="Age" />
-      {age.length === 2 && ageNum < 18 ? (
-        <T v="small" c={C.red} style={{ marginTop: 6 }}>
-          Tonight is for adults 18 and over.
-        </T>
-      ) : null}
+      <Section icon="user" title="The basics">
+        <Field label="First name or nickname" icon="user" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" />
+        <Field label="Age" icon="cake" value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} placeholder="18+" keyboardType="number-pad" maxLength={2} hint={age.length === 2 && ageNum < 18 ? 'Tonight is 18+ only' : null} />
+      </Section>
       <T v="label" c={C.muted} style={styles.lbl}>
         I am
       </T>

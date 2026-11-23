@@ -6,6 +6,7 @@ import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { PEOPLE, VOWS, personById } from '../data';
 import { versionLabel } from '../version';
+import { FilterSheet, activeCount, applyFilters, filterChips } from './DiscoverFilters';
 import {
   Avatar,
   Card,
@@ -29,11 +30,13 @@ import {
 
 /* ---------- Discover ---------- */
 
-export function Discover({ onOpen, onLike, deck }) {
-  const [mode, setMode] = useState('live');
+export function Discover({ onOpen, onLike, deck: all, profile, filters, onFilters }) {
   const [i, setI] = useState(0);
   const [fly] = useState(() => new Animated.Value(0));
-  const person = deck[i % deck.length];
+  const [sheet, setSheet] = useState(false);
+  const deck = applyFilters(all, filters, profile);
+  const person = deck.length ? deck[i % deck.length] : null;
+  const count = activeCount(filters);
 
   const go = (dir) => {
     if (dir > 0) thud();
@@ -51,20 +54,50 @@ export function Discover({ onOpen, onLike, deck }) {
         <T style={{ fontFamily: F.displayX, fontSize: 24, letterSpacing: -0.5 }}>
           tonight<T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 24 }}>.</T>
         </T>
-        <View style={styles.modeSeg}>
-          <Pressable onPress={() => setMode('live')} style={[styles.modeBtn, mode === 'live' && { backgroundColor: C.ink }]} accessibilityRole="button" accessibilityState={{ selected: mode === 'live' }}>
-            <LiveDot />
-            <T v="label" c={mode === 'live' ? C.bg : C.muted} style={{ fontSize: 13 }}>
-              Live now · {deck.length}
-            </T>
-          </Pressable>
-          <Pressable onPress={() => setMode('week')} style={[styles.modeBtn, mode === 'week' && { backgroundColor: C.ink }]} accessibilityRole="button" accessibilityState={{ selected: mode === 'week' }}>
-            <T v="label" c={mode === 'week' ? C.bg : C.muted} style={{ fontSize: 13 }}>
-              This week
-            </T>
-          </Pressable>
-        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel={count ? `Filters, ${count} on` : 'Filters'} onPress={() => setSheet(true)} style={styles.filterBtn}>
+          <Icon name="filter" size={20} />
+          {count ? (
+            <View style={styles.filterBadge}>
+              <T c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 10, lineHeight: 12 }}>
+                {count}
+              </T>
+            </View>
+          ) : null}
+        </Pressable>
       </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingHorizontal: 8 }} style={{ flexGrow: 0, marginTop: 2 }}>
+        {filterChips(filters, profile?.show).map((c) => (
+          <Pressable key={c.id} accessibilityRole="button" onPress={() => setSheet(true)} style={[styles.fChip, c.on && styles.fChipOn]}>
+            <T v="small" c={c.on ? C.ink : C.muted} style={{ fontFamily: c.on ? F.semi : F.medium }} numberOfLines={1}>
+              {c.label}
+            </T>
+            <Icon name="down" size={12} color={c.on ? C.ink : C.muted} stroke={2.2} />
+          </Pressable>
+        ))}
+      </ScrollView>
+      <FilterSheet
+        visible={sheet}
+        filters={filters}
+        show={profile?.show}
+        hasCity={!!profile?.city}
+        hasCountry={!!profile?.country}
+        onClose={() => setSheet(false)}
+        onApply={(f, show) => {
+          setI(0);
+          onFilters(f, show);
+        }}
+      />
+      {!person ? (
+        <View style={styles.emptyDeck}>
+          <Icon name="filter" size={30} color={C.muted} />
+          <T style={{ fontFamily: F.display, fontSize: 20, marginTop: 10, textAlign: 'center' }}>No one matches your filters</T>
+          <T v="meta" c={C.muted} style={{ textAlign: 'center', marginTop: 4 }}>
+            Try a wider age range or a bigger area.
+          </T>
+          <GradientButton title="Adjust filters" onPress={() => setSheet(true)} style={{ marginTop: 18, alignSelf: 'stretch' }} />
+        </View>
+      ) : (
+        <>
       <Animated.View
         style={{
           flex: 1,
@@ -105,9 +138,6 @@ export function Discover({ onOpen, onLike, deck }) {
                   </T>
                 </View>
                 <View style={styles.pill}>
-                  <T v="small">Tested {person.tested}</T>
-                </View>
-                <View style={styles.pill}>
                   <T v="small">Shows up {person.showsUp}%</T>
                 </View>
               </View>
@@ -128,6 +158,8 @@ export function Discover({ onOpen, onLike, deck }) {
           <Icon name="up" size={24} stroke={2.2} />
         </Pressable>
       </View>
+        </>
+      )}
     </Screen>
   );
 }
@@ -151,7 +183,7 @@ export function ProfileView({ person, onClose, onLike, onReport, onBlock }) {
             <Verified />
           </View>
           <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
-            {person.dist} · <T v="meta" c={C.green}>Live until {person.until}</T> · Tested {person.tested}
+            {person.dist} · <T v="meta" c={C.green}>Live until {person.until}</T>
           </T>
           <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 8 }}>
             You both want
@@ -528,8 +560,6 @@ export function Chat({ chat, onSend, onBack, onPlan, live }) {
 /* ---------- Plan & safety ---------- */
 
 export function Plan({ chat, onBack }) {
-  const [share, setShare] = useState(true);
-  const [check, setCheck] = useState(true);
   const p = chatPerson(chat);
   return (
     <Screen scroll>
@@ -557,14 +587,6 @@ export function Plan({ chat, onBack }) {
           </Pressable>
         ))}
       </View>
-      <Card tone="safe" style={{ marginTop: 14 }}>
-        <Row title="Share with a friend" sub="Their first name, photo, place and time" right={<Toggle value={share} onChange={setShare} color={C.blue} label="Share plan with a friend" />} />
-        <Row title="Check-in at 23:00" sub="No tap on “I’m good”? Your friend gets your location." right={<Toggle value={check} onChange={setCheck} color={C.blue} label="Safety check-in" />} />
-        <Row last title="Panic button" sub="Hold the side button 3 s to call 112 and alert your friend" />
-      </Card>
-      <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 14 }}>
-        Safety features are free for everyone, always.
-      </T>
     </Screen>
   );
 }
@@ -649,12 +671,14 @@ export function Me({ profile, go, onRestart }) {
             {profile.city ? `${profile.city}${profile.country ? `, ${profile.country}` : ''} · ` : ''}Level 1 · <T v="meta" c={C.violetL}>Verified</T>
           </T>
         </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => go('settings')} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="gear" size={20} />
+        </Pressable>
       </View>
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
         {[
           ['100%', 'Shows up'],
           ['5', 'Likes you'],
-          ['—', 'Last tested'],
         ].map(([v, l]) => (
           <Card key={l} style={{ flex: 1 }}>
             <T style={{ fontFamily: F.display, fontSize: 20 }}>{v}</T>
@@ -676,6 +700,7 @@ export function Me({ profile, go, onRestart }) {
       ) : null}
       <Card style={{ paddingVertical: 0 }}>
         <Row icon="pin" iconColor={C.pinkL} iconBg={C.pinkBg} title="Edit profile" onPress={() => go('editProfile')} />
+        <Row icon="gear" iconColor={C.ink2} iconBg={C.surf2} title="Settings" sub="Notifications, privacy, account" onPress={() => go('settings')} />
         <Row icon="lock" iconColor={C.blueL} iconBg={C.blueBg} title="Privacy & discretion" onPress={() => go('privacy')} />
         <Row icon="flame" iconColor={C.violetL} iconBg={C.violetBg} title="The Tonight Code" onPress={() => go('code')} last />
       </Card>
@@ -949,8 +974,11 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
 
 const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 48, paddingHorizontal: 8 },
-  modeSeg: { flexDirection: 'row', backgroundColor: C.surf2, borderRadius: 20, padding: 3 },
-  modeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 12, borderRadius: 17 },
+  filterBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  filterBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
+  fChip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: '#2E2830', backgroundColor: 'rgba(255,255,255,0.03)' },
+  fChipOn: { borderColor: C.pink, backgroundColor: C.pinkBg },
+  emptyDeck: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 },
   card: { flex: 1, borderRadius: 28 },
   bars: { position: 'absolute', top: 12, left: 16, right: 16, flexDirection: 'row', gap: 4 },
   bar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(244,239,234,0.3)' },

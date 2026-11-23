@@ -361,24 +361,7 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
             )}
           </>
         ) : (
-          <View style={{ marginTop: 14, gap: 10 }}>
-            {GUIDES.map((g, i) => (
-              <Rise key={g.id} delay={i * 60}>
-                <Pressable accessibilityRole="button" onPress={() => onGuide(g)}>
-                  <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: i % 2 ? '#22335C' : '#4A1A33', borderWidth: 1, backgroundColor: i % 2 ? C.blueBg : C.pinkBg }}>
-                    <Icon name="book" size={22} color={i % 2 ? C.blueL : C.pinkL} />
-                    <View style={{ flex: 1 }}>
-                      <T v="small" c={C.muted}>
-                        {g.cat} · {g.mins} min
-                      </T>
-                      <T style={{ fontFamily: F.display, fontSize: 16 }}>{g.title}</T>
-                    </View>
-                    <Icon name="chev" size={16} color={C.muted} />
-                  </Card>
-                </Pressable>
-              </Rise>
-            ))}
-          </View>
+          <GuidesTab onGuide={onGuide} />
         )}
       </ScrollView>
 
@@ -389,6 +372,137 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
           </LinearGradient>
         </Pressable>
       ) : null}
+    </View>
+  );
+}
+
+/* ---------- Guides (canvas artboard 17) ---------- */
+
+const CAT_STYLE = {
+  'Talking & consent': { icon: 'chat', colors: ['#3B7BFF', '#7B3CFF'] },
+  'Sexual health': { icon: 'shieldCheck', colors: ['#2BC48A', '#3B7BFF'] },
+  Aftercare: { icon: 'heart', colors: ['#F0287A', '#FF8A3D'] },
+  'First meet': { icon: 'pin', colors: ['#F0287A', '#7B3CFF'] },
+};
+const catStyle = (cat) => CAT_STYLE[cat] || { icon: 'book', colors: [C.pink, C.blue] };
+
+function GuidesTab({ onGuide }) {
+  const [query, setQuery] = useState('');
+  const [cat, setCat] = useState(null);
+  const cats = [...new Set(GUIDES.map((g) => g.cat))];
+  const q = query.trim().toLowerCase();
+  const list = GUIDES.filter((g) => (!cat || g.cat === cat) && (!q || g.title.toLowerCase().includes(q) || g.cat.toLowerCase().includes(q)));
+  const featured = GUIDES[0];
+  const fs = catStyle(featured.cat);
+  return (
+    <View>
+      <View style={styles.search}>
+        <Icon name="search" size={18} color={C.muted} />
+        <TextInput value={query} onChangeText={setQuery} placeholder="Tips, health, aftercare…" placeholderTextColor={C.faint} style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }} accessibilityLabel="Search guides" selectionColor={C.pink} />
+        {query ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery('')} hitSlop={8}>
+            <Icon name="close" size={14} color={C.muted} stroke={2.4} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      {!q && !cat ? (
+        <Rise>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Guide of the week: ${featured.title}`} onPress={() => onGuide(featured)}>
+            <LinearGradient colors={['#4A1238', '#2A1A5A', '#14285A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.featured}>
+              <View style={[styles.featuredGlow, { backgroundColor: fs.colors[0] }]} />
+              <View style={styles.featuredBadge}>
+                <Icon name="spark" size={12} color="#FFD27A" />
+                <T c="#FFD27A" style={{ fontFamily: F.bold, fontSize: 10, letterSpacing: 0.6 }}>
+                  GUIDE OF THE WEEK
+                </T>
+              </View>
+              <T style={{ fontFamily: F.display, fontSize: 24, lineHeight: 29, marginTop: 14, maxWidth: '88%' }}>{featured.title}</T>
+              <T v="small" c={C.ink2} style={{ marginTop: 6 }}>
+                {featured.cat} · {featured.mins} min read
+              </T>
+              <View style={styles.readBtn}>
+                <T v="label" c={C.bg}>
+                  Start reading
+                </T>
+                <Icon name="chev" size={14} color={C.bg} stroke={2.4} />
+              </View>
+            </LinearGradient>
+          </Pressable>
+        </Rise>
+      ) : null}
+
+      <T style={{ fontFamily: F.display, fontSize: 17, marginTop: 20 }}>Browse by topic</T>
+      <View style={styles.tiles}>
+        {cats.map((c, i) => {
+          const st = catStyle(c);
+          const on = cat === c;
+          const count = GUIDES.filter((g) => g.cat === c).length;
+          return (
+            <Rise key={c} delay={i * 50} style={{ width: '48.5%' }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                onPress={() => {
+                  tap();
+                  setCat(on ? null : c);
+                }}
+                style={[styles.tile, on && { borderColor: st.colors[0] }]}
+              >
+                <LinearGradient colors={st.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tileIcon}>
+                  <Icon name={st.icon} size={18} color="#FFFFFF" />
+                </LinearGradient>
+                <View style={{ flex: 1 }}>
+                  <T style={{ fontFamily: F.semi, fontSize: 14, lineHeight: 18 }} numberOfLines={2}>
+                    {c}
+                  </T>
+                  <T v="small" c={C.muted}>
+                    {count} {count === 1 ? 'guide' : 'guides'}
+                  </T>
+                </View>
+                {on ? <Icon name="check" size={16} color={st.colors[0]} stroke={2.6} /> : null}
+              </Pressable>
+            </Rise>
+          );
+        })}
+      </View>
+
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 20 }}>
+        <T style={{ fontFamily: F.display, fontSize: 17 }}>{cat || (q ? 'Results' : 'Popular this week')}</T>
+        {cat ? (
+          <Pressable accessibilityRole="button" onPress={() => setCat(null)} hitSlop={8}>
+            <T v="small" c={C.pinkL} style={{ fontFamily: F.semi }}>
+              Show all
+            </T>
+          </Pressable>
+        ) : null}
+      </View>
+      {list.length === 0 ? (
+        <T v="meta" c={C.muted} style={{ marginTop: 12 }}>
+          No guides match “{query}”.
+        </T>
+      ) : (
+        list.map((g, i) => {
+          const st = catStyle(g.cat);
+          return (
+            <Rise key={g.id} delay={i * 50}>
+              <Pressable accessibilityRole="button" onPress={() => onGuide(g)} style={[styles.guideRow, i === list.length - 1 && { borderBottomWidth: 0 }]}>
+                <T style={{ fontFamily: F.displayX, fontSize: 20, width: 22, color: i % 2 ? C.blue : C.pink }}>{i + 1}</T>
+                <View style={{ flex: 1 }}>
+                  <T style={{ fontFamily: F.semi, fontSize: 15, lineHeight: 20 }}>{g.title}</T>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    <Icon name={st.icon} size={13} color={st.colors[0]} />
+                    <T v="small" c={C.muted}>
+                      {g.cat} · {g.mins} min
+                    </T>
+                  </View>
+                </View>
+                <Icon name="chev" size={16} color={C.muted} />
+              </Pressable>
+            </Rise>
+          );
+        })
+      )}
     </View>
   );
 }
@@ -740,6 +854,15 @@ export function PostView({ post: initial, onBack }) {
 }
 
 const styles = StyleSheet.create({
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 48, borderRadius: 24, borderWidth: 1.5, borderColor: '#2E2830', backgroundColor: C.surf3, paddingHorizontal: 16, marginTop: 14 },
+  featured: { marginTop: 14, borderRadius: 24, padding: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  featuredGlow: { position: 'absolute', right: -60, top: -60, width: 180, height: 180, borderRadius: 90, opacity: 0.35 },
+  featuredBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.45)' },
+  readBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', height: 38, paddingHorizontal: 16, borderRadius: 19, backgroundColor: C.ink, marginTop: 16 },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10, marginTop: 10 },
+  tile: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 72, padding: 12, borderRadius: 18, backgroundColor: '#151217', borderWidth: 1.5, borderColor: C.line },
+  tileIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  guideRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line },
   ib: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: '#151217', borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 4, marginTop: 10 },
   actions: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: C.line, marginTop: 12 },

@@ -93,6 +93,8 @@ async function saveProfileNow(profile, onboarded) {
     bio: profile.bio || null,
     country: profile.country || null,
     city: profile.city || null,
+    settings: profile.settings ?? {},
+    paused: !!profile.settings?.paused,
     prompt: profile.prompt ?? null,
     photos: paths,
     blur_face: !!profile.blurFace,
@@ -137,6 +139,7 @@ export async function loadMyProfile() {
       bio: data.bio,
       country: data.country,
       city: data.city,
+      settings: data.settings || {},
       prompt: data.prompt,
       photos: urls,
       uploaded: Object.fromEntries(urls.map((u, i) => [u, data.photos[i]])),
@@ -199,6 +202,8 @@ function toPerson(row, me, url) {
     maybe: maybe || null,
     photo: url || null,
     blurred: !!row.blur_face, // shown blurred until you match
+    verified: !!row.verified,
+    intents: row.intents || [],
   };
 }
 
@@ -465,4 +470,39 @@ export async function likeComment(id, on) {
   if (!uid) return;
   if (on) await supabase.from('comment_likes').upsert({ comment_id: id, user_id: uid });
   else await supabase.from('comment_likes').delete().eq('comment_id', id).eq('user_id', uid);
+}
+
+/* ---------- Settings ---------- */
+
+export async function loadBlocks() {
+  if (!uid) return [];
+  const { data } = await supabase.rpc('my_blocks');
+  return data || [];
+}
+
+export async function unblock(personId) {
+  if (!uid) return;
+  await supabase.from('blocks').delete().eq('blocker', uid).eq('blocked', personId);
+}
+
+/** Deletes my photos, then my account and everything linked to it. */
+export async function deleteAccount() {
+  if (!uid) return false;
+  for (const bucket of ['photos', 'post-photos', 'selfies']) {
+    try {
+      const { data } = await supabase.storage.from(bucket).list(uid, { limit: 1000 });
+      const paths = (data || []).map((f) => `${uid}/${f.name}`);
+      if (paths.length) await supabase.storage.from(bucket).remove(paths);
+    } catch {
+      // keep going; the account removal below is what matters
+    }
+  }
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) {
+    console.warn('[backend] delete account failed', error.message);
+    return false;
+  }
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+  uid = null;
+  return true;
 }
