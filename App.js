@@ -26,7 +26,6 @@ import {
   Discover,
   GuideView,
   Ideas,
-  Lounge,
   Match,
   Me,
   Plan,
@@ -35,6 +34,7 @@ import {
   Support,
   Likes,
 } from './src/screens/Main';
+import { Compose, Lounge, PostView } from './src/screens/Lounge';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
 const BLOCK_SCREENSHOTS = false;
@@ -65,6 +65,7 @@ export default function App() {
   const [online, setOnline] = useState(false);
   const [deck, setDeck] = useState([]);
   const [likesYou, setLikesYou] = useState([]);
+  const [feedKey, setFeedKey] = useState(0); // bump to reload the Lounge feed
 
   // Get a new OTA update in right away (restarts the app once when there is one).
   useEffect(() => {
@@ -247,6 +248,29 @@ export default function App() {
         case 'plan':
           screen = chat ? <Plan chat={chat} onBack={pop} /> : null;
           break;
+        case 'compose':
+          screen = (
+            <Compose
+              onClose={pop}
+              onPosted={() => {
+                setFeedKey((k) => k + 1);
+                pop();
+              }}
+            />
+          );
+          break;
+        case 'post':
+          screen = (
+            <PostView
+              key={p.post.id}
+              post={p.post}
+              onBack={() => {
+                setFeedKey((k) => k + 1);
+                pop();
+              }}
+            />
+          );
+          break;
         case 'guide':
           screen = <GuideView guide={p.guide} onBack={pop} />;
           break;
@@ -270,7 +294,7 @@ export default function App() {
         discover: <Discover deck={[...deck, ...PEOPLE]} onOpen={(person) => push('profile', { person })} onLike={like} />,
         likes: <Likes people={[...likesYou, ...PEOPLE]} onOpen={(person) => push('profile', { person })} />,
         chats: <Chats chats={chats} onOpen={(id) => push('chat', { id })} />,
-        lounge: <Lounge onGuide={(guide) => push('guide', { guide })} />,
+        lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onOpenPost={(post) => push('post', { post })} />,
         me: (
           <Me
             profile={profile}

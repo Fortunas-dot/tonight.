@@ -337,3 +337,122 @@ export async function voteIdea(ideaId, value) {
   if (!value) await supabase.from('idea_votes').delete().eq('idea_id', ideaId).eq('user_id', uid);
   else await supabase.from('idea_votes').upsert({ idea_id: ideaId, user_id: uid, value });
 }
+
+/* ---------- Lounge: posts, comments, likes ---------- */
+
+const POST_BUCKET = 'post-photos';
+
+/** My Lounge alias (created the first time). */
+export async function myAlias() {
+  if (!uid) return null;
+  const { data } = await supabase.rpc('my_alias');
+  return data || null;
+}
+
+const toPost = (r, urls = {}) => ({
+  id: r.id,
+  real: true,
+  alias: r.author_alias,
+  verified: r.author_verified,
+  role: r.author_role,
+  topic: r.topic,
+  title: r.title,
+  body: r.body,
+  photos: (r.photos || []).map((p) => urls[p]).filter(Boolean),
+  spicy: r.spicy,
+  createdAt: r.created_at,
+  likes: r.like_count,
+  comments: r.comment_count,
+  liked: r.liked,
+  mine: r.mine,
+  expert: r.expert_reply || null,
+});
+
+async function postPhotoUrls(rows) {
+  const paths = rows.flatMap((r) => r.photos || []);
+  if (!paths.length) return {};
+  const { data } = await supabase.storage.from(POST_BUCKET).createSignedUrls(paths, URL_TTL);
+  return Object.fromEntries((data || []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+}
+
+/** Newest posts first; topic 'For you' means all. Returns null when offline. */
+export async function loadFeed(topic) {
+  if (!uid) return null;
+  let q = supabase.from('posts_feed').select('*').order('created_at', { ascending: false }).limit(50);
+  if (topic && topic !== 'For you') q = q.eq('topic', topic);
+  const { data, error } = await q;
+  if (error) return null;
+  const urls = await postPhotoUrls(data);
+  return data.map((r) => toPost(r, urls));
+}
+
+export async function loadPost(id) {
+  if (!uid) return null;
+  const { data } = await supabase.from('posts_feed').select('*').eq('id', id).maybeSingle();
+  if (!data) return null;
+  return toPost(data, await postPhotoUrls([data]));
+}
+
+export async function likePost(id, on) {
+  if (!uid) return;
+  if (on) await supabase.from('post_likes').upsert({ post_id: id, user_id: uid });
+  else await supabase.from('post_likes').delete().eq('post_id', id).eq('user_id', uid);
+}
+
+/** Creates a post; photos are local uris (already masked if the member chose that). */
+export async function createPost({ topic, title, body, photos = [], spicy }) {
+  if (!uid) return null;
+  const paths = [];
+  for (const uri of photos) {
+    const ext = (uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
+    const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext === 'jpeg' ? 'jpg' : ext}`;
+    const bytes = await new File(uri).arrayBuffer();
+    const { error } = await supabase.storage.from(POST_BUCKET).upload(path, bytes, { contentType: ext === 'png' ? 'image/png' : 'image/jpeg' });
+    if (!error) paths.push(path);
+  }
+  const { data, error } = await supabase
+    .from('posts')
+    .insert({ author: uid, topic, title: title || null, body: body || '', photos: paths, spicy: !!spicy })
+    .select('id')
+    .single();
+  if (error) {
+    console.warn('[backend] post failed', error.message);
+    return null;
+  }
+  return data.id;
+}
+
+export async function deletePost(id) {
+  if (!uid) return;
+  await supabase.from('posts').delete().eq('id', id);
+}
+
+export async function loadComments(postId) {
+  if (!uid) return [];
+  const { data } = await supabase.from('comments_feed').select('*').eq('post_id', postId).order('created_at');
+  return (data || []).map((c) => ({
+    id: c.id,
+    parentId: c.parent_id,
+    alias: c.author_alias,
+    verified: c.author_verified,
+    role: c.author_role,
+    body: c.body,
+    createdAt: c.created_at,
+    likes: c.like_count,
+    liked: c.liked,
+    mine: c.mine,
+  }));
+}
+
+export async function addComment(postId, body, parentId = null) {
+  if (!uid) return null;
+  const { data, error } = await supabase.from('comments').insert({ post_id: postId, author: uid, body, parent_id: parentId }).select('id').single();
+  if (error) return null;
+  return data.id;
+}
+
+export async function likeComment(id, on) {
+  if (!uid) return;
+  if (on) await supabase.from('comment_likes').upsert({ comment_id: id, user_id: uid });
+  else await supabase.from('comment_likes').delete().eq('comment_id', id).eq('user_id', uid);
+}

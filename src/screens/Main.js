@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
-import { GUIDES, PEOPLE, POSTS, VOWS, personById } from '../data';
+import { PEOPLE, VOWS, personById } from '../data';
 import { versionLabel } from '../version';
 import {
   Avatar,
@@ -569,112 +569,7 @@ export function Plan({ chat, onBack }) {
   );
 }
 
-/* ---------- Lounge & Guides ---------- */
-
-export function Lounge({ onGuide }) {
-  const [tab, setTab] = useState('talk');
-  const [liked, setLiked] = useState({});
-  const [revealed, setRevealed] = useState({});
-  return (
-    <Screen scroll>
-      <T v="title" style={{ marginTop: 8 }}>
-        The Lounge
-      </T>
-      <View style={{ marginTop: 12 }}>
-        <Segmented
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: 'talk', label: 'Talk' },
-            { value: 'guides', label: 'Guides' },
-          ]}
-        />
-      </View>
-      {tab === 'talk' ? (
-        <>
-          <LinearGradient colors={[C.pinkBg, C.violetBg]} style={{ borderRadius: 18, padding: 14, marginTop: 14, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-            <View style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center' }}>
-              <T v="small" c="#FFFFFF" style={{ fontFamily: F.semi, fontSize: 10 }}>
-                THU
-              </T>
-              <T c="#FFFFFF" style={{ fontFamily: F.display, fontSize: 18, lineHeight: 20 }}>
-                27
-              </T>
-            </View>
-            <View style={{ flex: 1 }}>
-              <T v="small" c={C.pinkL} style={{ fontFamily: F.semi }}>
-                LIVE Q&A · 20:00
-              </T>
-              <T style={{ fontFamily: F.medium }}>Ask a sex therapist anything, anonymously</T>
-            </View>
-          </LinearGradient>
-          {POSTS.map((p, i) => (
-            <Rise key={p.id} delay={i * 70}>
-              <View style={styles.post}>
-                <View style={{ flex: 1 }}>
-                  <T v="small" c={C.muted}>
-                    {p.by} · {p.topic}
-                  </T>
-                  <T style={{ fontFamily: F.displayM, fontSize: 19, lineHeight: 24, marginTop: 4 }}>{p.title}</T>
-                  <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, alignItems: 'center' }}>
-                    <Pressable accessibilityRole="button" accessibilityLabel="Like post" onPress={() => { tap(); setLiked({ ...liked, [p.id]: !liked[p.id] }); }} style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-                      <Icon name="heart" size={16} color={liked[p.id] ? C.pink : C.muted} fill={liked[p.id] ? C.pink : 'none'} />
-                      <T v="small" c={C.muted}>
-                        {p.likes + (liked[p.id] ? 1 : 0)}
-                      </T>
-                    </Pressable>
-                    <T v="small" c={C.muted}>
-                      {p.replies} replies
-                    </T>
-                    {p.expert ? (
-                      <T v="small" c={C.blueL}>
-                        Educator replied
-                      </T>
-                    ) : null}
-                  </View>
-                </View>
-                {p.spicy ? (
-                  <Pressable accessibilityRole="button" accessibilityLabel="Spicy photo, tap to view" onPress={() => setRevealed({ ...revealed, [p.id]: true })} style={styles.spicy}>
-                    <Photo seed={1} style={StyleSheet.absoluteFill} />
-                    {revealed[p.id] ? null : (
-                      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(30,20,30,0.9)', alignItems: 'center', justifyContent: 'center', gap: 4 }]}>
-                        <Icon name="eye" size={16} />
-                        <View style={{ backgroundColor: C.pink, borderRadius: 5, paddingHorizontal: 5 }}>
-                          <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 9 }}>
-                            SPICY
-                          </T>
-                        </View>
-                      </View>
-                    )}
-                  </Pressable>
-                ) : null}
-              </View>
-            </Rise>
-          ))}
-        </>
-      ) : (
-        <View style={{ marginTop: 14, gap: 10 }}>
-          {GUIDES.map((g, i) => (
-            <Rise key={g.id} delay={i * 60}>
-              <Pressable accessibilityRole="button" onPress={() => onGuide(g)}>
-                <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: i % 2 ? '#22335C' : '#4A1A33', borderWidth: 1, backgroundColor: i % 2 ? C.blueBg : C.pinkBg }}>
-                  <Icon name="book" size={22} color={i % 2 ? C.blueL : C.pinkL} />
-                  <View style={{ flex: 1 }}>
-                    <T v="small" c={C.muted}>
-                      {g.cat} · {g.mins} min
-                    </T>
-                    <T style={{ fontFamily: F.display, fontSize: 16 }}>{g.title}</T>
-                  </View>
-                  <Icon name="chev" size={16} color={C.muted} />
-                </Card>
-              </Pressable>
-            </Rise>
-          ))}
-        </View>
-      )}
-    </Screen>
-  );
-}
+/* ---------- Guides ---------- */
 
 export function GuideView({ guide, onBack }) {
   const [saved, setSaved] = useState(false);
@@ -1074,8 +969,6 @@ const styles = StyleSheet.create({
   composerInput: { flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 },
   sendBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   quick: { flex: 1, height: 64, borderRadius: 16, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center', gap: 5 },
-  post: { flexDirection: 'row', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line },
-  spicy: { width: 76, height: 92, borderRadius: 14, overflow: 'hidden' },
   report: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: '#2A1A1E', borderRadius: 14, padding: 12, margin: 16, marginBottom: 0 },
   ideaInput: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 52, paddingLeft: 16, paddingRight: 6, borderRadius: 26, backgroundColor: C.surf3, borderWidth: 1.5, borderColor: C.line2, marginTop: 14 },
   idea: { flexDirection: 'row', gap: 12, padding: 14, backgroundColor: C.surf3, borderRadius: 18, borderWidth: 1, borderColor: C.line, marginTop: 10 },
