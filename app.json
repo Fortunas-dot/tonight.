@@ -46,6 +46,11 @@
         }
       ]
     ],
-    "owner": "fortunascreations"
+    "owner": "fortunascreations",
+    "extra": {
+      "eas": {
+        "projectId": "5526954b-f8bd-4f75-8c32-afefe68fd2d8"
+      }
+    }
   }
 }
