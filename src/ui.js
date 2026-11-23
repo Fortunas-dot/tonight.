@@ -23,8 +23,11 @@ const TYPE = {
 };
 
 export function T({ v = 'body', c = C.ink, style, children, ...rest }) {
+  // A bigger font without its own line height would keep the variant's line height and get clipped at the top.
+  const own = StyleSheet.flatten(style) || {};
+  const fit = own.fontSize && !own.lineHeight && own.fontSize > TYPE[v].fontSize ? { lineHeight: Math.round(own.fontSize * 1.25) } : null;
   return (
-    <Text style={[TYPE[v], { color: c }, style]} {...rest}>
+    <Text style={[TYPE[v], { color: c }, style, fit]} {...rest}>
       {children}
     </Text>
   );
