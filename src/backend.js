@@ -117,6 +117,29 @@ export async function loadMyProfile() {
   };
 }
 
+/* ---------- Face verification ---------- */
+
+/**
+ * Uploads the selfie and asks the server to compare it with the profile photos (AWS Rekognition).
+ * The server deletes the selfie afterwards. Resolves to { verified, reason, uploaded }.
+ * reason 'offline' or 'not_configured' means the real check could not run.
+ */
+export async function verifyFace(profile, selfieUri) {
+  if (!uid) return { verified: false, reason: 'offline', uploaded: profile.uploaded || {} };
+  try {
+    const uploaded = await saveProfile(profile, false);
+    const body = await new File(selfieUri).arrayBuffer();
+    const { error: upErr } = await supabase.storage.from('selfies').upload(`${uid}/selfie.jpg`, body, { contentType: 'image/jpeg', upsert: true });
+    if (upErr) throw upErr;
+    const { data, error } = await supabase.functions.invoke('verify-face', { body: {} });
+    if (error) throw error;
+    return { ...data, uploaded };
+  } catch (e) {
+    console.warn('[backend] verify failed', e?.message || e);
+    return { verified: false, reason: 'error', uploaded: profile.uploaded || {} };
+  }
+}
+
 /* ---------- Other people ---------- */
 
 const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);

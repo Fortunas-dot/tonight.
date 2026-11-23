@@ -7,6 +7,7 @@ import { C, F, FIRE, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { BOUNDARIES, INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS } from '../data';
 import { MaskEditor } from './MaskEditor';
+import * as api from '../backend';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
 
 const STEPS = 6;
@@ -612,22 +613,29 @@ export function Boundaries({ profile, setProfile, next, back }) {
   );
 }
 
+const VERIFY_REASONS = {
+  no_face: 'We couldn’t see a face. Try again in good light, face in the frame.',
+  several_faces: 'More than one face in the shot. Make sure it’s just you.',
+  eyes_closed: 'Your eyes look closed. Try again, eyes open.',
+  sunglasses: 'Take off your sunglasses and try again.',
+  blurry: 'The selfie came out blurry. Hold still and try again.',
+  no_match: 'That didn’t match your photos. Make sure one photo shows your face clearly.',
+  no_photos: 'Add your photos first, then take the selfie.',
+  no_selfie: 'The selfie didn’t upload. Check your connection and try again.',
+  error: 'Something went wrong on our side. Try again in a moment.',
+};
+
 export function Verify({ profile, setProfile, next, back }) {
-  const [state, setState] = useState(profile.verified ? 'done' : 'idle');
+  const [state, setState] = useState(profile.verified ? 'done' : 'idle'); // idle | checking | done | failed
+  const [reason, setReason] = useState(null);
+  const [simulated, setSimulated] = useState(false);
+  const [shot, setShot] = useState(null);
   const [spin] = useState(() => new Animated.Value(0));
   useEffect(() => {
     if (state !== 'checking') return undefined;
     const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 1100, easing: Easing.linear, useNativeDriver: true }));
     loop.start();
-    const t = setTimeout(() => {
-      loop.stop();
-      success();
-      setState('done');
-    }, 2200);
-    return () => {
-      loop.stop();
-      clearTimeout(t);
-    };
+    return () => loop.stop();
   }, [state, spin]);
 
   const start = async () => {
@@ -641,9 +649,35 @@ export function Verify({ profile, setProfile, next, back }) {
       ]);
       return;
     }
-    const res = await ImagePicker.launchCameraAsync({ cameraType: ImagePicker.CameraType.front, quality: 0.5 });
-    if (!res.canceled) setState('checking');
+    const res = await ImagePicker.launchCameraAsync({ cameraType: ImagePicker.CameraType.front, quality: 0.6 });
+    if (res.canceled || !res.assets?.[0]) return;
+    setShot(res.assets[0].uri);
+    setReason(null);
+    setState('checking');
+    const out = await api.verifyFace(profile, res.assets[0].uri);
+    if (out.uploaded) setProfile((p) => ({ ...p, uploaded: out.uploaded }));
+    if (out.verified) {
+      success();
+      setSimulated(false);
+      setState('done');
+    } else if (out.reason === 'not_configured' || out.reason === 'offline') {
+      // The real check isn't switched on yet: keep the test-build behaviour.
+      success();
+      setSimulated(true);
+      setState('done');
+    } else {
+      thud();
+      setReason(out.reason);
+      setState('failed');
+    }
   };
+
+  const caption = {
+    idle: 'A quick selfie, face in the frame',
+    checking: 'Checking it’s really you…',
+    done: 'Verified. Welcome.',
+    failed: 'Not verified yet',
+  }[state];
 
   return (
     <Screen>
@@ -654,17 +688,25 @@ export function Verify({ profile, setProfile, next, back }) {
       <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
         Everyone here did this. It’s why there are no bots.
       </T>
-      <View style={styles.oval}>
+      <View style={[styles.oval, state === 'failed' && { borderColor: '#5A2A31' }, state === 'done' && { borderColor: C.blue }]}>
+        {shot && state !== 'done' ? <Image source={{ uri: shot }} style={[StyleSheet.absoluteFill, { opacity: 0.45 }]} /> : null}
         {state === 'checking' ? (
           <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }]}>
             <LinearGradient colors={[C.pink, 'transparent']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, borderRadius: 3 }} />
           </Animated.View>
         ) : null}
-        {state === 'done' ? <Verified size={72} /> : <Icon name="camera" size={56} color={C.muted} stroke={1.4} />}
+        {state === 'done' ? <Verified size={72} /> : state === 'failed' ? <Icon name="close" size={48} color="#FF9AA3" stroke={2} /> : state === 'idle' ? <Icon name="camera" size={56} color={C.muted} stroke={1.4} /> : null}
         <T v="meta" c={C.ink2} numberOfLines={2} style={{ position: 'absolute', bottom: 40, left: 28, right: 28, textAlign: 'center' }}>
-          {state === 'idle' ? 'A quick selfie, face in the frame' : state === 'checking' ? 'Checking it’s really you…' : 'Verified. Welcome.'}
+          {caption}
         </T>
       </View>
+      {state === 'failed' && reason ? (
+        <View style={styles.failNote}>
+          <T v="small" c="#FFD7DC" style={{ flex: 1 }}>
+            {VERIFY_REASONS[reason] || VERIFY_REASONS.error}
+          </T>
+        </View>
+      ) : null}
       <View style={{ gap: 10, marginTop: 22 }}>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
           <Icon name="check" size={18} color={C.blueL} />
@@ -672,23 +714,25 @@ export function Verify({ profile, setProfile, next, back }) {
             Compared to your photos, then deleted
           </T>
         </View>
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-          <Icon name="check" size={18} color={C.blueL} />
-          <T v="meta" c={C.safeInk}>
-            Test build: the check is simulated
-          </T>
-        </View>
+        {simulated ? (
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <Icon name="check" size={18} color={C.blueL} />
+            <T v="meta" c={C.safeInk}>
+              Test build: the check is simulated
+            </T>
+          </View>
+        ) : null}
       </View>
       <View style={{ flex: 1 }} />
       {state === 'done' ? (
         <Next
           onPress={() => {
-            setProfile({ ...profile, verified: true });
+            setProfile((p) => ({ ...p, verified: true }));
             next();
           }}
         />
       ) : (
-        <GradientButton title={state === 'checking' ? 'Checking…' : 'Take my selfie'} disabled={state === 'checking'} onPress={start} />
+        <GradientButton title={state === 'checking' ? 'Checking…' : state === 'failed' ? 'Try again' : 'Take my selfie'} disabled={state === 'checking'} onPress={start} />
       )}
     </Screen>
   );
@@ -817,6 +861,7 @@ const styles = StyleSheet.create({
   bRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.line },
   yn: { flexDirection: 'row', backgroundColor: C.surf2, borderRadius: 12, padding: 3, gap: 2 },
   ynBtn: { width: 50, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  failNote: { marginTop: 14, padding: 12, borderRadius: 14, backgroundColor: '#2A1418', borderWidth: 1, borderColor: '#5A2A31' },
   oval: {
     width: 240,
     height: 300,
