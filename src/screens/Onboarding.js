@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Animated, Easing, Image, Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Circle, Defs, LinearGradient as SvgGrad, Path, Stop } from 'react-native-svg';
 import { C, F, FIRE, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
-import { BOUNDARIES, INTENTS, TURN_ONS, VOWS } from '../data';
+import { BOUNDARIES, INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS } from '../data';
+import { MaskEditor } from './MaskEditor';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
 
 const STEPS = 6;
@@ -328,14 +329,85 @@ export function Basics({ profile, setProfile, next, back }) {
 }
 
 export function Photos({ profile, setProfile, next, back }) {
+  const { width } = useWindowDimensions();
   const [photos, setPhotos] = useState(profile.photos || []);
+  const [masked, setMasked] = useState(profile.masked || {});
   const [blur, setBlur] = useState(!!profile.blurFace);
+  const [editing, setEditing] = useState(null); // index of the photo in the mask editor
   const add = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [3, 4], quality: 0.8 });
     if (!res.canceled && res.assets?.[0]) setPhotos([...photos, res.assets[0].uri].slice(0, 6));
   };
   const remove = (i) => setPhotos(photos.filter((_, j) => j !== i));
-  const slots = Array.from({ length: 6 }, (_, i) => photos[i]);
+  const save = () => setProfile({ ...profile, photos, blurFace: blur, masked });
+
+  if (editing !== null && photos[editing]) {
+    return (
+      <MaskEditor
+        uri={photos[editing]}
+        onCancel={() => setEditing(null)}
+        onDone={(uri, mask) => {
+          if (mask) {
+            setPhotos(photos.map((p, j) => (j === editing ? uri : p)));
+            setMasked({ ...masked, [uri]: mask });
+          }
+          setEditing(null);
+        }}
+      />
+    );
+  }
+
+  // Grid: a big main photo (2 by 2) with two beside it, then a row of three.
+  const gap = 8;
+  const cell = Math.floor((width - 48 - gap * 2) / 3);
+  const cellH = Math.round(cell * 1.08);
+  const big = { width: cell * 2 + gap, height: cellH * 2 + gap };
+  const small = { width: cell, height: cellH };
+
+  const slot = (i, size) => {
+    const uri = photos[i];
+    if (!uri) {
+      const isNext = i === photos.length;
+      return (
+        <Pressable key={i} accessibilityRole="button" accessibilityLabel="Add photo" onPress={add} style={[styles.slotEmpty, size, isNext && { borderColor: C.pink }]}>
+          <Icon name="plus" size={i === 0 ? 30 : 22} color={isNext ? C.pinkL : C.muted} />
+          {i === 0 ? (
+            <T v="small" c={C.muted} style={{ marginTop: 6 }}>
+              Main photo
+            </T>
+          ) : null}
+        </Pressable>
+      );
+    }
+    return (
+      <View key={i} style={[styles.slot, size, i === 0 && styles.slotMain]}>
+        <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+        <Pressable accessibilityRole="button" accessibilityLabel={`Remove photo ${i + 1}`} onPress={() => remove(i)} hitSlop={8} style={styles.slotX}>
+          <Icon name="close" size={12} color={C.ink} stroke={3} />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={masked[uri] ? `Change mask on photo ${i + 1}` : `Add a mask to photo ${i + 1}`}
+          onPress={() => setEditing(i)}
+          hitSlop={6}
+          style={[styles.maskBtn, masked[uri] && { backgroundColor: C.pink }]}
+        >
+          <Svg width={18} height={18} viewBox="86 80 170 190">
+            <Path d="M96 222C108 198 150 196 171 211C192 196 234 198 246 222C240 252 206 260 188 245C180 238 162 238 154 245C136 260 102 252 96 222Z" fill="#FFFFFF" />
+            <Path d="M128 170L118 96L150 150Z M214 170L224 96L192 150Z" fill="#FFFFFF" />
+          </Svg>
+        </Pressable>
+        {i === 0 ? (
+          <View style={styles.mainTag}>
+            <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 10 }}>
+              MAIN
+            </T>
+          </View>
+        ) : null}
+      </View>
+    );
+  };
+
   return (
     <Screen scroll>
       <Header onBack={back} step={2} total={STEPS} />
@@ -343,42 +415,56 @@ export function Photos({ profile, setProfile, next, back }) {
         Show your best side
       </T>
       <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
-        Add at least 2 photos, one with your face. No nudity on public photos.
+        At least 2 photos, one with your face. No nudity on public photos.
       </T>
-      <View style={styles.grid}>
-        {slots.map((uri, i) => (
-          <Pressable
-            key={i}
-            accessibilityRole="button"
-            accessibilityLabel={uri ? `Remove photo ${i + 1}` : 'Add photo'}
-            onPress={() => (uri ? remove(i) : add())}
-            style={[styles.slot, i === 0 && styles.slotMain, !uri && styles.slotEmpty]}
-          >
-            {uri ? (
-              <>
-                <Image source={{ uri }} style={StyleSheet.absoluteFill} />
-                <View style={styles.slotX}>
-                  <Icon name="close" size={12} color={C.ink} stroke={3} />
-                </View>
-                {i === 0 ? (
-                  <View style={styles.mainTag}>
-                    <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 10 }}>
-                      MAIN
-                    </T>
-                  </View>
-                ) : null}
-              </>
-            ) : (
-              <Icon name="plus" size={22} color={C.muted} />
-            )}
-          </Pressable>
-        ))}
+      <View style={{ marginTop: 16, gap }}>
+        <View style={{ flexDirection: 'row', gap }}>
+          {slot(0, big)}
+          <View style={{ gap }}>
+            {slot(1, small)}
+            {slot(2, small)}
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap }}>
+          {slot(3, small)}
+          {slot(4, small)}
+          {slot(5, small)}
+        </View>
       </View>
-      <Card style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+
+      <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 19, padding: 1.5, marginTop: 18 }}>
+        <View style={styles.maskCard}>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.semi }}>Hide my face</T>
+            <T v="small" c={C.muted} style={{ marginTop: 2 }}>
+              Wear a bunny, masquerade or kitten mask. Added on your phone.
+            </T>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              if (!photos.length) {
+                Alert.alert('Add a photo first', 'Pick a photo, then choose a mask for it.');
+                return;
+              }
+              tap();
+              setEditing(0);
+            }}
+          >
+            <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.maskCta}>
+              <T v="small" c="#FFFFFF" style={{ fontFamily: F.semi, fontSize: 13 }}>
+                Try a mask
+              </T>
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </LinearGradient>
+
+      <Card style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}>
           <T style={{ fontFamily: F.medium }}>Blur my face until we match</T>
           <T v="small" c={C.muted} style={{ marginTop: 2 }}>
-            Great for discretion. Masks are coming in the next update.
+            Your photos show blurred until you both like each other.
           </T>
         </View>
         <Toggle value={blur} onChange={setBlur} label="Blur my face until we match" />
@@ -387,13 +473,13 @@ export function Photos({ profile, setProfile, next, back }) {
       <Next
         disabled={photos.length < 2}
         onPress={() => {
-          setProfile({ ...profile, photos, blurFace: blur });
+          save();
           next();
         }}
       />
       <Pressable
         onPress={() => {
-          setProfile({ ...profile, photos, blurFace: blur });
+          save();
           next();
         }}
         style={{ alignItems: 'center', paddingVertical: 14 }}
@@ -406,8 +492,42 @@ export function Photos({ profile, setProfile, next, back }) {
   );
 }
 
-const ANSWERS = ['Yes', 'Maybe', 'No'];
-const ANSWER_BG = { Yes: '#2E5E4A', Maybe: '#5A4A22', No: '#4A2328' };
+const ANSWERS = [
+  { v: 'Yes', icon: 'check', bg: '#1E4D3A', border: '#2BC48A', ink: '#E7FFF3' },
+  { v: 'Maybe', icon: null, bg: '#4A3C17', border: '#E8B64C', ink: '#FFF3D1' },
+  { v: 'No', icon: 'close', bg: '#4A1F26', border: '#FF6F7F', ink: '#FFE1E4' },
+];
+const B_ICONS = {
+  'Meet for a drink first': 'pin',
+  'Host at my place': 'lock',
+  'Go to theirs': 'send',
+  'Stay the night': 'clock',
+  'Couples & threesomes': 'heart',
+  'Kink-friendly': 'flame',
+  'Protection, always': 'shieldCheck',
+};
+
+function Answer({ a, on, onPress, label }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: on }}
+      onPress={onPress}
+      style={[styles.ans, on && { backgroundColor: a.bg, borderColor: a.border }]}
+    >
+      {on && a.icon ? <Icon name={a.icon} size={14} color={a.ink} stroke={2.6} /> : null}
+      {on && !a.icon ? (
+        <T c={a.ink} style={{ fontFamily: F.bold, fontSize: 14 }}>
+          ?
+        </T>
+      ) : null}
+      <T c={on ? a.ink : C.muted} style={{ fontFamily: on ? F.semi : F.medium, fontSize: 14 }}>
+        {a.v}
+      </T>
+    </Pressable>
+  );
+}
 
 export function Boundaries({ profile, setProfile, next, back }) {
   const [intents, setIntents] = useState(profile.intents || ['Tonight']);
@@ -425,47 +545,62 @@ export function Boundaries({ profile, setProfile, next, back }) {
           <Chip key={i} label={i} on={intents.includes(i)} onPress={() => tog(intents, setIntents, i)} />
         ))}
       </View>
-      <T v="h" style={{ marginTop: 26 }}>
+      <T v="h" style={{ marginTop: 28 }}>
         Your boundaries
       </T>
+      <View style={styles.noteSafe}>
+        <Icon name="lock" size={16} color={C.blueL} />
+        <T v="small" c={C.safeInk} style={{ flex: 1 }}>
+          Your no’s are never shown. They quietly filter out anyone who needs them.
+        </T>
+      </View>
+      <View style={{ gap: 10, marginTop: 12 }}>
+        {BOUNDARIES.map((b) => (
+          <View key={b} style={styles.bCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={styles.bIcon}>
+                <Icon name={B_ICONS[b] || 'check'} size={16} color={C.ink2} />
+              </View>
+              <T style={{ fontFamily: F.medium, fontSize: 15, flex: 1 }}>{b}</T>
+            </View>
+            <View style={styles.ansRow}>
+              {ANSWERS.map((a) => (
+                <Answer
+                  key={a.v}
+                  a={a}
+                  on={answers[b] === a.v}
+                  label={`${b}: ${a.v}`}
+                  onPress={() => {
+                    tap();
+                    setAnswers({ ...answers, [b]: a.v });
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28 }}>
+        <T v="h">What turns you on</T>
+        <T v="small" c={turnOns.length >= MAX_TURN_ONS ? C.pinkL : C.muted}>
+          {turnOns.length} of {MAX_TURN_ONS}
+        </T>
+      </View>
       <T v="small" c={C.muted} style={{ marginTop: 2 }}>
-        Your no’s are never shown. They quietly filter out anyone who needs them.
+        Shared ones light up for matches.
       </T>
-      {BOUNDARIES.map((b) => (
-        <View key={b} style={styles.bRow}>
-          <T style={{ flex: 1, fontSize: 14 }}>{b}</T>
-          <View style={styles.yn}>
-            {ANSWERS.map((a) => (
-              <Pressable
-                key={a}
-                accessibilityRole="button"
-                accessibilityLabel={`${b}: ${a}`}
-                accessibilityState={{ selected: answers[b] === a }}
-                onPress={() => {
-                  tap();
-                  setAnswers({ ...answers, [b]: a });
-                }}
-                style={[styles.ynBtn, answers[b] === a && { backgroundColor: ANSWER_BG[a] }]}
-              >
-                <T v="small" c={answers[b] === a ? C.ink : C.muted} style={{ fontFamily: F.medium }}>
-                  {a}
-                </T>
-              </Pressable>
+      {TURN_ON_GROUPS.map((g) => (
+        <View key={g.title} style={{ marginTop: 14 }}>
+          <T v="label" c={C.faint} style={{ marginBottom: 8 }}>
+            {g.title}
+          </T>
+          <View style={styles.wrap}>
+            {g.items.map((t) => (
+              <Chip key={t} small label={t} on={turnOns.includes(t)} onPress={() => tog(turnOns, setTurnOns, t, MAX_TURN_ONS)} />
             ))}
           </View>
         </View>
       ))}
-      <T v="h" style={{ marginTop: 26 }}>
-        What turns you on
-      </T>
-      <T v="small" c={C.muted} style={{ marginTop: 2 }}>
-        Pick up to 5. Shared ones light up for matches.
-      </T>
-      <View style={[styles.wrap, { marginTop: 10 }]}>
-        {TURN_ONS.map((t) => (
-          <Chip key={t} small label={t} on={turnOns.includes(t)} onPress={() => tog(turnOns, setTurnOns, t, 5)} />
-        ))}
-      </View>
       <View style={{ height: 28 }} />
       <Next
         onPress={() => {
@@ -521,7 +656,7 @@ export function Verify({ profile, setProfile, next, back }) {
           </Animated.View>
         ) : null}
         {state === 'done' ? <Verified size={72} /> : <Icon name="camera" size={56} color={C.muted} stroke={1.4} />}
-        <T v="meta" c={C.ink2} style={{ position: 'absolute', bottom: 26 }}>
+        <T v="meta" c={C.ink2} numberOfLines={2} style={{ position: 'absolute', bottom: 40, left: 28, right: 28, textAlign: 'center' }}>
           {state === 'idle' ? 'A quick selfie, face in the frame' : state === 'checking' ? 'Checking it’s really you…' : 'Verified. Welcome.'}
         </T>
       </View>
@@ -661,9 +796,17 @@ const styles = StyleSheet.create({
   },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  slot: { width: '31.5%', aspectRatio: 0.78, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: C.surf },
+  slot: { borderRadius: 16, overflow: 'hidden', backgroundColor: C.surf },
   slotMain: { borderWidth: 1.5, borderColor: C.pink },
-  slotEmpty: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#4A4148', backgroundColor: C.surf3 },
+  slotEmpty: { borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#4A4148', backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center' },
+  maskBtn: { position: 'absolute', right: 6, bottom: 6, width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
+  maskCard: { backgroundColor: C.surf, borderRadius: 17.5, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  maskCta: { height: 38, paddingHorizontal: 14, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  noteSafe: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 8, padding: 12, backgroundColor: '#141A2B', borderRadius: 14 },
+  bCard: { backgroundColor: C.surf, borderRadius: 18, padding: 12, gap: 10, borderWidth: 1, borderColor: C.line },
+  bIcon: { width: 30, height: 30, borderRadius: 10, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' },
+  ansRow: { flexDirection: 'row', gap: 8 },
+  ans: { flex: 1, height: 42, borderRadius: 12, borderWidth: 1.5, borderColor: '#2E2830', backgroundColor: C.surf3, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   slotX: { position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
   mainTag: { position: 'absolute', left: 6, bottom: 6, backgroundColor: C.pink, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
   bRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.line },

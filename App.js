@@ -17,8 +17,6 @@ import { CHATS, IDEAS, PEOPLE } from './src/data';
 import { TabBar } from './src/ui';
 import * as api from './src/backend';
 
-// Off during testing so screenshots can be shared. Turn back on before the App Store release.
-const BLOCK_SCREENSHOTS = false;
 import { Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
 import {
   Chat,
@@ -36,6 +34,9 @@ import {
   Support,
   Likes,
 } from './src/screens/Main';
+
+// Off during testing so screenshots can be shared. Turn back on before the App Store release.
+const BLOCK_SCREENSHOTS = false;
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

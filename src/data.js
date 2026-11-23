@@ -22,7 +22,16 @@ export const BOUNDARIES = [
   'Protection, always',
 ];
 
-export const TURN_ONS = ['Confidence', 'Eye contact', 'Slow build-up', 'Humour', 'Taking charge', 'Being spoiled', 'Massage', 'Good scent'];
+export const MAX_TURN_ONS = 8;
+
+export const TURN_ON_GROUPS = [
+  { title: 'The vibe', items: ['Confidence', 'Humour', 'Eye contact', 'Good scent', 'Nice hands', 'A deep voice', 'Tattoos', 'Well dressed'] },
+  { title: 'The build-up', items: ['Slow build-up', 'Flirty texting', 'Dirty talk', 'Kissing', 'Teasing', 'Dancing close', 'Lingerie', 'Role play'] },
+  { title: 'In the moment', items: ['Taking charge', 'Being led', 'Being spoiled', 'Massage', 'Hair pulling', 'Blindfolds', 'Light bondage', 'Toys'] },
+  { title: 'Setting', items: ['Candles & music', 'Shower together', 'Morning after', 'Hotel nights', 'Spontaneous', 'All night long'] },
+];
+
+export const TURN_ONS = TURN_ON_GROUPS.flatMap((g) => g.items);
 
 export const PEOPLE = [
   {
