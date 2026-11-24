@@ -23,7 +23,6 @@ import {
   Chat,
   Chats,
   CodeView,
-  Discover,
   GuideView,
   Ideas,
   Match,
@@ -40,6 +39,7 @@ import { Privacy, Settings } from './src/screens/Settings';
 import { LockGate } from './src/screens/Lock';
 import { Intro } from './src/screens/Intro';
 import { FakeCall } from './src/screens/FakeCall';
+import { DiscoverPage } from './src/screens/DiscoverPage';
 import { onNotificationTap, registerForPush } from './src/notifications';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
@@ -341,7 +341,7 @@ export default function App() {
     } else {
       const tabs = {
         discover: (
-          <Discover
+          <DiscoverPage
             deck={[...deck, ...PEOPLE]}
             profile={profile}
             filters={filters}
@@ -349,8 +349,9 @@ export default function App() {
               setFilters(f);
               if (show && show.join() !== (profile.show || []).join()) setProfile((p) => ({ ...p, show }));
             }}
-            onOpen={(person) => push('profile', { person })}
             onLike={like}
+            onReport={(person) => person.real && api.report(person.id, 'Reported from Discover')}
+            onBlock={(person) => person.real && api.block(person.id).then(refresh)}
           />
         ),
         likes: <Likes people={likesYou} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,

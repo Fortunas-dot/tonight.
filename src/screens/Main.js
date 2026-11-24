@@ -220,7 +220,7 @@ export function ProfileView({ person, onClose, onLike, onReport, onBlock }) {
           <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 8 }}>
             Ideal night
           </T>
-          <T style={{ fontFamily: F.displayM, fontSize: 21, lineHeight: 28 }}>“{person.prompt}”</T>
+          {person.prompt ? <T style={{ fontFamily: F.displayM, fontSize: 21, lineHeight: 28 }}>“{person.prompt}”</T> : null}
         </View>
       </ScrollView>
       <View style={[styles.closeWrap, { top: insets.top + 8 }]}>

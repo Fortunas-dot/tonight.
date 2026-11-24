@@ -178,7 +178,7 @@ export async function verifyFace(profile, selfieUri) {
 const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 const time = (iso) => (iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'late');
 
-function toPerson(row, me, url) {
+function toPerson(row, me, url, allUrls = []) {
   const mine = me?.boundaries || {};
   const theirs = row.boundaries || {};
   const both = Object.keys(theirs).filter((k) => theirs[k] === 'Yes' && mine[k] === 'Yes');
@@ -196,22 +196,30 @@ function toPerson(row, me, url) {
     seed: hash(row.id) % 4,
     tested: row.tested_month || '—',
     showsUp: 100,
-    bio: row.bio || (row.intents || []).join(' · ') || 'New on Tonight.',
-    prompt: row.prompt || (row.turn_ons || []).join(', ') || 'Say hi and see where it goes.',
+    bio: row.bio || '',
+    prompt: row.prompt || '',
     both: both.length ? both : (row.intents || []).slice(0, 3),
     maybe: maybe || null,
     photo: url || null,
     blurred: !!row.blur_face, // shown blurred until you match
     verified: !!row.verified,
     intents: row.intents || [],
+    turnOns: row.turn_ons || [],
+    photos: allUrls.length ? allUrls : url ? [url] : [],
+    gender: row.gender || null,
+    hereTonight: !!row.live_until && new Date(row.live_until).getTime() > Date.now(),
   };
 }
 
 async function withPhotos(rows, me) {
-  const firsts = rows.map((r) => r.photos?.[0]).filter(Boolean);
-  const urls = await signedUrls(firsts);
-  const byPath = Object.fromEntries(firsts.map((p, i) => [p, urls[i]]));
-  return rows.map((r) => toPerson(r, me, byPath[r.photos?.[0]]));
+  // Every photo (up to 6 each), signed in one call.
+  const all = rows.flatMap((r) => (r.photos || []).slice(0, 6));
+  const { data } = all.length ? await supabase.storage.from(BUCKET).createSignedUrls(all, URL_TTL) : { data: [] };
+  const byPath = Object.fromEntries((data || []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  return rows.map((r) => {
+    const urls = (r.photos || []).slice(0, 6).map((p) => byPath[p]).filter(Boolean);
+    return toPerson(r, me, urls[0], urls);
+  });
 }
 
 export async function loadDeck(me) {
