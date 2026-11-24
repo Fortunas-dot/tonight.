@@ -10,7 +10,7 @@ import { C, F } from '../theme';
 import { Icon } from '../icons';
 import { Screen, T, Toggle, success, tap } from '../ui';
 import { MANUAL, VH, VW, findFace } from '../faces';
-import { ART_BRIDGE_X, ART_EYE_Y, scalePlacement } from '../faceFit';
+import { ART_BAND_Y, ART_BRIDGE_X, ART_EYE_Y, scalePlacement } from '../faceFit';
 
 // Everything is drawn in the design's 342 by 430 frame (see faces.js).
 const OUT_W = 1080;
@@ -103,26 +103,31 @@ function Lace({ color }) {
   );
 }
 
-function Bunny() {
+function Bunny({ part }) {
   return (
     <G>
-      {/* ears on a headband over the top of the head */}
-      <G transform="translate(0 16)">
-        <G opacity={0.98}>
-          <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
-          <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
-          <Path d="M116 94C108 64 110 20 120 6C130 20 132 64 128 92Z" fill="url(#earInner)" />
-          <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
-          <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
-          <Path d="M214 92C210 64 212 20 222 6C232 20 234 64 226 94Z" fill="url(#earInner)" />
+      {part !== 'face' ? (
+        <G transform="translate(0 16)">
+          <G opacity={0.98}>
+            <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+            <Path d="M112 104C96 64 98 6 120 -10C142 6 146 64 136 100Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
+            <Path d="M116 94C108 64 110 20 120 6C130 20 132 64 128 92Z" fill="url(#earInner)" />
+            <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+            <Path d="M206 100C196 64 200 6 222 -10C244 6 246 64 230 104Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} />
+            <Path d="M214 92C210 64 212 20 222 6C232 20 234 64 226 94Z" fill="url(#earInner)" />
+          </G>
+          <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
+          <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
         </G>
-        <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
-        <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
-      </G>
-      <EyeMask fill="url(#satin)" trim="url(#trimPink)" />
-      <Lace color="#FF7FB5" />
-      {/* little heart at the temple */}
-      <Path d="M258 210c-2.5-6-11-5-10.5 1.8c.5 5 10.5 10.2 10.5 10.2s10-5.2 10.5-10.2c.5-6.8-8-7.8-10.5-1.8z" fill="url(#trimPink)" />
+      ) : null}
+      {part !== 'ears' ? (
+        <G>
+          <EyeMask fill="url(#satin)" trim="url(#trimPink)" />
+          <Lace color="#FF7FB5" />
+          {/* little heart at the temple */}
+          <Path d="M258 210c-2.5-6-11-5-10.5 1.8c.5 5 10.5 10.2 10.5 10.2s10-5.2 10.5-10.2c.5-6.8-8-7.8-10.5-1.8z" fill="url(#trimPink)" />
+        </G>
+      ) : null}
     </G>
   );
 }
@@ -144,25 +149,30 @@ function Masquerade() {
   );
 }
 
-function Kitten() {
+function Kitten({ part }) {
   return (
     <G>
-      {/* cat ears on a headband */}
-      <G transform="translate(0 16)">
-        <Path d="M100 118L112 36L156 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
-        <Path d="M100 118L112 36L156 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
-        <Path d="M112 104L118 60L142 94Z" fill="url(#earInner)" />
-        <Path d="M242 118L230 36L186 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
-        <Path d="M242 118L230 36L186 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
-        <Path d="M230 104L224 60L200 94Z" fill="url(#earInner)" />
-        <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
-        <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
-      </G>
-      <EyeMask fill="url(#satin)" trim="url(#trimPink)" />
-      {/* whiskers on the cheeks */}
-      <G stroke="#FF9CC6" strokeWidth={1.8} strokeLinecap="round" opacity={0.75}>
-        <Path d="M104 270l-34-6M106 280l-34 4M238 270l34-6M236 280l34 4" />
-      </G>
+      {part !== 'face' ? (
+        <G transform="translate(0 16)">
+          <Path d="M100 118L112 36L156 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+          <Path d="M100 118L112 36L156 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
+          <Path d="M112 104L118 60L142 94Z" fill="url(#earInner)" />
+          <Path d="M242 118L230 36L186 96Z" fill="#000000" opacity={0.25} transform="translate(2 4)" />
+          <Path d="M242 118L230 36L186 96Z" fill="url(#satin)" stroke="url(#trimPink)" strokeWidth={2.5} strokeLinejoin="round" />
+          <Path d="M230 104L224 60L200 94Z" fill="url(#earInner)" />
+          <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
+          <Path d={BAND} fill="none" stroke="url(#trimPink)" strokeWidth={2} strokeLinecap="round" opacity={0.9} />
+        </G>
+      ) : null}
+      {part !== 'ears' ? (
+        <G>
+          <EyeMask fill="url(#satin)" trim="url(#trimPink)" />
+          {/* whiskers on the cheeks */}
+          <G stroke="#FF9CC6" strokeWidth={1.8} strokeLinecap="round" opacity={0.75}>
+            <Path d="M104 270l-34-6M106 280l-34 4M238 270l34-6M236 280l34 4" />
+          </G>
+        </G>
+      ) : null}
     </G>
   );
 }
@@ -179,9 +189,9 @@ function Frost() {
 
 const MASKS = [
   { id: 'none', label: 'None' },
-  { id: 'bunny', label: 'Bunny', Comp: Bunny },
+  { id: 'bunny', label: 'Bunny', Comp: Bunny, ears: true },
   { id: 'masq', label: 'Masquerade', Comp: Masquerade },
-  { id: 'kitten', label: 'Kitten', Comp: Kitten },
+  { id: 'kitten', label: 'Kitten', Comp: Kitten, ears: true },
   { id: 'frost', label: 'Frost', Comp: Frost },
 ];
 
@@ -215,17 +225,31 @@ const dist = (t) => Math.hypot(t[0].pageX - t[1].pageX, t[0].pageY - t[1].pageY)
 // Each half of the mask gets its own width (sl, sr), so it follows a turned head. See faceFit.js.
 const halfTransform = (p, sx) => `translate(${p.x} ${p.y}) rotate(${p.r || 0}) scale(${sx} ${p.sy}) translate(${-ART_BRIDGE_X} ${-ART_EYE_Y})`;
 
+// Ears and headband sit on top of the head: one even scale, the band's apex put at place.top above the eyes.
+const earsTransform = (p) => {
+  const s = (p.sl + p.sr) / 2;
+  const top = p.top ?? -(ART_EYE_Y - ART_BAND_Y) * p.sy;
+  return `translate(${p.x} ${p.y}) rotate(${p.r || 0}) translate(0 ${top}) scale(${s}) translate(${-ART_BRIDGE_X} ${-ART_BAND_Y})`;
+};
+
 function Fitted({ place, Comp }) {
+  const ears = MASKS.some((m) => m.Comp === Comp && m.ears);
+  const part = ears ? 'face' : undefined;
   return (
     <G>
+      {ears ? (
+        <G transform={earsTransform(place)}>
+          <Comp part="ears" />
+        </G>
+      ) : null}
       <G transform={halfTransform(place, place.sl)}>
         <G clipPath="url(#maskLeftHalf)">
-          <Comp />
+          <Comp part={part} />
         </G>
       </G>
       <G transform={halfTransform(place, place.sr)}>
         <G clipPath="url(#maskRightHalf)">
-          <Comp />
+          <Comp part={part} />
         </G>
       </G>
     </G>

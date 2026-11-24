@@ -9,7 +9,9 @@ export const ART_BRIDGE_X = 171;
 export const ART_EYE_Y = 225;
 const ART_HALF_W = 99; // nose bridge to the mask's outer edge
 const ART_FACE_H = 267; // face height the art is drawn for
-const ART_EYE_GAP = 72;
+// The headband's apex in the art (ears drawn around it), and how high it sits above the eyes at art size.
+export const ART_BAND_Y = 111;
+const ART_BAND_LIFT = ART_EYE_Y - ART_BAND_Y;
 
 /** Placement when no face is found: centred, upright, art size. */
 export const MANUAL = {
@@ -19,6 +21,7 @@ export const MANUAL = {
   sl: 1,
   sr: 1,
   sy: 1,
+  top: -ART_BAND_LIFT,
   auto: false,
 };
 
@@ -71,22 +74,48 @@ export function fitMask(face) {
   let bridge = 0;
   if (face.bridge && face.bridge.length) bridge = up(face.bridge[0]).x;
 
-  if (left === null || right === null || right - left < gap) {
-    // No usable outline: a frontal face is about 2.75 eye-gaps wide at eye level.
-    left = -gap * 1.375;
-    right = gap * 1.375;
+  // Face box (always there): its centre shifts towards the far side on a turned head, so the halves come out uneven.
+  const box = face.box && face.box.w > gap ? face.box : null;
+  let boxTop = null;
+  if (box) {
+    const c = up({ x: box.x + box.w / 2, y: box.y + box.h / 2 });
+    const hw = box.w * 0.46;
+    if (left === null || right === null || right - left < gap) {
+      left = c.x - hw;
+      right = c.x + hw;
+    }
+    boxTop = c.y - box.h / 2;
   }
+  if (left === null || right === null || right - left < gap) {
+    // Nothing better: a frontal face is about 2.3 eye-gaps wide at eye level.
+    left = -gap * 1.15;
+    right = gap * 1.15;
+  }
+  // Keep the mask believable: not narrower than 1.6 or wider than 2.7 eye-gaps, each side at least half a gap.
+  left = Math.min(left, -gap * 0.5);
+  right = Math.max(right, gap * 0.5);
+  const width = clamp(right - left, gap * 1.6, gap * 2.7);
+  const k = width / (right - left);
+  left *= k;
+  right *= k;
   bridge = clamp(bridge, left + gap * 0.2, right - gap * 0.2);
-  if (!height || height < gap) height = (gap / ART_EYE_GAP) * ART_FACE_H;
+  const hasHeight = height && height >= gap;
+
+  // Where the headband goes: on the top of the head. Outline top, else the face box top, else ~1.25 eye-gaps up.
+  let top = oval.length >= 8 ? Math.min(...oval.map((p) => p.y)) : boxTop;
+  if (top === null) top = -gap * 1.25;
+  top = clamp(top - gap * 0.1, -gap * 2.2, -gap * 1.1);
 
   const sl = clamp((bridge - left) / ART_HALF_W, 0.08, 4);
   const sr = clamp((right - bridge) / ART_HALF_W, 0.08, 4);
-  const sy = clamp(height / ART_FACE_H, 0.1, 4);
+  // Without an outline, keep the art's own proportions so the eye holes don't stretch.
+  const sy = clamp(hasHeight ? height / ART_FACE_H : ((sl + sr) / 2) * 1.05, 0.1, 4);
 
   // Back to the photo: the bridge point on the eye line.
   const bx = mid.x + bridge * Math.cos(roll);
   const by = mid.y + bridge * Math.sin(roll);
-  return { x: bx, y: by, r: (roll * 180) / Math.PI, sl, sr, sy, auto: true };
+  // top is measured from the bridge point, upwards along the face.
+  return { x: bx, y: by, r: (roll * 180) / Math.PI, sl, sr, sy, top, auto: true };
 }
 
 /** Scales a placement by k (pinch), keeping its centre. */
@@ -95,6 +124,7 @@ export const scalePlacement = (p, k) => ({
   sl: p.sl * k,
   sr: p.sr * k,
   sy: p.sy * k,
+  top: (p.top ?? -ART_BAND_LIFT * p.sy) * k,
 });
 
 export const placementScale = (p) => (p.sl + p.sr) / 2;
@@ -126,6 +156,13 @@ export function facePartsFromMlKit(face, toFrame) {
   return {
     eyeL,
     eyeR,
+    box: face.frame
+      ? (() => {
+          const tl = toFrame(face.frame.origin);
+          const br = toFrame({ x: face.frame.origin.x + face.frame.size.x, y: face.frame.origin.y + face.frame.size.y });
+          return { x: Math.min(tl.x, br.x), y: Math.min(tl.y, br.y), w: Math.abs(br.x - tl.x), h: Math.abs(br.y - tl.y) };
+        })()
+      : null,
     oval: contour('faceOval'),
     bridge: contour('noseBridge'),
   };
