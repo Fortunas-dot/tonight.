@@ -10,7 +10,7 @@ import { C, F } from '../theme';
 import { Icon } from '../icons';
 import { Screen, T, Toggle, success, tap } from '../ui';
 import { MANUAL, VH, VW, findFace } from '../faces';
-import { ART_BAND_Y, ART_BRIDGE_X, ART_EYE_Y, scalePlacement } from '../faceFit';
+import { ART_BAND_Y, ART_BRIDGE_X, ART_EYE_Y, earsOf, scalePlacement } from '../faceFit';
 
 // Everything is drawn in the design's 342 by 430 frame (see faces.js).
 const OUT_W = 1080;
@@ -227,9 +227,8 @@ const halfTransform = (p, sx) => `translate(${p.x} ${p.y}) rotate(${p.r || 0}) s
 
 // Ears and headband sit on top of the head: one even scale, the band's apex put at place.top above the eyes.
 const earsTransform = (p) => {
-  const s = (p.sl + p.sr) / 2;
-  const top = p.top ?? -(ART_EYE_Y - ART_BAND_Y) * p.sy;
-  return `translate(${p.x} ${p.y}) rotate(${p.r || 0}) translate(0 ${top}) scale(${s}) translate(${-ART_BRIDGE_X} ${-ART_BAND_Y})`;
+  const e = earsOf(p);
+  return `translate(${p.x + e.ex} ${p.y + e.ey}) rotate(${p.r || 0}) scale(${e.es}) translate(${-ART_BRIDGE_X} ${-ART_BAND_Y})`;
 };
 
 function Fitted({ place, Comp }) {

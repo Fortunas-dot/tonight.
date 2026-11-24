@@ -21,7 +21,6 @@ export const MANUAL = {
   sl: 1,
   sr: 1,
   sy: 1,
-  top: -ART_BAND_LIFT,
   auto: false,
 };
 
@@ -40,22 +39,50 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 export function fitMask(face) {
   const { eyeL, eyeR } = face;
   const mid = { x: (eyeL.x + eyeR.x) / 2, y: (eyeL.y + eyeR.y) / 2 };
-  const roll = Math.atan2(eyeR.y - eyeL.y, eyeR.x - eyeL.x);
-  const gap = Math.hypot(eyeR.x - eyeL.x, eyeR.y - eyeL.y);
+  // Head tilt: ML Kit measures it from the whole face. The line between the eyes goes wrong on a turned head
+  // (the far eye is half hidden), so it is only the fallback.
+  const eyeRoll = Math.atan2(eyeR.y - eyeL.y, eyeR.x - eyeL.x);
+  // On a (nearly) frontal face the eye line is the most precise, so ML Kit's tilt is used once the head turns.
+  const turned = typeof face.yaw !== 'number' || Math.abs(face.yaw) > 15;
+  const roll = turned && typeof face.roll === 'number' && Number.isFinite(face.roll) ? (face.roll * Math.PI) / 180 : eyeRoll;
   const cos = Math.cos(-roll);
   const sin = Math.sin(-roll);
-  // Into the face's own upright frame: origin between the eyes, x along the eye line.
+  // Into the face's own upright frame: origin between the eyes, x across the face.
   const up = (p) => {
     const dx = p.x - mid.x;
     const dy = p.y - mid.y;
     return { x: dx * cos - dy * sin, y: dx * sin + dy * cos };
   };
+  const gap = Math.max(1, Math.abs(up(eyeR).x - up(eyeL).x));
+
+  const oval = (face.oval || []).map(up);
+  const hasOval = oval.length >= 8;
+  const box = face.box && face.box.w > gap ? face.box : null;
+  const boxC = box ? up({ x: box.x + box.w / 2, y: box.y + box.h / 2 }) : null;
+
+  // The head: its width, centre and top in the upright frame.
+  let headW = null;
+  let headCx = 0;
+  let headTop = null;
+  let height = null;
+  if (hasOval) {
+    const xs = oval.map((p) => p.x);
+    const ys = oval.map((p) => p.y);
+    headW = Math.max(...xs) - Math.min(...xs);
+    headCx = (Math.max(...xs) + Math.min(...xs)) / 2;
+    headTop = Math.min(...ys);
+    height = Math.max(...ys) - headTop;
+  } else if (box) {
+    headW = box.w * 0.92;
+    headCx = boxC.x;
+    headTop = boxC.y - box.h / 2;
+  }
+  // One size unit that doesn't shrink when the head turns (the eye gap does).
+  const unit = Math.max(gap, headW ? headW / 2.3 : 0);
 
   let left = null;
   let right = null;
-  let height = null;
-  const oval = (face.oval || []).map(up);
-  if (oval.length >= 8) {
+  if (hasOval) {
     // Where the face outline crosses the eye line.
     const xs = [];
     for (let i = 0; i < oval.length; i++) {
@@ -64,69 +91,73 @@ export function fitMask(face) {
       if ((p.y <= 0 && q.y > 0) || (p.y > 0 && q.y <= 0)) xs.push(p.x + ((0 - p.y) * (q.x - p.x)) / (q.y - p.y));
     }
     if (xs.length >= 2) {
-      // A touch inside the outline, so the mask never overhangs into hair or background.
-      left = Math.min(...xs) * 0.96;
-      right = Math.max(...xs) * 0.96;
+      left = Math.min(...xs);
+      right = Math.max(...xs);
     }
-    height = Math.max(...oval.map((p) => p.y)) - Math.min(...oval.map((p) => p.y));
   }
+  if ((left === null || right - left < unit) && box) {
+    left = boxC.x - box.w * 0.46;
+    right = boxC.x + box.w * 0.46;
+  }
+  if (left === null || right - left < unit) {
+    left = -unit * 1.15;
+    right = unit * 1.15;
+  }
+  // A touch inside the outline, so the mask never overhangs into hair or background.
+  const c0 = (left + right) / 2;
+  left = c0 + (left - c0) * 0.95;
+  right = c0 + (right - c0) * 0.95;
 
   // The nose bridge: top of the bridge line when we have it, else halfway between the eyes.
   let bridge = 0;
   if (face.bridge && face.bridge.length) bridge = up(face.bridge[0]).x;
+  bridge = clamp(bridge, left + unit * 0.15, right - unit * 0.15);
 
-  // Face box (always there): its centre shifts towards the far side on a turned head, so the halves come out uneven.
-  const box = face.box && face.box.w > gap ? face.box : null;
-  let boxTop = null;
-  if (box) {
-    const c = up({ x: box.x + box.w / 2, y: box.y + box.h / 2 });
-    const hw = box.w * 0.46;
-    if (left === null || right === null || right - left < gap) {
-      left = c.x - hw;
-      right = c.x + hw;
-    }
-    boxTop = c.y - box.h / 2;
-  }
-  if (left === null || right === null || right - left < gap) {
-    // Nothing better: a frontal face is about 2.3 eye-gaps wide at eye level.
-    left = -gap * 1.15;
-    right = gap * 1.15;
-  }
-  // Keep the mask believable: not narrower than 1.6 or wider than 2.7 eye-gaps, each side at least half a gap.
-  left = Math.min(left, -gap * 0.5);
-  right = Math.max(right, gap * 0.5);
-  const width = clamp(right - left, gap * 1.6, gap * 2.7);
-  const k = width / (right - left);
-  left *= k;
-  right *= k;
-  bridge = clamp(bridge, left + gap * 0.2, right - gap * 0.2);
-  const hasHeight = height && height >= gap;
+  const sl = clamp((bridge - left) / ART_HALF_W, 0.06, 4);
+  const sr = clamp((right - bridge) / ART_HALF_W, 0.06, 4);
+  const hasHeight = height && height >= unit;
+  // Height follows the face; without an outline keep the art's proportions so the eye holes don't stretch.
+  const sy = clamp(hasHeight ? height / ART_FACE_H : (unit * 2.3 * 1.05) / (2 * ART_HALF_W), 0.1, 4);
 
-  // Where the headband goes: on the top of the head. Outline top, else the face box top, else ~1.25 eye-gaps up.
-  let top = oval.length >= 8 ? Math.min(...oval.map((p) => p.y)) : boxTop;
-  if (top === null) top = -gap * 1.25;
-  top = clamp(top - gap * 0.1, -gap * 2.2, -gap * 1.1);
+  // Ears: centred on the head (not the nose, which moves off-centre when the head turns), the band just above
+  // the top of the face, about as wide as the head.
+  if (headTop === null) headTop = -unit * 1.25;
+  const bandY = clamp(headTop - unit * 0.12, -unit * 2.2, -unit * 1.0);
+  const earsS = clamp(((headW || unit * 2.3) * 0.98) / 170, 0.06, 4);
 
-  const sl = clamp((bridge - left) / ART_HALF_W, 0.08, 4);
-  const sr = clamp((right - bridge) / ART_HALF_W, 0.08, 4);
-  // Without an outline, keep the art's own proportions so the eye holes don't stretch.
-  const sy = clamp(hasHeight ? height / ART_FACE_H : ((sl + sr) / 2) * 1.05, 0.1, 4);
-
-  // Back to the photo: the bridge point on the eye line.
-  const bx = mid.x + bridge * Math.cos(roll);
-  const by = mid.y + bridge * Math.sin(roll);
-  // top is measured from the bridge point, upwards along the face.
-  return { x: bx, y: by, r: (roll * 180) / Math.PI, sl, sr, sy, top, auto: true };
+  // Back to the photo.
+  const toPhoto = (u) => ({ x: mid.x + u.x * Math.cos(roll) - u.y * Math.sin(roll), y: mid.y + u.x * Math.sin(roll) + u.y * Math.cos(roll) });
+  const b = toPhoto({ x: bridge, y: 0 });
+  const e = toPhoto({ x: headCx, y: bandY });
+  return {
+    x: b.x,
+    y: b.y,
+    r: (roll * 180) / Math.PI,
+    sl,
+    sr,
+    sy,
+    // Ears as an offset from the mask (so dragging moves both) plus their own scale.
+    ex: e.x - b.x,
+    ey: e.y - b.y,
+    es: earsS,
+    auto: true,
+  };
 }
 
 /** Scales a placement by k (pinch), keeping its centre. */
-export const scalePlacement = (p, k) => ({
-  ...p,
-  sl: p.sl * k,
-  sr: p.sr * k,
-  sy: p.sy * k,
-  top: (p.top ?? -ART_BAND_LIFT * p.sy) * k,
-});
+export const scalePlacement = (p, k) => {
+  const ears = earsOf(p);
+  return { ...p, sl: p.sl * k, sr: p.sr * k, sy: p.sy * k, ex: ears.ex * k, ey: ears.ey * k, es: ears.es * k };
+};
+
+/** Where the ears go for a placement: its own fit, or straight above the mask at art proportions. */
+export function earsOf(p) {
+  if (typeof p.ex === 'number') return { ex: p.ex, ey: p.ey, es: p.es };
+  const s = (p.sl + p.sr) / 2;
+  const lift = typeof p.top === 'number' ? p.top : -ART_BAND_LIFT * p.sy;
+  const a = ((p.r || 0) * Math.PI) / 180;
+  return { ex: -lift * Math.sin(a), ey: lift * Math.cos(a), es: s };
+}
 
 export const placementScale = (p) => (p.sl + p.sr) / 2;
 
@@ -174,9 +205,14 @@ export function facePartsFromMlKit(face, toFrame) {
   }
   if (!e1 || !e2) throw new Error('no eyes');
   const [eyeL, eyeR] = e1.x <= e2.x ? [e1, e2] : [e2, e1];
+  // ML Kit: positive Z is counter-clockwise in the picture; SVG rotation is clockwise.
+  const roll = face.hasHeadEulerAngleZ !== false && typeof face.headEulerAngleZ === 'number' ? -face.headEulerAngleZ : null;
+  const yaw = face.hasHeadEulerAngleY !== false && typeof face.headEulerAngleY === 'number' ? face.headEulerAngleY : null;
   return {
     eyeL,
     eyeR,
+    roll,
+    yaw,
     box,
     oval: oval ? oval.points.map(toFrame) : [],
     bridge: bridgeC ? bridgeC.points.map(toFrame) : [],
