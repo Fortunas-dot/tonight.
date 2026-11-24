@@ -10,3 +10,7 @@ web-build/
 .env.local
 ios/
 android/
+
+# Demo people: raw AI photos and the demo accounts' sessions (scripts/seed-demo.mjs)
+assets/demo-raw/
+scripts/.demo-sessions.json

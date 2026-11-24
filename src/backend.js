@@ -232,6 +232,7 @@ function toPerson(row, me, url, allUrls = []) {
   return {
     id: row.id,
     real: true,
+    demo: !!row.is_demo, // seeded by scripts/seed-demo.mjs, labelled in the app
     name: row.name || 'Someone',
     age: row.age || '',
     dist: (!row.settings?.hideCity && row.city) || 'Nearby',

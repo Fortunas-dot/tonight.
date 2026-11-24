@@ -203,10 +203,10 @@ function PersonPage({ person, me, blurAll, onReport, onBlock, onJump }) {
     <View style={{ gap: 12 }}>
       {/* hero */}
       <BigPhoto person={person} index={0} blurAll={blurAll} width={w}>
-        {!person.real ? (
+        {!person.real || person.demo ? (
           <View style={styles.exampleTag}>
             <T v="small" c={C.ink2} style={{ fontFamily: F.semi, fontSize: 11 }}>
-              Example profile
+              {person.demo ? 'Demo profile · AI photos' : 'Example profile'}
             </T>
           </View>
         ) : null}
