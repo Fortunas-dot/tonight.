@@ -145,7 +145,7 @@ Things that are deliberately "test mode" now and must change before submitting f
 - [ ] Remove "Restart onboarding (test build)" on Me and "Skip for this test build" on the Photos step.
 - [ ] Verification: the AWS Rekognition check is live; drop the simulated fallback in Verify when keys are missing.
 - [ ] Sign-in: accounts are anonymous (one per device). Before launch add a way to keep the account on a new phone (Sign in with Apple or phone number) — required if accounts can't be recovered otherwise.
-- [ ] Moderation: reports land in `public.reports`; build a simple review view (or Supabase dashboard routine) and answer within 24 h (Guideline 1.2).
+- [x] Moderation: Settings › Team › Moderation (moderators only, `app.moderators`) lists every report with a 24-hour countdown; No violation / Remove post / Ban. Moderators get a push per new report. Banned accounts see "Account suspended" and vanish from Discover. Still to do: keep answering within 24 h (Guideline 1.2).
 - [ ] Privacy label: add "Sensitive info" for the new details (orientation, relationship) and "Other user content" for prompts; remove "sexual health test date" (removed from the app).
 - [ ] Demo account for App Review (fill in above).
 - [ ] Terms and privacy policy pages at fortunas.nl/tonight/terms and /privacy describe: anonymous accounts, photo storage, face masks done on the phone, AWS face comparison (selfie deleted after the check), push notifications, account deletion.

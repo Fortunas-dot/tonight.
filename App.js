@@ -6,11 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as ScreenCapture from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
-import {
-  BricolageGrotesque_500Medium,
-  BricolageGrotesque_700Bold,
-  BricolageGrotesque_800ExtraBold,
-} from '@expo-google-fonts/bricolage-grotesque';
+import { BricolageGrotesque_500Medium, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { C } from './src/theme';
 import { CHATS, IDEAS, PEOPLE } from './src/data';
@@ -19,22 +15,12 @@ import * as api from './src/backend';
 import { applyNewestUpdate } from './src/version';
 
 import { Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
-import {
-  Chat,
-  Chats,
-  CodeView,
-  GuideView,
-  Ideas,
-  Match,
-  Me,
-  Plan,
-  Support,
-  Likes,
-} from './src/screens/Main';
+import { Chat, Chats, CodeView, GuideView, Ideas, Match, Me, Plan, Support, Likes } from './src/screens/Main';
 import { Compose, Lounge, PostView } from './src/screens/Lounge';
 import { EditProfile } from './src/screens/ProfileFields';
 import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
 import { Privacy, Settings } from './src/screens/Settings';
+import { Moderation, Suspended } from './src/screens/Moderation';
 import { LockGate } from './src/screens/Lock';
 import { Intro } from './src/screens/Intro';
 import { FakeCall } from './src/screens/FakeCall';
@@ -68,6 +54,7 @@ export default function App() {
   const [chats, setChats] = useState(CHATS);
   const [ideas, setIdeas] = useState(IDEAS);
   const [online, setOnline] = useState(false);
+  const [banned, setBanned] = useState(false);
   const [deck, setDeck] = useState([]);
   const [likesYou, setLikesYou] = useState([]);
   const [feedKey, setFeedKey] = useState(0); // bump to reload the Lounge feed
@@ -148,11 +135,23 @@ export default function App() {
     registerForPush();
     return onNotificationTap((data) => {
       setStack([]);
-      if (data.kind === 'likes') setTab('likes');
+      if (data.kind === 'moderation') {
+        setTab('me');
+        setStack([{ name: 'moderation' }]);
+      } else if (data.kind === 'likes') setTab('likes');
       else if (data.kind === 'lounge') setTab('lounge');
       else setTab('chats');
     });
   }, [online, onboarded]);
+
+  useEffect(() => {
+    if (!online) return;
+    let alive = true;
+    api.amIBanned().then((b) => alive && setBanned(b));
+    return () => {
+      alive = false;
+    };
+  }, [online]);
 
   useEffect(() => {
     if (!online || !onboarded) return;
@@ -160,8 +159,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     return api.subscribe({
-      onMessage: (matchId, msg) =>
-        setChats((cs) => cs.map((c) => (c.matchId === matchId && !c.messages.some((m) => m.id === msg.id) ? { ...c, messages: [...c.messages, msg] } : c))),
+      onMessage: (matchId, msg) => setChats((cs) => cs.map((c) => (c.matchId === matchId && !c.messages.some((m) => m.id === msg.id) ? { ...c, messages: [...c.messages, msg] } : c))),
       onMatch: () => refresh(),
     });
   }, [online, onboarded, refresh]);
@@ -184,6 +182,14 @@ export default function App() {
   }, [fontsLoaded, ready]);
 
   if (!fontsLoaded || !ready) return null;
+  if (banned) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <Suspended />
+      </SafeAreaProvider>
+    );
+  }
 
   const push = (name, params) => setStack((s) => [...s, { name, params }]);
   const pop = () => setStack((s) => s.slice(0, -1));
@@ -272,7 +278,18 @@ export default function App() {
           screen = <Match person={p.person} me={profile} onClose={pop} onChat={openChat} />;
           break;
         case 'chat':
-          screen = chat ? <Chat key={chat.id} chat={chat} live={!chat.plan && !chat.real} filterExplicit={profile.settings?.filterExplicit !== false} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} onProfile={(person) => push('profile', { person, matched: true })} /> : null;
+          screen = chat ? (
+            <Chat
+              key={chat.id}
+              chat={chat}
+              live={!chat.plan && !chat.real}
+              filterExplicit={profile.settings?.filterExplicit !== false}
+              onSend={sendMessage}
+              onBack={pop}
+              onPlan={(id) => push('plan', { id })}
+              onProfile={(person) => push('profile', { person, matched: true })}
+            />
+          ) : null;
           break;
         case 'plan':
           screen = chat ? (
@@ -344,6 +361,9 @@ export default function App() {
           break;
         case 'editProfile':
           screen = <EditProfile profile={profile} setProfile={setProfile} onBack={pop} />;
+          break;
+        case 'moderation':
+          screen = <Moderation onBack={pop} />;
           break;
         case 'privacy':
           screen = <Privacy profile={profile} setProfile={setProfile} onBack={pop} />;

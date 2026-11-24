@@ -26,6 +26,14 @@ function Label({ children }) {
 }
 
 export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
+  const [moderator, setModerator] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    api.isModerator().then((m) => alive && setModerator(m));
+    return () => {
+      alive = false;
+    };
+  }, []);
   const settings = profile.settings || {};
   const notify = { matches: true, messages: true, likes: true, lounge: true, ...(settings.notify || {}) };
   const [alias, setAlias] = useState(null);
@@ -181,6 +189,15 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
           </View>
         ) : null}
       </Card>
+
+      {moderator ? (
+        <>
+          <Label>Team</Label>
+          <Card style={{ paddingVertical: 0 }}>
+            <Row icon="shieldCheck" iconColor={C.blueL} iconBg={C.blueBg} title="Moderation" sub="Review reports within 24 hours" onPress={() => go('moderation')} last />
+          </Card>
+        </>
+      ) : null}
 
       <Label>Help & community</Label>
       <Card style={{ paddingVertical: 0 }}>

@@ -231,7 +231,10 @@ async function withPhotos(rows, me) {
   const { data } = all.length ? await supabase.storage.from(BUCKET).createSignedUrls(all, URL_TTL) : { data: [] };
   const byPath = Object.fromEntries((data || []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
   return rows.map((r) => {
-    const urls = (r.photos || []).slice(0, 6).map((p) => byPath[p]).filter(Boolean);
+    const urls = (r.photos || [])
+      .slice(0, 6)
+      .map((p) => byPath[p])
+      .filter(Boolean);
     return toPerson(r, me, urls[0], urls);
   });
 }
@@ -495,6 +498,41 @@ export async function likeComment(id, on) {
   if (!uid) return;
   if (on) await supabase.from('comment_likes').upsert({ comment_id: id, user_id: uid });
   else await supabase.from('comment_likes').delete().eq('comment_id', id).eq('user_id', uid);
+}
+
+/* ---------- Moderation ---------- */
+
+export async function isModerator() {
+  if (!uid) return false;
+  const { data } = await supabase.rpc('is_moderator');
+  return data === true;
+}
+
+export async function amIBanned() {
+  if (!uid) return false;
+  const { data } = await supabase.rpc('am_i_banned');
+  return data === true;
+}
+
+/** Reports for review, newest first; each with the reported person's first photo signed. */
+export async function modQueue(includeClosed = false) {
+  const { data, error } = await supabase.rpc('mod_queue', { include_closed: includeClosed });
+  if (error) {
+    console.warn('[backend] mod queue failed', error.message);
+    return [];
+  }
+  const list = data || [];
+  const paths = [...new Set(list.map((r) => r.target_photo).filter(Boolean))];
+  const urls = paths.length ? await supabase.storage.from(BUCKET).createSignedUrls(paths, URL_TTL) : { data: [] };
+  const byPath = Object.fromEntries((urls.data || []).filter((u) => u.signedUrl).map((u) => [u.path, u.signedUrl]));
+  return list.map((r) => ({ ...r, photo: r.target_photo ? byPath[r.target_photo] || null : null }));
+}
+
+/** action: 'dismiss' | 'remove_post' | 'ban' */
+export async function modResolve(reportId, action, note = null) {
+  const { error } = await supabase.rpc('mod_resolve', { report_id: reportId, action, note });
+  if (error) console.warn('[backend] resolve failed', error.message);
+  return !error;
 }
 
 /* ---------- Settings ---------- */
