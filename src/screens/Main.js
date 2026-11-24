@@ -457,7 +457,7 @@ const QUICK = [
   { icon: 'close', label: 'Cancel kindly', text: 'Hey, I can’t make it tonight after all. Sorry for the short notice, hope you have a good night.' },
 ];
 
-export function Plan({ chat, onBack, onSend, onFakeCall }) {
+export function Plan({ chat, onBack, onSend, onFakeCall, onUnmatch }) {
   const p = chatPerson(chat);
   return (
     <Screen scroll>
@@ -506,6 +506,38 @@ export function Plan({ chat, onBack, onSend, onFakeCall }) {
           </Pressable>
         ))}
       </View>
+      <T v="label" c={C.muted} style={{ marginTop: 26, marginBottom: 6 }}>
+        Safety
+      </T>
+      <Card style={{ paddingVertical: 0 }}>
+        <Row
+          icon="shield"
+          iconColor={C.blueL}
+          iconBg={C.blueBg}
+          title={`Report ${p.name}`}
+          sub="Ward reviews it. You’re unmatched straight away."
+          onPress={() =>
+            Alert.alert(`Report ${p.name}?`, 'They won’t know it was you. The chat is removed for both of you.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Report', style: 'destructive', onPress: () => onUnmatch?.(chat, true) },
+            ])
+          }
+        />
+        <Row
+          icon="close"
+          iconColor={C.red}
+          iconBg="#2A1418"
+          title="Unmatch"
+          sub="Ends the match and the chat for both of you"
+          onPress={() =>
+            Alert.alert(`Unmatch ${p.name}?`, 'This can’t be undone.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Unmatch', style: 'destructive', onPress: () => onUnmatch?.(chat, false) },
+            ])
+          }
+          last
+        />
+      </Card>
     </Screen>
   );
 }

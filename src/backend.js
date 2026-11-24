@@ -565,3 +565,10 @@ export async function refreshMyPhotos(profile) {
   });
   return { photos: nextPhotos, uploaded: nextUploaded, masked: nextMasked };
 }
+
+/** Ends a match for both people (the chat and plan go with it). */
+export async function unmatch(matchId) {
+  if (!uid || !matchId) return false;
+  const { error } = await supabase.from('matches').delete().eq('id', matchId);
+  return !error;
+}

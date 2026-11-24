@@ -275,7 +275,23 @@ export default function App() {
           screen = chat ? <Chat key={chat.id} chat={chat} live={!chat.plan && !chat.real} filterExplicit={profile.settings?.filterExplicit !== false} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} onProfile={(person) => push('profile', { person, matched: true })} /> : null;
           break;
         case 'plan':
-          screen = chat ? <Plan chat={chat} onBack={pop} onSend={sendMessage} onFakeCall={() => setTimeout(() => setRinging(true), 20000)} /> : null;
+          screen = chat ? (
+            <Plan
+              chat={chat}
+              onBack={pop}
+              onSend={sendMessage}
+              onFakeCall={() => setTimeout(() => setRinging(true), 20000)}
+              onUnmatch={async (c, reported) => {
+                if (c.real) {
+                  if (reported) await api.report(c.id, 'Reported from chat');
+                  await api.unmatch(c.matchId);
+                }
+                setChats((cs) => cs.filter((x) => x.id !== c.id));
+                setStack([]);
+                setTab('chats');
+              }}
+            />
+          ) : null;
           break;
         case 'compose':
           screen = (
