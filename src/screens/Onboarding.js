@@ -362,6 +362,7 @@ export function Basics({ profile, setProfile, next, back }) {
   const [gender, setGender] = useState(profile.gender || 'Woman');
   const [show, setShow] = useState(profile.show || ['Men']);
   const [bio, setBio] = useState(profile.bio || '');
+  const [prompt, setPrompt] = useState(profile.prompt || '');
   const [country, setCountry] = useState(profile.country || '');
   const [city, setCity] = useState(profile.city || '');
   const ageNum = parseInt(age, 10);
@@ -396,12 +397,12 @@ export function Basics({ profile, setProfile, next, back }) {
           <Chip key={g} label={g} tone="blue" on={show.includes(g)} onPress={() => toggleShow(g)} />
         ))}
       </View>
-      <ProfileFields bio={bio} setBio={setBio} country={country} setCountry={setCountry} city={city} setCity={setCity} />
+      <ProfileFields bio={bio} setBio={setBio} prompt={prompt} setPrompt={setPrompt} country={country} setCountry={setCountry} city={city} setCity={setCity} />
       <View style={{ height: 30 }} />
       <Next
         disabled={!valid}
         onPress={() => {
-          setProfile({ ...profile, name: name.trim(), age: ageNum, gender, show, bio: bio.trim(), country: country.trim(), city: city.trim() });
+          setProfile({ ...profile, name: name.trim(), age: ageNum, gender, show, bio: bio.trim(), prompt: prompt.trim(), country: country.trim(), city: city.trim() });
           next();
         }}
       />

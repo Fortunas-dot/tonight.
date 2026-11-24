@@ -242,7 +242,10 @@ function Starters({ bio, setBio }) {
 }
 
 /** Description, country and city (used inside onboarding step 1). */
-export function ProfileFields({ bio, setBio, country, setCountry, city, setCity }) {
+const NIGHT_MAX = 150;
+const NIGHT_STARTERS = ['A drink first, then ', 'Candles, music and ', 'Somewhere new, then '];
+
+export function ProfileFields({ bio, setBio, prompt = '', setPrompt, country, setCountry, city, setCity }) {
   const findCountries = useCallback(async (q) => searchCountries(q), []);
   const code = countryCode(country);
   const findCities = useCallback(async (q) => searchCities(q, code), [code]);
@@ -251,6 +254,32 @@ export function ProfileFields({ bio, setBio, country, setCountry, city, setCity 
       <Section icon="pen" title="About you" caption="What should a match know first?">
         <Field label="Description" icon="chat" value={bio} onChangeText={setBio} placeholder="A few lines about you and what you're looking for" multiline max={BIO_MAX} />
         <Starters bio={bio} setBio={setBio} />
+        {setPrompt ? (
+          <>
+            <Field label="My ideal night" icon="flame" value={prompt} onChangeText={setPrompt} placeholder="Describe your perfect night out (or in)" multiline max={NIGHT_MAX} />
+            {prompt.trim().length < 10 ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                {NIGHT_STARTERS.map((s) => (
+                  <Pressable
+                    key={s}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Start with: ${s.trim()}`}
+                    onPress={() => {
+                      tap();
+                      setPrompt(s);
+                    }}
+                    style={styles.starter}
+                  >
+                    <Icon name="plus" size={12} color={C.pinkL} stroke={2.6} />
+                    <T v="small" c={C.ink2}>
+                      {s.trim().replace(/,$/, '')}…
+                    </T>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : null}
       </Section>
       <Section icon="globe" title="Where you are" caption="Only your city is shown, never your exact location.">
         <SearchSelect
@@ -397,6 +426,7 @@ export function EditProfile({ profile, setProfile, onBack }) {
   const [name, setName] = useState(profile.name || '');
   const [age, setAge] = useState(profile.age ? String(profile.age) : '');
   const [bio, setBio] = useState(profile.bio || '');
+  const [prompt, setPrompt] = useState(profile.prompt || '');
   const [country, setCountry] = useState(profile.country || '');
   const [city, setCity] = useState(profile.city || '');
   const [photos, setPhotos] = useState(profile.photos || []);
@@ -411,12 +441,13 @@ export function EditProfile({ profile, setProfile, onBack }) {
     name.trim() !== (profile.name || '') ||
     ageNum !== profile.age ||
     bio.trim() !== (profile.bio || '') ||
+    prompt.trim() !== (profile.prompt || '') ||
     country.trim() !== (profile.country || '') ||
     city.trim() !== (profile.city || '');
   const save = () => {
     if (!valid || !dirty) return;
     success();
-    setProfile((p) => ({ ...p, name: name.trim(), age: ageNum, bio: bio.trim(), country: country.trim(), city: city.trim(), photos, masked, blurFace: blur }));
+    setProfile((p) => ({ ...p, name: name.trim(), age: ageNum, bio: bio.trim(), prompt: prompt.trim(), country: country.trim(), city: city.trim(), photos, masked, blurFace: blur }));
     onBack();
   };
 
@@ -480,7 +511,7 @@ export function EditProfile({ profile, setProfile, onBack }) {
             hint={age.length === 2 && ageNum < 18 ? 'Tonight is 18+ only' : null}
           />
         </Section>
-        <ProfileFields bio={bio} setBio={setBio} country={country} setCountry={setCountry} city={city} setCity={setCity} />
+        <ProfileFields bio={bio} setBio={setBio} prompt={prompt} setPrompt={setPrompt} country={country} setCountry={setCountry} city={city} setCity={setCity} />
       </ScrollView>
       <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} locations={[0, 0.35]} style={[styles.saveBar, { paddingBottom: insets.bottom + 12 }]}>
         <GradientButton title={dirty ? 'Save changes' : 'No changes yet'} disabled={!valid || !dirty} onPress={save} />
