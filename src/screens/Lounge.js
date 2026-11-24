@@ -312,8 +312,37 @@ function ActivitySheet({ visible, onClose, onOpenPost }) {
   );
 }
 
+/** The next Thursday 20:00 (the weekly Live Q&A). */
+function nextQA() {
+  const d = new Date();
+  const add = (4 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + add);
+  d.setHours(20, 0, 0, 0);
+  if (d.getTime() < Date.now()) d.setDate(d.getDate() + 7);
+  return d;
+}
+
+/** A local reminder 15 minutes before the Q&A. Resolves to true when scheduled. */
+async function remindQA() {
+  try {
+    const N = await import('expo-notifications');
+    let { status } = await N.getPermissionsAsync();
+    if (status !== 'granted') ({ status } = await N.requestPermissionsAsync());
+    if (status !== 'granted') return false;
+    const at = new Date(nextQA().getTime() - 15 * 60000);
+    await N.scheduleNotificationAsync({
+      content: { title: 'Live Q&A in 15 minutes', body: 'Ask a sex therapist anything, anonymously. In the Lounge.', data: { kind: 'lounge' } },
+      trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: at },
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) {
   const [tab, setTab] = useState('feed');
+  const [reminded, setReminded] = useState(false);
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [activity, setActivity] = useState(false);
@@ -477,7 +506,7 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
                   THU
                 </T>
                 <T c="#FFFFFF" style={{ fontFamily: F.display, fontSize: 17, lineHeight: 20 }}>
-                  27
+                  {nextQA().getDate()}
                 </T>
               </View>
               <View style={{ flex: 1 }}>
@@ -486,9 +515,21 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
                 </T>
                 <T style={{ fontFamily: F.semi, fontSize: 14, lineHeight: 19 }}>Ask a sex therapist anything, anonymously</T>
               </View>
-              <Pressable accessibilityRole="button" onPress={() => success()} style={{ height: 32, paddingHorizontal: 12, borderRadius: 16, backgroundColor: C.ink, justifyContent: 'center' }}>
-                <T v="small" c={C.bg} style={{ fontFamily: F.semi }}>
-                  Remind me
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={reminded ? 'Reminder set' : 'Remind me'}
+                onPress={async () => {
+                  const ok = await remindQA();
+                  if (ok) {
+                    success();
+                    setReminded(true);
+                  } else Alert.alert('Turn on notifications', 'Allow notifications for Tonight to get a reminder.');
+                }}
+                style={{ height: 32, paddingHorizontal: 12, borderRadius: 16, backgroundColor: reminded ? C.greenBg : C.ink, justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              >
+                {reminded ? <Icon name="check" size={13} color={C.green} stroke={2.6} /> : null}
+                <T v="small" c={reminded ? C.green : C.bg} style={{ fontFamily: F.semi }}>
+                  {reminded ? 'Reminder set' : 'Remind me'}
                 </T>
               </Pressable>
             </LinearGradient>
