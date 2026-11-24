@@ -10,6 +10,7 @@ import { C, F } from '../theme';
 import { Icon, Verified } from '../icons';
 import { GradientButton, LiquidBg, Photo, T, Toggle, success, tap } from '../ui';
 import { countryCode, searchCities, searchCountries } from '../countries';
+import { DETAILS, PROMPTS } from '../data';
 
 export const BIO_MAX = 300;
 const STARTERS = ['Looking for ', 'My ideal night: ', 'Green flags: ', 'You should know: '];
@@ -310,6 +311,144 @@ export function ProfileFields({ bio, setBio, prompt = '', setPrompt, country, se
   );
 }
 
+
+/* ---------- Details (icon rows with tap-to-pick chips) ---------- */
+
+export function DetailsSection({ details, setDetails }) {
+  const [open, setOpen] = useState(null);
+  const filled = DETAILS.filter((d) => (d.multi ? details[d.key]?.length : details[d.key])).length;
+  const pick = (d, o) => {
+    tap();
+    if (d.multi) {
+      const cur = details[d.key] || [];
+      setDetails({ ...details, [d.key]: cur.includes(o) ? cur.filter((x) => x !== o) : [...cur, o] });
+    } else {
+      setDetails({ ...details, [d.key]: details[d.key] === o ? undefined : o });
+      setOpen(null);
+    }
+  };
+  return (
+    <Section icon="spark" title="Details" caption={`All optional. ${filled} of ${DETAILS.length} added.`}>
+      <View style={{ marginTop: 10 }}>
+        {DETAILS.map((d, i) => {
+          const v = details[d.key];
+          const shown = d.multi ? (v || []).join(', ') : v;
+          const isOpen = open === d.key;
+          return (
+            <View key={d.key} style={[styles.detailRow, i === DETAILS.length - 1 && !isOpen && { borderBottomWidth: 0 }]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${d.label}${shown ? `: ${shown}` : ', not added'}`}
+                onPress={() => {
+                  tap();
+                  setOpen(isOpen ? null : d.key);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 }}
+              >
+                <View style={[styles.detailIcon, shown && { backgroundColor: C.pinkBg }]}>
+                  <Icon name={d.icon} size={17} color={shown ? C.pinkL : C.muted} />
+                </View>
+                <T style={{ flex: 1, fontFamily: F.medium }}>{d.label}</T>
+                <T v="small" c={shown ? C.ink : C.faint} numberOfLines={1} style={{ maxWidth: '45%', textAlign: 'right' }}>
+                  {shown || 'Add'}
+                </T>
+                <Icon name={isOpen ? 'up' : 'down'} size={14} color={C.muted} stroke={2.2} />
+              </Pressable>
+              {isOpen ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingBottom: 12, paddingLeft: 46 }}>
+                  {d.options.map((o) => {
+                    const on = d.multi ? (v || []).includes(o) : v === o;
+                    return (
+                      <Pressable key={o} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => pick(d, o)} style={[styles.optChip, on && { backgroundColor: C.pink, borderColor: C.pink }]}>
+                        <T v="small" c={on ? '#FFFFFF' : C.ink2} style={{ fontFamily: on ? F.semi : F.medium }}>
+                          {o}
+                        </T>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+    </Section>
+  );
+}
+
+/* ---------- Prompts (up to 3 questions with your answer) ---------- */
+
+export function PromptsSection({ prompts, setPrompts }) {
+  const [adding, setAdding] = useState(false);
+  const used = prompts.map((p) => p.q);
+  const free = PROMPTS.filter((q) => !used.includes(q));
+  return (
+    <Section icon="chat" title="Prompts" caption="Answer up to 3. Great openers for a match.">
+      {prompts.map((p, i) => (
+        <View key={p.q} style={styles.promptCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <T c={C.pinkL} style={{ flex: 1, fontFamily: F.bold, fontSize: 12, letterSpacing: 0.5 }}>
+              {p.q.toUpperCase()}
+            </T>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Remove prompt ${p.q}`} onPress={() => setPrompts(prompts.filter((_, j) => j !== i))} hitSlop={8}>
+              <Icon name="close" size={14} color={C.muted} stroke={2.4} />
+            </Pressable>
+          </View>
+          <TextInput
+            value={p.a}
+            onChangeText={(t) => setPrompts(prompts.map((x, j) => (j === i ? { ...x, a: t.slice(0, 150) } : x)))}
+            placeholder="Your answer"
+            placeholderTextColor={C.faint}
+            multiline
+            selectionColor={C.pink}
+            style={styles.promptInput}
+            accessibilityLabel={`Answer to ${p.q}`}
+          />
+          <T v="small" c={C.faint} style={{ textAlign: 'right' }}>
+            {(p.a || '').length}/150
+          </T>
+        </View>
+      ))}
+      {prompts.length < 3 ? (
+        adding ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+            {free.map((q) => (
+              <Pressable
+                key={q}
+                accessibilityRole="button"
+                onPress={() => {
+                  tap();
+                  setPrompts([...prompts, { q, a: '' }]);
+                  setAdding(false);
+                }}
+                style={styles.optChip}
+              >
+                <T v="small" c={C.ink2} style={{ fontFamily: F.medium }}>
+                  {q}
+                </T>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              tap();
+              setAdding(true);
+            }}
+            style={styles.addPrompt}
+          >
+            <Icon name="plus" size={16} color={C.pinkL} stroke={2.4} />
+            <T v="label" c={C.pinkL}>
+              Add a prompt
+            </T>
+          </Pressable>
+        )
+      ) : null}
+    </Section>
+  );
+}
+
 /* ---------- Photos in Edit profile ---------- */
 
 function PhotoGrid({ photos, setPhotos, masked, onMask }) {
@@ -427,6 +566,8 @@ export function EditProfile({ profile, setProfile, onBack }) {
   const [age, setAge] = useState(profile.age ? String(profile.age) : '');
   const [bio, setBio] = useState(profile.bio || '');
   const [prompt, setPrompt] = useState(profile.prompt || '');
+  const [details, setDetails] = useState(profile.details || {});
+  const [prompts, setPrompts] = useState(profile.prompts || []);
   const [country, setCountry] = useState(profile.country || '');
   const [city, setCity] = useState(profile.city || '');
   const [photos, setPhotos] = useState(profile.photos || []);
@@ -442,12 +583,14 @@ export function EditProfile({ profile, setProfile, onBack }) {
     ageNum !== profile.age ||
     bio.trim() !== (profile.bio || '') ||
     prompt.trim() !== (profile.prompt || '') ||
+    JSON.stringify(details) !== JSON.stringify(profile.details || {}) ||
+    JSON.stringify(prompts) !== JSON.stringify(profile.prompts || []) ||
     country.trim() !== (profile.country || '') ||
     city.trim() !== (profile.city || '');
   const save = () => {
     if (!valid || !dirty) return;
     success();
-    setProfile((p) => ({ ...p, name: name.trim(), age: ageNum, bio: bio.trim(), prompt: prompt.trim(), country: country.trim(), city: city.trim(), photos, masked, blurFace: blur }));
+    setProfile((p) => ({ ...p, name: name.trim(), age: ageNum, bio: bio.trim(), prompt: prompt.trim(), country: country.trim(), city: city.trim(), photos, masked, blurFace: blur, details, prompts: prompts.filter((x) => x.a?.trim()) }));
     onBack();
   };
 
@@ -512,6 +655,8 @@ export function EditProfile({ profile, setProfile, onBack }) {
           />
         </Section>
         <ProfileFields bio={bio} setBio={setBio} prompt={prompt} setPrompt={setPrompt} country={country} setCountry={setCountry} city={city} setCity={setCity} />
+        <PromptsSection prompts={prompts} setPrompts={setPrompts} />
+        <DetailsSection details={details} setDetails={setDetails} />
       </ScrollView>
       <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} locations={[0, 0.35]} style={[styles.saveBar, { paddingBottom: insets.bottom + 12 }]}>
         <GradientButton title={dirty ? 'Save changes' : 'No changes yet'} disabled={!valid || !dirty} onPress={save} />
@@ -541,6 +686,12 @@ const styles = StyleSheet.create({
   slotMask: { position: 'absolute', right: 5, bottom: 5, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
   mainTag: { position: 'absolute', left: 5, bottom: 5, backgroundColor: C.pink, borderRadius: 7, paddingHorizontal: 5, paddingVertical: 2 },
   photoOpt: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14, padding: 12, borderRadius: 14, backgroundColor: C.surf2 },
+  detailRow: { borderBottomWidth: 1, borderBottomColor: C.line },
+  detailIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' },
+  optChip: { height: 34, paddingHorizontal: 13, borderRadius: 17, borderWidth: 1.5, borderColor: '#3A3439', justifyContent: 'center' },
+  promptCard: { marginTop: 12, padding: 14, borderRadius: 16, backgroundColor: '#1A1218', borderWidth: 1, borderColor: '#4A1A33' },
+  promptInput: { color: C.ink, fontFamily: F.display, fontSize: 18, lineHeight: 24, minHeight: 50, marginTop: 6, padding: 0, textAlignVertical: 'top' },
+  addPrompt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 48, marginTop: 12, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#4A1A33' },
   dropdown: { marginTop: 6, borderRadius: 16, borderWidth: 1, borderColor: C.line2, backgroundColor: '#1A161C', overflow: 'hidden' },
   option: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line },
   starter: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 30, paddingHorizontal: 10, borderRadius: 15, backgroundColor: C.pinkBg, borderWidth: 1, borderColor: '#4A1A33' },

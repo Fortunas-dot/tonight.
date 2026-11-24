@@ -8,14 +8,52 @@ import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { GradientButton, LiquidBg, Photo, T, success, tap, thud } from '../ui';
 import { FilterSheet, activeCount, applyFilters, filterChips } from './DiscoverFilters';
+import { DETAILS } from '../data';
 
-function Label({ children, color = C.pinkL }) {
+function Label({ children, color = C.pinkL, icon }) {
   return (
-    <T c={color} style={{ fontFamily: F.bold, fontSize: 11, letterSpacing: 0.8 }}>
-      {children}
-    </T>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      {icon ? <Icon name={icon} size={14} color={color} stroke={2} /> : null}
+      <T c={color} style={{ fontFamily: F.bold, fontSize: 11, letterSpacing: 0.8 }}>
+        {children}
+      </T>
+    </View>
   );
 }
+
+/** Their details as a two-column grid of icon tiles (only what they filled in). */
+function DetailsGrid({ details = {} }) {
+  const items = DETAILS.map((d) => ({ ...d, value: d.multi ? (details[d.key] || []).join(', ') : details[d.key] })).filter((d) => d.value);
+  if (!items.length) return null;
+  return (
+    <View style={styles.card}>
+      <Label icon="spark">THE DETAILS</Label>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, rowGap: 14 }}>
+        {items.map((d) => (
+          <View key={d.key} style={{ width: '50%', flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 8 }}>
+            <LinearGradient colors={['rgba(240,40,122,0.22)', 'rgba(59,123,255,0.18)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.detailIcon}>
+              <Icon name={d.icon} size={17} color="#FFD7E8" />
+            </LinearGradient>
+            <View style={{ flex: 1 }}>
+              <T v="small" c={C.muted} style={{ fontSize: 11 }}>
+                {d.label}
+              </T>
+              <T style={{ fontFamily: F.semi, fontSize: 14, lineHeight: 18 }} numberOfLines={2}>
+                {d.value}
+              </T>
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const PROMPT_TONES = [
+  ['#2A1020', '#1A1230', '#4A1A33'],
+  ['#111B33', '#1A1230', '#22335C'],
+  ['#2A1A10', '#1A1020', '#4A3317'],
+];
 
 function BigPhoto({ person, index, blurAll, width, children }) {
   const uri = person.photos?.[index] || (index === 0 ? person.photo : null);
@@ -54,14 +92,16 @@ function PersonPage({ person, me, blurAll, onReport, onBlock, onJump }) {
   if (person.bio)
     sections.push(
       <View key="about" style={styles.card}>
-        <Label>ABOUT ME</Label>
+        <Label icon="pen">ABOUT ME</Label>
         <T style={{ fontSize: 16, lineHeight: 24, marginTop: 8 }}>{person.bio}</T>
       </View>,
     );
   if (both.length || person.maybe)
     sections.push(
       <View key="both" onLayout={(e) => setBothY(e.nativeEvent.layout.y)} style={[styles.card, { backgroundColor: '#111A16', borderColor: '#1E3A2E' }]}>
-        <Label color={C.green}>YOU BOTH SAY YES TO</Label>
+        <Label color={C.green} icon="shieldCheck">
+          YOU BOTH SAY YES TO
+        </Label>
         <View style={{ gap: 10, marginTop: 10 }}>
           {both.map((b) => (
             <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -89,14 +129,27 @@ function PersonPage({ person, me, blurAll, onReport, onBlock, onJump }) {
   if (person.prompt)
     sections.push(
       <LinearGradient key="prompt" colors={['#2A1020', '#1A1230']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, { borderColor: '#4A1A33' }]}>
-        <Label>MY IDEAL NIGHT</Label>
+        <Label icon="flame">MY IDEAL NIGHT</Label>
         <T style={{ fontFamily: F.display, fontSize: 23, lineHeight: 30, marginTop: 8 }}>“{person.prompt}”</T>
       </LinearGradient>,
     );
+  (person.prompts || [])
+    .filter((x) => x?.q && x?.a)
+    .forEach((x, n) => {
+      const [a, b, border] = PROMPT_TONES[n % PROMPT_TONES.length];
+      sections.push(
+        <LinearGradient key={`prompt-${x.q}`} colors={[a, b]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, { borderColor: border }]}>
+          <Label icon="chat" color={n % 3 === 1 ? C.blueL : C.pinkL}>
+            {x.q.toUpperCase()}
+          </Label>
+          <T style={{ fontFamily: F.display, fontSize: 21, lineHeight: 28, marginTop: 8 }}>{x.a}</T>
+        </LinearGradient>,
+      );
+    });
   if (person.turnOns?.length)
     sections.push(
       <View key="turnons" style={styles.card}>
-        <Label>WHAT TURNS ME ON</Label>
+        <Label icon="heart">WHAT TURNS ME ON</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
           {person.turnOns.map((t) => {
             const shared = mineTurnOns.includes(t);
@@ -201,6 +254,8 @@ function PersonPage({ person, me, blurAll, onReport, onBlock, onJump }) {
         {person.country ? <Fact icon="globe" text={person.country} /> : null}
       </View>
 
+      <DetailsGrid details={person.details} />
+
       {blocks}
 
       {!sections.length && !photos.length ? (
@@ -258,7 +313,10 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
       <View style={[styles.top, { paddingTop: insets.top + 4 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, paddingHorizontal: 16 }}>
           <T style={{ flex: 1, fontFamily: F.displayX, fontSize: 24, letterSpacing: -0.5 }}>
-            tonight<T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 24 }}>.</T>
+            tonight
+            <T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 24 }}>
+              .
+            </T>
           </T>
           <Pressable accessibilityRole="button" accessibilityLabel={count ? `Filters, ${count} on` : 'Filters'} onPress={() => setSheet(true)} style={styles.filterBtn}>
             <Icon name="filter" size={20} />
@@ -286,7 +344,15 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
       {person ? (
         <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
           <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-            <PersonPage key={person.id} person={person} me={profile} blurAll={blurAll} onReport={onReport} onBlock={onBlock} onJump={(y) => scroll.current?.scrollTo({ y: Math.max(0, y - 12), animated: true })} />
+            <PersonPage
+              key={person.id}
+              person={person}
+              me={profile}
+              blurAll={blurAll}
+              onReport={onReport}
+              onBlock={onBlock}
+              onJump={(y) => scroll.current?.scrollTo({ y: Math.max(0, y - 12), animated: true })}
+            />
           </ScrollView>
         </Animated.View>
       ) : (
@@ -336,11 +402,25 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
 const styles = StyleSheet.create({
   top: { backgroundColor: 'rgba(14,12,16,0.92)', borderBottomWidth: 1, borderBottomColor: C.line, zIndex: 5 },
   filterBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
-  badge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: C.pink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: C.bg,
+  },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: '#2E2830', backgroundColor: 'rgba(255,255,255,0.03)' },
   chipOn: { borderColor: C.pink, backgroundColor: C.pinkBg },
   heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 18, paddingTop: 90 },
   exampleTag: { position: 'absolute', top: 14, left: 14, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)', justifyContent: 'center' },
+  detailIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   countTag: { position: 'absolute', top: 14, right: 14, flexDirection: 'row', alignItems: 'center', gap: 4, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(17,35,27,0.85)', marginLeft: 4 },
   fact: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 32, paddingHorizontal: 11, borderRadius: 16, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line },
