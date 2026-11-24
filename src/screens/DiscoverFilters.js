@@ -1,5 +1,5 @@
 // Discover filters, like other dating apps: age range, where, verified only, what they're after.
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
@@ -7,6 +7,7 @@ import { C, F, GRAD } from '../theme';
 import { Icon } from '../icons';
 import { INTENTS } from '../data';
 import { GradientButton, T, Toggle, tap } from '../ui';
+import { Grabber, useSwipeDown } from '../sheet';
 
 export const DEFAULT_FILTERS = { ageMin: 18, ageMax: 60, where: 'anywhere', verifiedOnly: false, intents: [] };
 const SHOW = ['Women', 'Men', 'Non-binary', 'Couples'];
@@ -123,25 +124,28 @@ export function FilterSheet({ visible, filters, show, hasCity, hasCountry, onClo
     }
   }
   const toggle = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+  const swipe = useSwipeDown(onClose);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable accessibilityLabel="Close filters" style={styles.backdrop} onPress={onClose} />
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-        <View style={styles.grab} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-          <T style={{ flex: 1, fontFamily: F.display, fontSize: 22 }}>Filters</T>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              tap();
-              setF(DEFAULT_FILTERS);
-            }}
-            hitSlop={8}
-          >
-            <T v="label" c={C.pinkL}>
-              Reset
-            </T>
-          </Pressable>
+      <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }, swipe.style]}>
+        <View {...swipe.handlers}>
+          <Grabber />
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <T style={{ flex: 1, fontFamily: F.display, fontSize: 22 }}>Filters</T>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                tap();
+                setF(DEFAULT_FILTERS);
+              }}
+              hitSlop={8}
+            >
+              <T v="label" c={C.pinkL}>
+                Reset
+              </T>
+            </Pressable>
+          </View>
         </View>
         <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
           <T v="label" c={C.muted} style={styles.h}>
@@ -221,7 +225,7 @@ export function FilterSheet({ visible, filters, show, hasCity, hasCountry, onClo
             onClose();
           }}
         />
-      </View>
+      </Animated.View>
     </Modal>
   );
 }

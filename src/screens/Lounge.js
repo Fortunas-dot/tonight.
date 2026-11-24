@@ -1,6 +1,6 @@
 // The Lounge: a social feed (posts, photos, likes, comments) plus the Guides. Design: canvas artboards 15b–15d.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Animated, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { Icon, Verified } from '../icons';
 import { GUIDES, POSTS } from '../data';
 import { Card, LiquidBg, Rise, Segmented, T, Toggle, success, tap } from '../ui';
 import { MaskEditor } from './MaskEditor';
+import { Grabber, useSwipeDown } from '../sheet';
 import * as api from '../backend';
 
 export const TOPICS = [
@@ -139,7 +140,14 @@ function Poll({ post }) {
         const pct = total ? Math.round((poll.counts[i] / total) * 100) : 0;
         const on = poll.mine === i;
         return (
-          <Pressable key={o} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={voted ? `${o}, ${pct} percent` : `Vote ${o}`} onPress={() => vote(i)} style={[styles.pollOpt, on && { borderColor: C.pink }]}>
+          <Pressable
+            key={o}
+            accessibilityRole="button"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={voted ? `${o}, ${pct} percent` : `Vote ${o}`}
+            onPress={() => vote(i)}
+            style={[styles.pollOpt, on && { borderColor: C.pink }]}
+          >
             {voted ? <View style={[styles.pollFill, { width: `${pct}%` }, on && { backgroundColor: 'rgba(240,40,122,0.22)' }]} /> : null}
             <T style={{ flex: 1, fontFamily: on ? F.semi : F.medium, fontSize: 14 }}>{o}</T>
             {voted ? (
@@ -257,6 +265,7 @@ const samplePosts = () =>
 function ActivitySheet({ visible, onClose, onOpenPost }) {
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState(null);
+  const swipe = useSwipeDown(onClose);
   useEffect(() => {
     if (!visible) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -266,9 +275,11 @@ function ActivitySheet({ visible, onClose, onOpenPost }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable accessibilityLabel="Close activity" style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }} onPress={onClose} />
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-        <View style={styles.grab} />
-        <T style={{ fontFamily: F.display, fontSize: 22, marginBottom: 6 }}>Activity</T>
+      <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }, swipe.style]}>
+        <View {...swipe.handlers}>
+          <Grabber />
+          <T style={{ fontFamily: F.display, fontSize: 22, marginBottom: 6 }}>Activity</T>
+        </View>
         <ScrollView style={{ maxHeight: 460 }}>
           {items === null ? (
             <T v="meta" c={C.muted} style={{ paddingVertical: 20 }}>
@@ -307,7 +318,7 @@ function ActivitySheet({ visible, onClose, onOpenPost }) {
             ))
           )}
         </ScrollView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -525,7 +536,16 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
                     setReminded(true);
                   } else Alert.alert('Turn on notifications', 'Allow notifications for Tonight to get a reminder.');
                 }}
-                style={{ height: 32, paddingHorizontal: 12, borderRadius: 16, backgroundColor: reminded ? C.greenBg : C.ink, justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                style={{
+                  height: 32,
+                  paddingHorizontal: 12,
+                  borderRadius: 16,
+                  backgroundColor: reminded ? C.greenBg : C.ink,
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
               >
                 {reminded ? <Icon name="check" size={13} color={C.green} stroke={2.6} /> : null}
                 <T v="small" c={reminded ? C.green : C.bg} style={{ fontFamily: F.semi }}>
