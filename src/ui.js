@@ -335,7 +335,17 @@ export function Photo({ style, seed = 0, children, label, uri, blur }) {
           </T>
         </View>
       ) : null}
-      {label && !uri ? (
+      {blur && !uri ? (
+        <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', gap: 8 }]}>
+          <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(14,12,16,0.55)', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="lock" size={24} color="#C9D6F2" />
+          </View>
+          <T v="small" c="#C9D6F2" style={{ fontFamily: F.semi }}>
+            Unlocks when you match
+          </T>
+        </View>
+      ) : null}
+      {label && !uri && !blur ? (
         <T v="small" c="#6F6470" style={{ position: 'absolute', alignSelf: 'center', top: '42%', letterSpacing: 2, fontFamily: F.medium }}>
           {label}
         </T>
