@@ -26,20 +26,23 @@ function BigPhoto({ person, index, blurAll, width, children }) {
   );
 }
 
-function Fact({ icon, text, tone }) {
+function Fact({ icon, text, tone, onPress }) {
   const pink = tone === 'pink';
+  const Wrap = onPress ? Pressable : View;
   return (
-    <View style={[styles.fact, pink && { backgroundColor: C.pinkBg, borderColor: '#4A1A33' }]}>
+    <Wrap accessibilityRole={onPress ? 'button' : undefined} onPress={onPress} style={[styles.fact, pink && { backgroundColor: C.pinkBg, borderColor: '#4A1A33' }]}>
       <Icon name={icon} size={14} color={pink ? C.pinkL : C.ink2} />
       <T v="small" c={pink ? '#FFD7E8' : C.ink2} style={{ fontFamily: F.medium }}>
         {text}
       </T>
-    </View>
+      {onPress ? <Icon name="down" size={12} color={pink ? C.pinkL : C.ink2} stroke={2.4} /> : null}
+    </Wrap>
   );
 }
 
 /** One person's page. Photos and their own words are woven together, using only what they filled in. */
-function PersonPage({ person, me, blurAll, onReport, onBlock }) {
+function PersonPage({ person, me, blurAll, onReport, onBlock, onJump }) {
+  const [bothY, setBothY] = useState(null);
   const { width } = useWindowDimensions();
   const w = width - 32;
   const half = Math.floor((w - 10) / 2);
@@ -55,16 +58,9 @@ function PersonPage({ person, me, blurAll, onReport, onBlock }) {
         <T style={{ fontSize: 16, lineHeight: 24, marginTop: 8 }}>{person.bio}</T>
       </View>,
     );
-  if (person.prompt)
-    sections.push(
-      <LinearGradient key="prompt" colors={['#2A1020', '#1A1230']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, { borderColor: '#4A1A33' }]}>
-        <Label>MY IDEAL NIGHT</Label>
-        <T style={{ fontFamily: F.display, fontSize: 23, lineHeight: 30, marginTop: 8 }}>“{person.prompt}”</T>
-      </LinearGradient>,
-    );
   if (both.length || person.maybe)
     sections.push(
-      <View key="both" style={[styles.card, { backgroundColor: '#111A16', borderColor: '#1E3A2E' }]}>
+      <View key="both" onLayout={(e) => setBothY(e.nativeEvent.layout.y)} style={[styles.card, { backgroundColor: '#111A16', borderColor: '#1E3A2E' }]}>
         <Label color={C.green}>YOU BOTH SAY YES TO</Label>
         <View style={{ gap: 10, marginTop: 10 }}>
           {both.map((b) => (
@@ -89,6 +85,13 @@ function PersonPage({ person, me, blurAll, onReport, onBlock }) {
           ) : null}
         </View>
       </View>,
+    );
+  if (person.prompt)
+    sections.push(
+      <LinearGradient key="prompt" colors={['#2A1020', '#1A1230']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, { borderColor: '#4A1A33' }]}>
+        <Label>MY IDEAL NIGHT</Label>
+        <T style={{ fontFamily: F.display, fontSize: 23, lineHeight: 30, marginTop: 8 }}>“{person.prompt}”</T>
+      </LinearGradient>,
     );
   if (person.turnOns?.length)
     sections.push(
@@ -189,7 +192,9 @@ function PersonPage({ person, me, blurAll, onReport, onBlock }) {
 
       {/* quick facts */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        <Fact icon="flame" tone="pink" text={`${person.fit || 0} of 7 boundaries fit`} />
+        {both.length ? (
+          <Fact icon="flame" tone="pink" text={`${both.length} ${both.length === 1 ? 'boundary' : 'boundaries'} in common`} onPress={bothY !== null ? () => onJump?.(bothY) : undefined} />
+        ) : null}
         {(person.intents || []).slice(0, 2).map((i) => (
           <Fact key={i} icon="clock" text={i} />
         ))}
@@ -281,7 +286,7 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
       {person ? (
         <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
           <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-            <PersonPage key={person.id} person={person} me={profile} blurAll={blurAll} onReport={onReport} onBlock={onBlock} />
+            <PersonPage key={person.id} person={person} me={profile} blurAll={blurAll} onReport={onReport} onBlock={onBlock} onJump={(y) => scroll.current?.scrollTo({ y: Math.max(0, y - 12), animated: true })} />
           </ScrollView>
         </Animated.View>
       ) : (
