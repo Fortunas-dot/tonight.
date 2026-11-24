@@ -38,13 +38,111 @@ function Fact({ icon, text, tone }) {
   );
 }
 
-/** One person's page. */
+/** One person's page. Photos and their own words are woven together, using only what they filled in. */
 function PersonPage({ person, me, blurAll, onReport, onBlock }) {
   const { width } = useWindowDimensions();
   const w = width - 32;
+  const half = Math.floor((w - 10) / 2);
   const mineTurnOns = me?.turnOns || [];
-  const extraPhotos = (person.photos || []).slice(1);
   const both = person.both || [];
+
+  // The text sections they filled in, in a natural reading order.
+  const sections = [];
+  if (person.bio)
+    sections.push(
+      <View key="about" style={styles.card}>
+        <Label>ABOUT ME</Label>
+        <T style={{ fontSize: 16, lineHeight: 24, marginTop: 8 }}>{person.bio}</T>
+      </View>,
+    );
+  if (person.prompt)
+    sections.push(
+      <LinearGradient key="prompt" colors={['#2A1020', '#1A1230']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, { borderColor: '#4A1A33' }]}>
+        <Label>MY IDEAL NIGHT</Label>
+        <T style={{ fontFamily: F.display, fontSize: 23, lineHeight: 30, marginTop: 8 }}>“{person.prompt}”</T>
+      </LinearGradient>,
+    );
+  if (both.length || person.maybe)
+    sections.push(
+      <View key="both" style={[styles.card, { backgroundColor: '#111A16', borderColor: '#1E3A2E' }]}>
+        <Label color={C.green}>YOU BOTH SAY YES TO</Label>
+        <View style={{ gap: 10, marginTop: 10 }}>
+          {both.map((b) => (
+            <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={styles.yes}>
+                <Icon name="check" size={12} color="#E7FFF3" stroke={3} />
+              </View>
+              <T style={{ fontSize: 15 }}>{b}</T>
+            </View>
+          ))}
+          {person.maybe ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={[styles.yes, { backgroundColor: '#4A3C17' }]}>
+                <T c="#FFF3D1" style={{ fontFamily: F.bold, fontSize: 12, lineHeight: 14 }}>
+                  ?
+                </T>
+              </View>
+              <T c={C.ink2} style={{ fontSize: 15 }}>
+                Maybe: {person.maybe}
+              </T>
+            </View>
+          ) : null}
+        </View>
+      </View>,
+    );
+  if (person.turnOns?.length)
+    sections.push(
+      <View key="turnons" style={styles.card}>
+        <Label>WHAT TURNS ME ON</Label>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+          {person.turnOns.map((t) => {
+            const shared = mineTurnOns.includes(t);
+            return (
+              <View key={t} style={[styles.turnOn, shared && { backgroundColor: C.pinkBg, borderColor: C.pink }]}>
+                {shared ? <Icon name="spark" size={12} color={C.pinkL} /> : null}
+                <T v="small" c={shared ? '#FFD7E8' : C.ink2} style={{ fontFamily: shared ? F.semi : F.medium }}>
+                  {t}
+                </T>
+              </View>
+            );
+          })}
+        </View>
+        {person.turnOns.some((t) => mineTurnOns.includes(t)) ? (
+          <T v="small" c={C.muted} style={{ marginTop: 8 }}>
+            Pink ones you share.
+          </T>
+        ) : null}
+      </View>,
+    );
+
+  // The other photos (index into person.photos). Example profiles get one placeholder so the rhythm still shows.
+  const realCount = (person.photos || []).length;
+  const photos = realCount > 1 ? Array.from({ length: realCount - 1 }, (_, i) => i + 1) : !person.real ? [1] : [];
+
+  // Weave: text, photo, text, photo... Then leftover photos in pairs side by side; leftover text just follows.
+  const blocks = [];
+  let s = 0;
+  let p = 0;
+  while (s < sections.length || p < photos.length) {
+    if (s < sections.length) blocks.push(sections[s++]);
+    if (p < photos.length) {
+      // Once the text has run out, show the remaining photos two by two.
+      if (s >= sections.length && photos.length - p >= 2) {
+        const a = photos[p++];
+        const b = photos[p++];
+        blocks.push(
+          <View key={`pair${a}`} style={{ flexDirection: 'row', gap: 10 }}>
+            <Photo seed={(person.seed || 0) + a} uri={person.photos?.[a]} blur={person.blurred || blurAll} style={{ width: half, height: Math.round(half * 1.3), borderRadius: 22 }} />
+            <Photo seed={(person.seed || 0) + b} uri={person.photos?.[b]} blur={person.blurred || blurAll} style={{ width: half, height: Math.round(half * 1.3), borderRadius: 22 }} />
+          </View>,
+        );
+      } else {
+        const a = photos[p++];
+        blocks.push(<BigPhoto key={`ph${a}`} person={person} index={a} blurAll={blurAll} width={w} />);
+      }
+    }
+  }
+
   return (
     <View style={{ gap: 12 }}>
       {/* hero */}
@@ -53,6 +151,14 @@ function PersonPage({ person, me, blurAll, onReport, onBlock }) {
           <View style={styles.exampleTag}>
             <T v="small" c={C.ink2} style={{ fontFamily: F.semi, fontSize: 11 }}>
               Example profile
+            </T>
+          </View>
+        ) : null}
+        {realCount > 1 ? (
+          <View style={styles.countTag}>
+            <Icon name="image" size={12} color={C.ink2} />
+            <T v="small" c={C.ink2} style={{ fontFamily: F.semi, fontSize: 11 }}>
+              {realCount}
             </T>
           </View>
         ) : null}
@@ -90,80 +196,12 @@ function PersonPage({ person, me, blurAll, onReport, onBlock }) {
         {person.country ? <Fact icon="globe" text={person.country} /> : null}
       </View>
 
-      {/* about */}
-      {person.bio ? (
-        <View style={styles.card}>
-          <Label>ABOUT ME</Label>
-          <T style={{ fontSize: 16, lineHeight: 24, marginTop: 8 }}>{person.bio}</T>
-        </View>
-      ) : null}
+      {blocks}
 
-      {extraPhotos[0] || !person.real ? <BigPhoto person={person} index={1} blurAll={blurAll} width={w} /> : null}
-
-      {/* ideal night */}
-      {person.prompt ? (
-        <LinearGradient colors={['#2A1020', '#1A1230']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, { borderColor: '#4A1A33' }]}>
-          <Label>MY IDEAL NIGHT</Label>
-          <T style={{ fontFamily: F.display, fontSize: 23, lineHeight: 30, marginTop: 8 }}>“{person.prompt}”</T>
-        </LinearGradient>
-      ) : null}
-
-      {/* shared boundaries */}
-      {both.length || person.maybe ? (
-        <View style={[styles.card, { backgroundColor: '#111A16', borderColor: '#1E3A2E' }]}>
-          <Label color={C.green}>YOU BOTH SAY YES TO</Label>
-          <View style={{ gap: 10, marginTop: 10 }}>
-            {both.map((b) => (
-              <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={styles.yes}>
-                  <Icon name="check" size={12} color="#E7FFF3" stroke={3} />
-                </View>
-                <T style={{ fontSize: 15 }}>{b}</T>
-              </View>
-            ))}
-            {person.maybe ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={[styles.yes, { backgroundColor: '#4A3C17' }]}>
-                  <T c="#FFF3D1" style={{ fontFamily: F.bold, fontSize: 12, lineHeight: 14 }}>
-                    ?
-                  </T>
-                </View>
-                <T c={C.ink2} style={{ fontSize: 15 }}>
-                  Maybe: {person.maybe}
-                </T>
-              </View>
-            ) : null}
-          </View>
-        </View>
-      ) : null}
-
-      {extraPhotos.slice(1).map((_, i) => (
-        <BigPhoto key={i} person={person} index={i + 2} blurAll={blurAll} width={w} />
-      ))}
-
-      {/* turn-ons */}
-      {person.turnOns?.length ? (
-        <View style={styles.card}>
-          <Label>WHAT TURNS ME ON</Label>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-            {person.turnOns.map((t) => {
-              const shared = mineTurnOns.includes(t);
-              return (
-                <View key={t} style={[styles.turnOn, shared && { backgroundColor: C.pinkBg, borderColor: C.pink }]}>
-                  {shared ? <Icon name="spark" size={12} color={C.pinkL} /> : null}
-                  <T v="small" c={shared ? '#FFD7E8' : C.ink2} style={{ fontFamily: shared ? F.semi : F.medium }}>
-                    {t}
-                  </T>
-                </View>
-              );
-            })}
-          </View>
-          {person.turnOns.some((t) => mineTurnOns.includes(t)) ? (
-            <T v="small" c={C.muted} style={{ marginTop: 8 }}>
-              Pink ones you share.
-            </T>
-          ) : null}
-        </View>
+      {!sections.length && !photos.length ? (
+        <T v="meta" c={C.muted} style={{ textAlign: 'center', marginTop: 6 }}>
+          {person.name} hasn’t added more yet. Say hi and ask.
+        </T>
       ) : null}
 
       <Pressable
@@ -298,6 +336,7 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: C.pink, backgroundColor: C.pinkBg },
   heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 18, paddingTop: 90 },
   exampleTag: { position: 'absolute', top: 14, left: 14, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)', justifyContent: 'center' },
+  countTag: { position: 'absolute', top: 14, right: 14, flexDirection: 'row', alignItems: 'center', gap: 4, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(17,35,27,0.85)', marginLeft: 4 },
   fact: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 32, paddingHorizontal: 11, borderRadius: 16, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line },
   card: { padding: 18, borderRadius: 24, backgroundColor: '#151217', borderWidth: 1, borderColor: C.line },
