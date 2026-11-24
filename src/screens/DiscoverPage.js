@@ -291,7 +291,9 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
   const scroll = useRef(null);
   const blurAll = !!profile?.settings?.blurAll;
   const deck = applyFilters(all, filters, profile);
-  const person = deck.length ? deck[i % deck.length] : null;
+  // After the last person you get an end screen instead of the same people again.
+  const seenAll = deck.length > 0 && i >= deck.length;
+  const person = deck.length && !seenAll ? deck[i] : null;
   const count = activeCount(filters);
 
   const next = (liked) => {
@@ -355,6 +357,29 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
             />
           </ScrollView>
         </Animated.View>
+      ) : seenAll ? (
+        <View style={styles.empty}>
+          <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.endBadge}>
+            <Icon name="check" size={30} color="#FFFFFF" stroke={2.6} />
+          </LinearGradient>
+          <T style={{ fontFamily: F.display, fontSize: 22, marginTop: 14, textAlign: 'center' }}>You’ve seen everyone for now</T>
+          <T v="meta" c={C.muted} style={{ textAlign: 'center', marginTop: 6 }}>
+            New people go live every evening. Widen your filters to see more, or look again.
+          </T>
+          <GradientButton title="Adjust filters" onPress={() => setSheet(true)} style={{ marginTop: 20, alignSelf: 'stretch' }} />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              tap();
+              setI(0);
+            }}
+            style={{ paddingVertical: 14 }}
+          >
+            <T v="label" c={C.ink2}>
+              Start over
+            </T>
+          </Pressable>
+        </View>
       ) : (
         <View style={styles.empty}>
           <Icon name="filter" size={30} color={C.muted} />
@@ -427,6 +452,7 @@ const styles = StyleSheet.create({
   card: { padding: 18, borderRadius: 24, backgroundColor: '#151217', borderWidth: 1, borderColor: C.line },
   yes: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#1E4D3A', alignItems: 'center', justifyContent: 'center' },
   turnOn: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: '#3A3439' },
+  endBadge: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 },
   closeBar: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row' },
   closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(20,16,24,0.85)', borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
