@@ -5,11 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { C, F, GRAD } from '../theme';
 import { Icon } from '../icons';
-import { INTENTS } from '../data';
+import { DETAILS, INTENTS } from '../data';
 import { GradientButton, T, Toggle, tap } from '../ui';
 import { Grabber, useSwipeDown } from '../sheet';
 
-export const DEFAULT_FILTERS = { ageMin: 18, ageMax: 60, where: 'anywhere', verifiedOnly: false, intents: [] };
+const LANGUAGES = DETAILS.find((d) => d.key === 'languages').options;
+const HOSTS = ['I can host', 'Sometimes'];
+
+export const DEFAULT_FILTERS = { ageMin: 18, ageMax: 60, where: 'anywhere', verifiedOnly: false, intents: [], canHost: false, languages: [] };
 const SHOW = ['Women', 'Men', 'Non-binary', 'Couples'];
 const WHERE = [
   { id: 'anywhere', label: 'Anywhere' },
@@ -24,6 +27,8 @@ export function activeCount(f) {
   if (f.where !== 'anywhere') n++;
   if (f.verifiedOnly) n++;
   if (f.intents.length) n++;
+  if (f.canHost) n++;
+  if (f.languages?.length) n++;
   return n;
 }
 
@@ -38,6 +43,8 @@ export function applyFilters(deck, f, me) {
     if (p.real && f.where === 'city' && !same(p.dist, me?.city)) return false;
     if (p.real && f.where === 'country' && !same(p.country, me?.country)) return false;
     if (f.intents.length && p.intents?.length && !p.intents.some((i) => f.intents.includes(i))) return false;
+    if (f.canHost && !HOSTS.includes(p.details?.hosting)) return false;
+    if (f.languages?.length && !(p.details?.languages || []).some((l) => f.languages.includes(l))) return false;
     return true;
   });
 }
@@ -50,6 +57,8 @@ export function filterChips(f, show) {
     { id: 'where', label: WHERE.find((w) => w.id === f.where).label, on: f.where !== 'anywhere' },
     { id: 'verified', label: 'Verified only', on: f.verifiedOnly },
     { id: 'intents', label: f.intents.length ? f.intents.join(', ') : 'Looking for', on: f.intents.length > 0 },
+    { id: 'host', label: 'Can host', on: !!f.canHost },
+    { id: 'lang', label: f.languages?.length ? f.languages.join(', ') : 'Languages', on: !!f.languages?.length },
   ];
 }
 
@@ -204,6 +213,25 @@ export function FilterSheet({ visible, filters, show, hasCity, hasCountry, onClo
             {INTENTS.map((i) => (
               <Chip key={i} label={i} on={f.intents.includes(i)} onPress={() => setF({ ...f, intents: toggle(f.intents, i) })} />
             ))}
+          </View>
+
+          <T v="label" c={C.muted} style={styles.h}>
+            Speaks
+          </T>
+          <View style={styles.wrap}>
+            {LANGUAGES.map((l) => (
+              <Chip key={l} label={l} on={(f.languages || []).includes(l)} onPress={() => setF({ ...f, languages: toggle(f.languages || [], l) })} />
+            ))}
+          </View>
+
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <T style={{ fontFamily: F.medium }}>Can host</T>
+              <T v="small" c={C.muted}>
+                Only people who can (sometimes) host
+              </T>
+            </View>
+            <Toggle value={!!f.canHost} onChange={(v) => setF({ ...f, canHost: v })} label="Can host" />
           </View>
 
           <View style={styles.row}>

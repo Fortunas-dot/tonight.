@@ -428,7 +428,52 @@ const styles = StyleSheet.create({
   yes: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#1E4D3A', alignItems: 'center', justifyContent: 'center' },
   turnOn: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: '#3A3439' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 },
+  closeBar: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row' },
+  closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(20,16,24,0.85)', borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
   actions: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 30, paddingBottom: 14 },
   pass: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.surf2, borderWidth: 1.5, borderColor: '#3A3439', alignItems: 'center', justifyContent: 'center' },
   like: { height: 56, borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
 });
+
+/** A single person's page opened from Likes or a chat: same layout as Discover, with Close, Pass and Like. */
+export function ProfilePage({ person, me, onClose, onLike, onReport, onBlock, showActions = true }) {
+  const insets = useSafeAreaInsets();
+  const scroll = useRef(null);
+  const blurAll = !!me?.settings?.blurAll;
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <LiquidBg />
+      <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 56, paddingBottom: showActions ? 120 : 40 }} showsVerticalScrollIndicator={false}>
+        <PersonPage person={person} me={me} blurAll={blurAll} onReport={onReport} onBlock={onBlock} onJump={(y) => scroll.current?.scrollTo({ y: Math.max(0, y + insets.top + 44), animated: true })} />
+      </ScrollView>
+      <View style={[styles.closeBar, { paddingTop: insets.top + 4 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Close profile" onPress={onClose} style={styles.closeBtn}>
+          <Icon name="down" size={22} stroke={2.2} />
+        </Pressable>
+      </View>
+      {showActions ? (
+        <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.96)']} locations={[0, 0.45]} style={styles.actions} pointerEvents="box-none">
+          <Pressable accessibilityRole="button" accessibilityLabel={`Pass on ${person.name}`} onPress={onClose} style={styles.pass}>
+            <Icon name="close" size={24} stroke={2.4} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Like ${person.name}`}
+            onPress={() => {
+              thud();
+              onLike(person);
+            }}
+            style={{ flex: 1 }}
+          >
+            <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.like}>
+              <Icon name="heart" size={20} color="#FFFFFF" fill="#FFFFFF" />
+              <T c="#FFFFFF" style={{ fontFamily: F.semi, fontSize: 16 }}>
+                Like {person.name}
+              </T>
+            </LinearGradient>
+          </Pressable>
+        </LinearGradient>
+      ) : null}
+    </View>
+  );
+}

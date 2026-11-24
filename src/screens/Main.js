@@ -8,7 +8,6 @@ import { PEOPLE, VOWS, personById } from '../data';
 import { versionLabel } from '../version';
 import { completeness } from '../completeness';
 import Svg, { Circle as SvgCircle, Defs as SvgDefs, LinearGradient as SvgGrad, Stop as SvgStop } from 'react-native-svg';
-import { FilterSheet, activeCount, applyFilters, filterChips } from './DiscoverFilters';
 import {
   Avatar,
   Card,
@@ -26,231 +25,7 @@ import {
   T,
   success,
   tap,
-  thud,
 } from '../ui';
-
-/* ---------- Discover ---------- */
-
-export function Discover({ onOpen, onLike, deck: all, profile, filters, onFilters }) {
-  const blurAll = !!profile?.settings?.blurAll;
-  const [i, setI] = useState(0);
-  const [fly] = useState(() => new Animated.Value(0));
-  const [sheet, setSheet] = useState(false);
-  const deck = applyFilters(all, filters, profile);
-  const person = deck.length ? deck[i % deck.length] : null;
-  const count = activeCount(filters);
-
-  const go = (dir) => {
-    if (dir > 0) thud();
-    else tap();
-    Animated.timing(fly, { toValue: dir, duration: 260, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
-      if (dir > 0) onLike(person);
-      fly.setValue(0);
-      setI((x) => x + 1);
-    });
-  };
-
-  return (
-    <Screen pad={12} bottom={8}>
-      <View style={styles.topbar}>
-        <T style={{ fontFamily: F.displayX, fontSize: 24, letterSpacing: -0.5 }}>
-          tonight<T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 24 }}>.</T>
-        </T>
-        <Pressable accessibilityRole="button" accessibilityLabel={count ? `Filters, ${count} on` : 'Filters'} onPress={() => setSheet(true)} style={styles.filterBtn}>
-          <Icon name="filter" size={20} />
-          {count ? (
-            <View style={styles.filterBadge}>
-              <T c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 10, lineHeight: 12 }}>
-                {count}
-              </T>
-            </View>
-          ) : null}
-        </Pressable>
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingHorizontal: 8 }} style={{ flexGrow: 0, marginTop: 2 }}>
-        {filterChips(filters, profile?.show).map((c) => (
-          <Pressable key={c.id} accessibilityRole="button" onPress={() => setSheet(true)} style={[styles.fChip, c.on && styles.fChipOn]}>
-            <T v="small" c={c.on ? C.ink : C.muted} style={{ fontFamily: c.on ? F.semi : F.medium }} numberOfLines={1}>
-              {c.label}
-            </T>
-            <Icon name="down" size={12} color={c.on ? C.ink : C.muted} stroke={2.2} />
-          </Pressable>
-        ))}
-      </ScrollView>
-      <FilterSheet
-        visible={sheet}
-        filters={filters}
-        show={profile?.show}
-        hasCity={!!profile?.city}
-        hasCountry={!!profile?.country}
-        onClose={() => setSheet(false)}
-        onApply={(f, show) => {
-          setI(0);
-          onFilters(f, show);
-        }}
-      />
-      {!person ? (
-        <View style={styles.emptyDeck}>
-          <Icon name="filter" size={30} color={C.muted} />
-          <T style={{ fontFamily: F.display, fontSize: 20, marginTop: 10, textAlign: 'center' }}>No one matches your filters</T>
-          <T v="meta" c={C.muted} style={{ textAlign: 'center', marginTop: 4 }}>
-            Try a wider age range or a bigger area.
-          </T>
-          <GradientButton title="Adjust filters" onPress={() => setSheet(true)} style={{ marginTop: 18, alignSelf: 'stretch' }} />
-        </View>
-      ) : (
-        <>
-      <Animated.View
-        style={{
-          flex: 1,
-          marginTop: 6,
-          transform: [
-            { translateX: fly.interpolate({ inputRange: [-1, 0, 1], outputRange: [-420, 0, 420] }) },
-            { rotate: fly.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-14deg', '0deg', '14deg'] }) },
-          ],
-        }}
-      >
-        <Pressable onPress={() => onOpen(person)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`}>
-          <Photo seed={person.seed} uri={person.photo} blur={person.blurred || blurAll} style={styles.card} label="PHOTO">
-            {!person.real ? (
-              <View style={styles.exampleTag}>
-                <T v="small" c={C.ink2} style={{ fontFamily: F.semi, fontSize: 11 }}>
-                  Example profile
-                </T>
-              </View>
-            ) : null}
-            <View style={styles.bars}>
-              {[0, 1, 2, 3].map((b) => (
-                <View key={b} style={[styles.bar, b === 0 && { backgroundColor: C.ink }]} />
-              ))}
-            </View>
-            <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.94)']} style={styles.cardInfo}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <T style={{ fontFamily: F.display, fontSize: 32, letterSpacing: -0.6 }}>
-                  {person.name}, {person.age}
-                </T>
-                <Verified size={22} />
-              </View>
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-                <T v="meta" c={C.ink2}>
-                  {person.dist}
-                </T>
-                <T v="meta" c={C.green}>
-                  Live until {person.until}
-                </T>
-              </View>
-              <T style={{ marginTop: 10 }}>“{person.bio}”</T>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-                <View style={[styles.pill, { backgroundColor: C.pink }]}>
-                  <T v="small" c="#FFFFFF" style={{ fontFamily: F.semi }}>
-                    {(person.both || []).length} boundaries in common
-                  </T>
-                </View>
-                <View style={styles.pill}>
-                  <T v="small">Shows up {person.showsUp}%</T>
-                </View>
-              </View>
-            </LinearGradient>
-          </Photo>
-        </Pressable>
-      </Animated.View>
-      <View style={styles.actions}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Pass" onPress={() => go(-1)} style={styles.roundGhost}>
-          <Icon name="close" size={24} stroke={2.2} />
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Like" onPress={() => go(1)}>
-          <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.roundLike}>
-            <Icon name="heart" size={28} color="#FFFFFF" fill="#FFFFFF" stroke={1} />
-          </LinearGradient>
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open profile" onPress={() => onOpen(person)} style={styles.roundGhost}>
-          <Icon name="up" size={24} stroke={2.2} />
-        </Pressable>
-      </View>
-        </>
-      )}
-    </Screen>
-  );
-}
-
-/* ---------- Profile ---------- */
-
-export function ProfileView({ person, onClose, onLike, onReport, onBlock }) {
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
-        <Photo seed={person.seed} uri={person.photo} blur={person.blurred} style={{ height: 440 }} label="PHOTO">
-          <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 200 }} />
-        </Photo>
-        <View style={{ paddingHorizontal: 24, marginTop: -70 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
-            <T style={{ fontFamily: F.display, fontSize: 38, letterSpacing: -1.2 }}>{person.name}</T>
-            <T style={{ fontFamily: F.displayM, fontSize: 30 }} c="rgba(244,239,234,0.6)">
-              {person.age}
-            </T>
-            <Verified />
-          </View>
-          <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
-            {person.dist} · <T v="meta" c={C.green}>Live until {person.until}</T>
-          </T>
-          <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 8 }}>
-            You both want
-          </T>
-          {person.both.map((b) => (
-            <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 34 }}>
-              <LinearGradient colors={GRAD} style={styles.check}>
-                <Icon name="check" size={11} color="#FFFFFF" stroke={4} />
-              </LinearGradient>
-              <T style={{ fontSize: 16 }}>{b}</T>
-            </View>
-          ))}
-          {person.maybe ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 34 }}>
-              <View style={[styles.check, { backgroundColor: '#5A4A22' }]}>
-                <T v="small" c="#FFF3D1" style={{ fontFamily: F.bold }}>
-                  ?
-                </T>
-              </View>
-              <T style={{ fontSize: 16 }} c={C.ink2}>
-                Maybe: {person.maybe}
-              </T>
-            </View>
-          ) : null}
-          <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 8 }}>
-            Ideal night
-          </T>
-          {person.prompt ? <T style={{ fontFamily: F.displayM, fontSize: 21, lineHeight: 28 }}>“{person.prompt}”</T> : null}
-        </View>
-      </ScrollView>
-      <View style={[styles.closeWrap, { top: insets.top + 8 }]}>
-        <IconButton name="down" label="Close profile" onPress={onClose} style={styles.glass} />
-        <IconButton
-          name="dots"
-          label="Report or block"
-          onPress={() => Alert.alert('Report or block', `Ward will review ${person.name}'s profile.`, [
-              {
-                text: 'Report',
-                onPress: () => {
-                  success();
-                  onReport?.(person);
-                },
-              },
-              { text: 'Block', style: 'destructive', onPress: () => onBlock?.(person) },
-              { text: 'Cancel', style: 'cancel' },
-            ])}
-          style={styles.glass}
-        />
-      </View>
-      <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} locations={[0, 0.4]} style={[styles.stickyBar, { paddingBottom: insets.bottom + 14 }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Pass" onPress={onClose} style={styles.roundGhost}>
-          <Icon name="close" size={22} stroke={2.2} />
-        </Pressable>
-        <GradientButton title={`Like ${person.name}`} onPress={() => onLike(person)} style={{ flex: 1 }} />
-      </LinearGradient>
-    </View>
-  );
-}
 
 /* ---------- Match ---------- */
 
@@ -501,7 +276,7 @@ function HiddenMessage({ text }) {
   );
 }
 
-export function Chat({ chat, onSend, onBack, onPlan, live, filterExplicit = true }) {
+export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExplicit = true }) {
   // Messages they sent before you ever replied count as "first messages".
   const firstMine = chat.messages.findIndex((m) => m.me);
   const hide = (m, i) => filterExplicit && !m.me && !m.plan && (firstMine === -1 || i < firstMine) && EXPLICIT.test(m.text || '');
@@ -529,13 +304,15 @@ export function Chat({ chat, onSend, onBack, onPlan, live, filterExplicit = true
       <LiquidBg />
       <View style={[styles.chatHead, { paddingTop: insets.top + 4 }]}>
         <IconButton name="back" label="Back to chats" onPress={onBack} />
-        <Avatar size={36} seed={p.seed} uri={p.photo} ring={p.tier === 'fire' ? 'fire' : 'glow'} />
-        <View style={{ flex: 1 }}>
-          <T style={{ fontFamily: F.semi }}>{p.name}</T>
-          <T v="small" c={C.green}>
-            {chat.plan ? `Plan at ${chat.plan.time}` : `Live until ${p.until}`}
-          </T>
-        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel={`View ${p.name}'s profile`} onPress={() => onProfile?.(p)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Avatar size={36} seed={p.seed} uri={p.photo} ring={p.tier === 'fire' ? 'fire' : 'glow'} />
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.semi }}>{p.name}</T>
+            <T v="small" c={C.green}>
+              {chat.plan ? `Plan at ${chat.plan.time}` : `Live until ${p.until}`} · <T v="small" c={C.muted}>view profile</T>
+            </T>
+          </View>
+        </Pressable>
         <IconButton name="shield" label="Safety tools" color={C.blueL} onPress={() => onPlan(chat.id)} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 8 }}>

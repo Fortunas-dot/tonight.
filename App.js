@@ -28,7 +28,6 @@ import {
   Match,
   Me,
   Plan,
-  ProfileView,
   Support,
   Likes,
 } from './src/screens/Main';
@@ -39,7 +38,7 @@ import { Privacy, Settings } from './src/screens/Settings';
 import { LockGate } from './src/screens/Lock';
 import { Intro } from './src/screens/Intro';
 import { FakeCall } from './src/screens/FakeCall';
-import { DiscoverPage } from './src/screens/DiscoverPage';
+import { DiscoverPage, ProfilePage } from './src/screens/DiscoverPage';
 import { onNotificationTap, registerForPush } from './src/notifications';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
@@ -251,8 +250,10 @@ export default function App() {
       switch (top.name) {
         case 'profile':
           screen = (
-            <ProfileView
+            <ProfilePage
               person={p.person}
+              me={profile}
+              showActions={!p.matched}
               onClose={pop}
               onLike={async (person) => {
                 if (await likeIt(person)) replaceTop('match', { person });
@@ -271,7 +272,7 @@ export default function App() {
           screen = <Match person={p.person} me={profile} onClose={pop} onChat={openChat} />;
           break;
         case 'chat':
-          screen = chat ? <Chat key={chat.id} chat={chat} live={!chat.plan && !chat.real} filterExplicit={profile.settings?.filterExplicit !== false} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} /> : null;
+          screen = chat ? <Chat key={chat.id} chat={chat} live={!chat.plan && !chat.real} filterExplicit={profile.settings?.filterExplicit !== false} onSend={sendMessage} onBack={pop} onPlan={(id) => push('plan', { id })} onProfile={(person) => push('profile', { person, matched: true })} /> : null;
           break;
         case 'plan':
           screen = chat ? <Plan chat={chat} onBack={pop} onSend={sendMessage} onFakeCall={() => setTimeout(() => setRinging(true), 20000)} /> : null;
