@@ -143,7 +143,7 @@ export function Discover({ onOpen, onLike, deck: all, profile, filters, onFilter
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
                 <View style={[styles.pill, { backgroundColor: C.pink }]}>
                   <T v="small" c="#FFFFFF" style={{ fontFamily: F.semi }}>
-                    {person.fit} of 7 boundaries fit
+                    {(person.both || []).length} boundaries in common
                   </T>
                 </View>
                 <View style={styles.pill}>
@@ -308,7 +308,7 @@ export function Match({ person, me, onChat, onClose }) {
         It’s mutual.
       </T>
       <T c="#FFFFFF" style={{ textAlign: 'center', fontSize: 16, marginTop: 10 }}>
-        You and {person.name} are both live tonight{'\n'}and fit on {person.fit} of 7 boundaries.
+        You and {person.name} like each other{'\n'}and share {(person.both || []).length} boundaries.
       </T>
       <View style={styles.matchNote}>
         <Icon name="clock" size={20} color="#FFFFFF" />
@@ -369,7 +369,7 @@ export function Likes({ people: real = [], onOpen, blurAll }) {
                     {p.name}, {p.age}
                   </T>
                   <T v="small" c={C.ink2}>
-                    {p.fit}/7 fit · {p.dist}
+                    {(p.both || []).length} in common · {p.dist}
                   </T>
                 </LinearGradient>
               </Photo>
