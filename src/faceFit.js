@@ -64,8 +64,9 @@ export function fitMask(face) {
       if ((p.y <= 0 && q.y > 0) || (p.y > 0 && q.y <= 0)) xs.push(p.x + ((0 - p.y) * (q.x - p.x)) / (q.y - p.y));
     }
     if (xs.length >= 2) {
-      left = Math.min(...xs);
-      right = Math.max(...xs);
+      // A touch inside the outline, so the mask never overhangs into hair or background.
+      left = Math.min(...xs) * 0.96;
+      right = Math.max(...xs) * 0.96;
     }
     height = Math.max(...oval.map((p) => p.y)) - Math.min(...oval.map((p) => p.y));
   }
@@ -129,41 +130,55 @@ export const scalePlacement = (p, k) => ({
 
 export const placementScale = (p) => (p.sl + p.sr) / 2;
 
+// ML Kit's part names differ per platform ("faceOval", "FaceOval", "Face Oval", ...), so compare them loosely.
+const norm = (t) =>
+  String(t || '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
+
 /** Pulls the face parts out of an ML Kit result, mapped into the frame with toFrame. */
 export function facePartsFromMlKit(face, toFrame) {
-  const contour = (type) => ((face.contours || []).find((c) => c.type === type)?.points || []).map(toFrame);
-  const landmark = (type) => {
-    const l = (face.landmarks || []).find((x) => x.type === type && x.position);
+  const contours = (face.contours || []).filter((c) => c && c.points && c.points.length);
+  const byName = (re) => contours.find((c) => re.test(norm(c.type)));
+  // Fallback by shape: ML Kit always gives 36 points for the face outline, 16 per eye and 2 for the nose bridge.
+  const byCount = (n) => contours.filter((c) => c.points.length === n);
+  const oval = byName(/oval/) || byCount(36)[0];
+  let eyeConts = [byName(/^(lefteye|eyeleft)$/), byName(/^(righteye|eyeright)$/)].filter(Boolean);
+  if (eyeConts.length < 2) eyeConts = byCount(16).slice(0, 2);
+  const bridgeC = byName(/bridge/) || byCount(2)[0];
+
+  const landmark = (re) => {
+    const l = (face.landmarks || []).find((x) => x && x.position && re.test(norm(x.type)));
     return l ? toFrame(l.position) : null;
   };
-  const eyeA = contour('leftEye');
-  const eyeB = contour('rightEye');
-  let e1 = eyeA.length ? mean(eyeA) : landmark('leftEye');
-  let e2 = eyeB.length ? mean(eyeB) : landmark('rightEye');
-  if (!e1 || !e2) {
-    const fr = face.frame;
-    const tl = toFrame(fr.origin);
-    const br = toFrame({
-      x: fr.origin.x + fr.size.x,
-      y: fr.origin.y + fr.size.y,
-    });
-    const w = br.x - tl.x;
-    const h = br.y - tl.y;
-    e1 = { x: tl.x + w * 0.3, y: tl.y + h * 0.4 };
-    e2 = { x: tl.x + w * 0.7, y: tl.y + h * 0.4 };
+
+  let e1 = null;
+  let e2 = null;
+  if (eyeConts.length === 2) {
+    e1 = mean(eyeConts[0].points.map(toFrame));
+    e2 = mean(eyeConts[1].points.map(toFrame));
+  } else {
+    e1 = landmark(/^(lefteye|eyeleft)$/);
+    e2 = landmark(/^(righteye|eyeright)$/);
   }
+  const fr = face.frame;
+  let box = null;
+  if (fr && fr.origin && fr.size) {
+    const tl = toFrame(fr.origin);
+    const br = toFrame({ x: fr.origin.x + fr.size.x, y: fr.origin.y + fr.size.y });
+    box = { x: Math.min(tl.x, br.x), y: Math.min(tl.y, br.y), w: Math.abs(br.x - tl.x), h: Math.abs(br.y - tl.y) };
+  }
+  if (box && (!e1 || !e2 || Math.hypot(e1.x - e2.x, e1.y - e2.y) < box.w * 0.15)) {
+    e1 = { x: box.x + box.w * 0.32, y: box.y + box.h * 0.4 };
+    e2 = { x: box.x + box.w * 0.68, y: box.y + box.h * 0.4 };
+  }
+  if (!e1 || !e2) throw new Error('no eyes');
   const [eyeL, eyeR] = e1.x <= e2.x ? [e1, e2] : [e2, e1];
   return {
     eyeL,
     eyeR,
-    box: face.frame
-      ? (() => {
-          const tl = toFrame(face.frame.origin);
-          const br = toFrame({ x: face.frame.origin.x + face.frame.size.x, y: face.frame.origin.y + face.frame.size.y });
-          return { x: Math.min(tl.x, br.x), y: Math.min(tl.y, br.y), w: Math.abs(br.x - tl.x), h: Math.abs(br.y - tl.y) };
-        })()
-      : null,
-    oval: contour('faceOval'),
-    bridge: contour('noseBridge'),
+    box,
+    oval: oval ? oval.points.map(toFrame) : [],
+    bridge: bridgeC ? bridgeC.points.map(toFrame) : [],
   };
 }
