@@ -31,6 +31,40 @@ export async function ensureSession() {
   }
 }
 
+/* ---------- Keeping the account (Sign in with Apple) ---------- */
+
+/** Is this account tied to an Apple ID (so it can be restored on a new phone)? */
+export async function appleLinked() {
+  const { data } = await supabase.auth.getUser();
+  return !!data?.user?.identities?.some((i) => i.provider === 'apple');
+}
+
+/**
+ * Ties the current (anonymous) account to an Apple ID, keeping everything in it.
+ * Returns 'linked', 'taken' (that Apple ID already has a Tonight account) or 'failed'.
+ */
+export async function linkApple(token) {
+  const { error } = await supabase.auth.linkIdentity({ provider: 'apple', token });
+  if (!error) {
+    await supabase.auth.refreshSession().catch(() => {});
+    return 'linked';
+  }
+  console.warn('[backend] link apple failed', error.code, error.message);
+  if (error.code === 'identity_already_exists' || /already/i.test(error.message || '')) return 'taken';
+  return 'failed';
+}
+
+/** Switches to the account behind this Apple ID (made fresh if there is none). Returns the new user id or null. */
+export async function signInApple(token) {
+  const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token });
+  if (error || !data?.user) {
+    console.warn('[backend] apple sign-in failed', error?.message);
+    return null;
+  }
+  uid = data.user.id;
+  return uid;
+}
+
 /* ---------- Photos ---------- */
 
 async function signedUrls(paths) {

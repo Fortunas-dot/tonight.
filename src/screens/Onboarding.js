@@ -11,20 +11,19 @@ import { FireBurst } from './FireBurst';
 import { Field, ProfileFields, Section } from './ProfileFields';
 import * as api from '../backend';
 import { versionLabel } from '../version';
+import { AppleButton, useAppleAvailable } from '../appleAuth';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
 
 const STEPS = 6;
 
 /* ---------- Welcome ---------- */
 
-export function Welcome({ next }) {
+export function Welcome({ next, onRestore }) {
+  const apple = useAppleAvailable();
   return (
     <Screen strong style={{ justifyContent: 'flex-end' }} bottom={30}>
       {/* Orb top right, as in the design: a thin ring with a gradient disc inside it */}
-      <View
-        pointerEvents="none"
-        style={{ position: 'absolute', right: -120, top: 90, width: 340, height: 340, borderRadius: 170, borderWidth: 1, borderColor: '#3A2A2E' }}
-      />
+      <View pointerEvents="none" style={{ position: 'absolute', right: -120, top: 90, width: 340, height: 340, borderRadius: 170, borderWidth: 1, borderColor: '#3A2A2E' }} />
       <LinearGradient
         pointerEvents="none"
         colors={GRAD}
@@ -35,7 +34,10 @@ export function Welcome({ next }) {
       />
       <View style={{ position: 'absolute', top: 70, left: 24 }}>
         <T style={{ fontFamily: F.displayX, fontSize: 26, letterSpacing: -0.5 }}>
-          tonight<T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 26 }}>.</T>
+          tonight
+          <T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 26 }}>
+            .
+          </T>
         </T>
       </View>
       <Rise>
@@ -60,6 +62,14 @@ export function Welcome({ next }) {
       </Rise>
       <Rise delay={240} style={{ marginTop: 34, gap: 10 }}>
         <GradientButton title="Get started" onPress={next} />
+        {apple ? (
+          <>
+            <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 6 }}>
+              Already have an account?
+            </T>
+            <AppleButton kind="signIn" onPress={onRestore} />
+          </>
+        ) : null}
         <T v="small" c={C.faint} style={{ textAlign: 'center', marginTop: 8 }}>
           18+ only. By continuing you agree to the Terms and Privacy Policy at fortunas.nl/tonight.
         </T>
@@ -104,7 +114,9 @@ function NextHint() {
     return () => loop.stop();
   }, [a]);
   return (
-    <Animated.View style={[styles.hint, { opacity: a.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }), transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1.03] }) }] }]}>
+    <Animated.View
+      style={[styles.hint, { opacity: a.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }), transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1.03] }) }] }]}
+    >
       <FlameGlyph size={11} />
       <T v="small" c="#FFB36B" style={{ fontFamily: F.semi, fontSize: 11 }}>
         tap to take this vow
@@ -379,7 +391,16 @@ export function Basics({ profile, setProfile, next, back }) {
       </T>
       <Section icon="user" title="The basics">
         <Field label="First name or nickname" icon="user" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" />
-        <Field label="Age" icon="cake" value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} placeholder="18+" keyboardType="number-pad" maxLength={2} hint={age.length === 2 && ageNum < 18 ? 'Tonight is 18+ only' : null} />
+        <Field
+          label="Age"
+          icon="cake"
+          value={age}
+          onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))}
+          placeholder="18+"
+          keyboardType="number-pad"
+          maxLength={2}
+          hint={age.length === 2 && ageNum < 18 ? 'Tonight is 18+ only' : null}
+        />
       </Section>
       <T v="label" c={C.muted} style={styles.lbl}>
         I am
@@ -791,7 +812,13 @@ export function Verify({ profile, setProfile, next, back }) {
             <LinearGradient colors={[C.pink, 'transparent']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, borderRadius: 3 }} />
           </Animated.View>
         ) : null}
-        {state === 'done' ? <Verified size={72} /> : state === 'failed' ? <Icon name="close" size={48} color="#FF9AA3" stroke={2} /> : state === 'idle' ? <Icon name="camera" size={56} color={C.muted} stroke={1.4} /> : null}
+        {state === 'done' ? (
+          <Verified size={72} />
+        ) : state === 'failed' ? (
+          <Icon name="close" size={48} color="#FF9AA3" stroke={2} />
+        ) : state === 'idle' ? (
+          <Icon name="camera" size={56} color={C.muted} stroke={1.4} />
+        ) : null}
         <T v="meta" c={C.ink2} numberOfLines={2} style={{ position: 'absolute', bottom: 40, left: 28, right: 28, textAlign: 'center' }}>
           {caption}
         </T>
@@ -904,11 +931,14 @@ export function Preview({ profile, next, back }) {
             </T>
           ) : null}
           <View style={[styles.wrap, { marginTop: 10, gap: 6 }]}>
-            {(profile.intents || []).concat(profile.turnOns || []).slice(0, 4).map((t) => (
-              <View key={t} style={styles.tag}>
-                <T v="small">{t}</T>
-              </View>
-            ))}
+            {(profile.intents || [])
+              .concat(profile.turnOns || [])
+              .slice(0, 4)
+              .map((t) => (
+                <View key={t} style={styles.tag}>
+                  <T v="small">{t}</T>
+                </View>
+              ))}
           </View>
         </LinearGradient>
       </View>
@@ -937,7 +967,18 @@ const styles = StyleSheet.create({
   orn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginVertical: 1 },
   ornLine: { width: 28, height: 1, backgroundColor: C.line2 },
   ornDot: { width: 5, height: 5, transform: [{ rotate: '45deg' }], backgroundColor: '#4A4148' },
-  hint: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6, height: 24, paddingHorizontal: 10, borderRadius: 12, backgroundColor: 'rgba(255,138,61,0.12)', borderWidth: 1, borderColor: 'rgba(255,138,61,0.35)' },
+  hint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 6,
+    height: 24,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,138,61,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,138,61,0.35)',
+  },
   progress: { flexDirection: 'row', gap: 5, marginTop: 12, width: '70%' },
   progSeg: { flex: 1, height: 5, borderRadius: 3 },
   sealGlow: { position: 'absolute', width: 96, height: 96, borderRadius: 48, backgroundColor: 'rgba(255,138,61,0.35)' },
@@ -959,7 +1000,19 @@ const styles = StyleSheet.create({
   slot: { borderRadius: 16, overflow: 'hidden', backgroundColor: C.surf },
   slotMain: { borderWidth: 1.5, borderColor: C.pink },
   slotEmpty: { borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#4A4148', backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center' },
-  blurNote: { position: 'absolute', top: 8, left: 8, right: 40, flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 24, paddingHorizontal: 8, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)' },
+  blurNote: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    minHeight: 24,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(14,12,16,0.7)',
+  },
   maskBtn: { position: 'absolute', right: 6, bottom: 6, width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
   maskCard: { backgroundColor: C.surf, borderRadius: 17.5, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
   maskCta: { height: 38, paddingHorizontal: 14, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },

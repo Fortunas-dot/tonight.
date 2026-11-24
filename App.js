@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -26,6 +26,7 @@ import { Intro } from './src/screens/Intro';
 import { FakeCall } from './src/screens/FakeCall';
 import { DiscoverPage, ProfilePage } from './src/screens/DiscoverPage';
 import { onNotificationTap, registerForPush } from './src/notifications';
+import { appleToken } from './src/appleAuth';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
 const BLOCK_SCREENSHOTS = false;
@@ -244,6 +245,33 @@ export default function App() {
         } else setStep(step + 1);
       },
       back: () => setStep(Math.max(0, step - 1)),
+      // Welcome › "Sign in with Apple": bring back the account tied to that Apple ID.
+      onRestore: async () => {
+        let token;
+        try {
+          token = await appleToken();
+        } catch {
+          Alert.alert('Apple sign-in didn’t work', 'Please try again.');
+          return;
+        }
+        if (!token) return;
+        const id = await api.signInApple(token);
+        if (!id) {
+          Alert.alert('Couldn’t sign in', 'Check your connection and try again.');
+          return;
+        }
+        const remote = await api.loadMyProfile();
+        if (remote?.onboarded) {
+          setProfile(remote.profile);
+          setOnboarded(true);
+          setStep(0);
+          setStack([]);
+          setTab('discover');
+        } else {
+          Alert.alert('Welcome', 'There’s no profile on this Apple ID yet. Set one up now; it stays tied to your Apple ID.');
+          setStep(1);
+        }
+      },
     };
     const map = { welcome: Welcome, code: Code, basics: Basics, photos: Photos, boundaries: Boundaries, verify: Verify, discretion: Discretion, preview: Preview };
     const Step = map[name];
