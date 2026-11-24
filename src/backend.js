@@ -92,8 +92,8 @@ async function saveProfileNow(profile, onboarded) {
     turn_ons: profile.turnOns ?? [],
     bio: profile.bio || null,
     country: profile.country || null,
-    city: profile.city || null,
-    settings: profile.settings ?? {},
+    // A hidden city stays private (profile_private); the public profile then has none.
+    city: profile.settings?.hideCity ? null : profile.city || null,
     details: profile.details ?? {},
     prompts: (profile.prompts || []).filter((x) => x?.q && x?.a?.trim()).slice(0, 3),
     paused: !!profile.settings?.paused,
@@ -106,6 +106,11 @@ async function saveProfileNow(profile, onboarded) {
     live_until: onboarded ? new Date(Date.now() + 6 * 3600 * 1000).toISOString() : null,
   };
   const { error } = await supabase.from('profiles').upsert(row);
+  if (!error) {
+    await supabase
+      .from('profile_private')
+      .upsert({ user_id: uid, settings: profile.settings ?? {}, hidden_city: profile.settings?.hideCity ? profile.city || null : null, updated_at: new Date().toISOString() });
+  }
   if (error) {
     console.warn('[backend] save profile failed', error.message);
     return uploaded;
@@ -125,7 +130,10 @@ async function saveProfileNow(profile, onboarded) {
 /** Loads my saved profile (for a fresh install on the same account). */
 export async function loadMyProfile() {
   if (!uid) return null;
-  const { data } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
+  const [{ data }, { data: priv }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', uid).maybeSingle(),
+    supabase.from('profile_private').select('*').eq('user_id', uid).maybeSingle(),
+  ]);
   if (!data) return null;
   const urls = await signedUrls(data.photos);
   return {
@@ -140,8 +148,8 @@ export async function loadMyProfile() {
       turnOns: data.turn_ons,
       bio: data.bio,
       country: data.country,
-      city: data.city,
-      settings: data.settings || {},
+      city: data.city || priv?.hidden_city || null,
+      settings: priv?.settings || {},
       details: data.details || {},
       prompts: data.prompts || [],
       prompt: data.prompt,
