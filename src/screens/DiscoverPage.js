@@ -302,7 +302,8 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
     else tap();
     Animated.timing(fade, { toValue: 0, duration: 180, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
       if (liked) onLike(person);
-      setI((x) => x + 1);
+      // A liked real person leaves the deck, so the next one slides into this spot.
+      if (!(liked && person.real)) setI((x) => x + 1);
       scroll.current?.scrollTo({ y: 0, animated: false });
       Animated.timing(fade, { toValue: 1, duration: 260, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
     });
