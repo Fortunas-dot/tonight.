@@ -333,6 +333,8 @@ export function subscribe({ onMessage, onMatch }) {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'matches' }, ({ new: m }) => {
       if (m.user_a === uid || m.user_b === uid) onMatch();
     })
+    // An unmatch only carries the id, so just reload the chats.
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'matches' }, () => onMatch())
     .subscribe();
   return () => supabase.removeChannel(channel);
 }
