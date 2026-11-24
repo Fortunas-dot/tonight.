@@ -361,7 +361,7 @@ export default function App() {
           />
         ),
         likes: <Likes people={likesYou} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
-        chats: <Chats chats={chats} onOpen={(id) => push('chat', { id })} />,
+        chats: <Chats chats={chats} filterExplicit={profile.settings?.filterExplicit !== false} onOpen={(id) => push('chat', { id })} />,
         lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onOpenPost={(post) => push('post', { post })} />,
         me: (
           <Me

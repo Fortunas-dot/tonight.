@@ -160,20 +160,67 @@ export function Likes({ people: real = [], onOpen, blurAll }) {
 
 const chatPerson = (c) => c.person || personById(c.id);
 
-export function Chats({ chats, onOpen }) {
+export function Chats({ chats, onOpen, filterExplicit = true }) {
   const plan = chats.find((c) => c.plan);
+  const fresh = chats.filter((c) => !c.plan && !c.messages.length);
+  const talking = chats.filter((c) => !c.plan && c.messages.length);
+  const examples = chats.length && chats.every((c) => !c.real);
   return (
     <Screen scroll>
       <T v="title" style={{ marginTop: 8 }}>
         Chats
       </T>
+      {examples ? (
+        <T v="small" c={C.muted} style={{ marginTop: 4 }}>
+          Example chats. Your real matches show up here.
+        </T>
+      ) : null}
+
+      {!chats.length ? (
+        <Card style={{ marginTop: 18, alignItems: 'center', gap: 6, paddingVertical: 28 }}>
+          <Icon name="chat" size={28} color={C.muted} />
+          <T style={{ fontFamily: F.semi }}>No matches yet</T>
+          <T v="small" c={C.muted} style={{ textAlign: 'center' }}>
+            Like someone in Discover. When it’s mutual, your chat starts here.
+          </T>
+        </Card>
+      ) : null}
+
+      {fresh.length ? (
+        <>
+          <T v="label" c={C.faint} style={{ marginTop: 20, marginBottom: 10 }}>
+            New matches · your move
+          </T>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
+            {fresh.map((c, i) => {
+              const p = chatPerson(c);
+              return (
+                <Rise key={c.id} delay={i * 60}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`New match ${p.name}, say hi`} onPress={() => onOpen(c.id)} style={{ alignItems: 'center', width: 72 }}>
+                    <Avatar size={66} seed={p.seed} uri={p.photo} ring="glow" />
+                    <T v="small" style={{ marginTop: 6, fontFamily: F.semi }} numberOfLines={1}>
+                      {p.name}
+                    </T>
+                    {c.left ? (
+                      <T v="small" c={C.pinkL} style={{ fontSize: 10 }}>
+                        {c.left}
+                      </T>
+                    ) : null}
+                  </Pressable>
+                </Rise>
+              );
+            })}
+          </ScrollView>
+        </>
+      ) : null}
+
       {plan ? (
         <Rise>
           <Pressable accessibilityRole="button" onPress={() => onOpen(plan.id)}>
-            <Card style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24 }}>
+            <LinearGradient colors={['rgba(240,40,122,0.18)', 'rgba(123,60,255,0.14)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.planCard}>
               <Avatar seed={chatPerson(plan).seed} uri={chatPerson(plan).photo} ring="fire" />
               <View style={{ flex: 1 }}>
-                <T v="small" c={C.pinkL} style={{ fontFamily: F.semi, letterSpacing: 0.3 }}>
+                <T v="small" c={C.pinkL} style={{ fontFamily: F.bold, letterSpacing: 0.5 }}>
                   TONIGHT
                 </T>
                 <T style={{ fontFamily: F.semi }}>
@@ -183,41 +230,52 @@ export function Chats({ chats, onOpen }) {
                   {plan.messages[plan.messages.length - 1]?.text}
                 </T>
               </View>
-            </Card>
+              <Icon name="chev" size={16} color={C.muted} />
+            </LinearGradient>
           </Pressable>
         </Rise>
       ) : null}
-      <T v="label" c={C.faint} style={{ marginTop: 26, marginBottom: 4 }}>
-        Make a plan to keep these
-      </T>
-      {chats
-        .filter((c) => !c.plan)
-        .map((c, i) => {
-          const p = chatPerson(c);
-          const last = c.messages[c.messages.length - 1];
-          return (
-            <Rise key={c.id} delay={60 * (i + 1)}>
-              <Pressable accessibilityRole="button" onPress={() => onOpen(c.id)} style={styles.chatRow}>
-                <Avatar seed={p.seed} uri={p.photo} ring={p.tier === 'fire' ? 'fire' : p.tier === 'glow' ? 'glow' : 'verified'} />
-                <View style={{ flex: 1 }}>
+
+      {talking.length ? (
+        <T v="label" c={C.faint} style={{ marginTop: 22, marginBottom: 4 }}>
+          Messages
+        </T>
+      ) : null}
+      {talking.map((c, i) => {
+        const p = chatPerson(c);
+        const last = c.messages[c.messages.length - 1];
+        const theirTurn = last && !last.me;
+        return (
+          <Rise key={c.id} delay={60 * (i + 1)}>
+            <Pressable accessibilityRole="button" onPress={() => onOpen(c.id)} style={styles.chatRow}>
+              <Avatar seed={p.seed} uri={p.photo} ring={p.tier === 'fire' ? 'fire' : p.tier === 'glow' ? 'glow' : 'verified'} />
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <T style={{ fontFamily: F.semi }}>{p.name}</T>
-                  <T v="meta" c={C.muted} numberOfLines={1}>
-                    {last ? last.text : 'New match. Your move.'}
-                  </T>
+                  {theirTurn ? <View style={styles.turnDot} /> : null}
                 </View>
+                <T v="meta" c={theirTurn ? C.ink2 : C.muted} numberOfLines={1} style={theirTurn ? { fontFamily: F.medium } : null}>
+                  {last.me ? `You: ${last.text}` : last.text}
+                </T>
+              </View>
+              {c.left ? (
                 <T v="small" c={C.pinkL}>
                   {c.left}
                 </T>
-              </Pressable>
-            </Rise>
-          );
-        })}
-      <Card tone="safe" style={{ marginTop: 20, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-        <Icon name="shieldCheck" size={20} color={C.blueL} />
-        <T v="small" c={C.safeInk} style={{ flex: 1 }}>
-          We filtered 1 request with explicit language before you saw it.
-        </T>
-      </Card>
+              ) : null}
+            </Pressable>
+          </Rise>
+        );
+      })}
+
+      {filterExplicit ? (
+        <Card tone="safe" style={{ marginTop: 20, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+          <Icon name="shieldCheck" size={20} color={C.blueL} />
+          <T v="small" c={C.safeInk} style={{ flex: 1 }}>
+            Explicit first messages stay hidden until you tap. Change this in Privacy & discretion.
+          </T>
+        </Card>
+      ) : null}
     </Screen>
   );
 }
@@ -869,6 +927,8 @@ const styles = StyleSheet.create({
   matchNote: { flexDirection: 'row', gap: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 18, padding: 14, marginTop: 26 },
   matchOpt: { height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)', justifyContent: 'center', paddingHorizontal: 16, marginBottom: 10 },
   matchCta: { height: 56, borderRadius: 28, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  planCard: { marginTop: 18, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24, borderWidth: 1, borderColor: '#4A1A33' },
+  turnDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.pink },
   chatRow: { flexDirection: 'row', alignItems: 'center', gap: 14, height: 76, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
   chatHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.line },
   me: { paddingVertical: 11, paddingHorizontal: 15, borderRadius: 22, borderBottomRightRadius: 6 },
