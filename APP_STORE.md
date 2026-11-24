@@ -135,3 +135,19 @@ Apple Guideline 1.1.4 rejects "overtly sexual or pornographic material". Feeld a
 dating is allowed, but explicit photo exchange is the risky part. Keep the store listing and screenshots free of
 nudity and explicit wording, keep the moderation/report/block flows prominent (Guideline 1.2), and be ready to keep
 explicit media off on iOS if Review objects.
+
+## Launch checklist (status 24 Nov 2026)
+
+Things that are deliberately "test mode" now and must change before submitting for review:
+
+- [ ] `BLOCK_SCREENSHOTS` in App.js back to `true` (the store listing promises screenshots are blocked).
+- [ ] Remove the example people, chats, posts and ideas (`PEOPLE`, `CHATS`, `POSTS`, `IDEAS` in src/data.js) or show them only when the app is offline.
+- [ ] Remove "Restart onboarding (test build)" on Me and "Skip for this test build" on the Photos step.
+- [ ] Verification: the AWS Rekognition check is live; drop the simulated fallback in Verify when keys are missing.
+- [ ] Sign-in: accounts are anonymous (one per device). Before launch add a way to keep the account on a new phone (Sign in with Apple or phone number) — required if accounts can't be recovered otherwise.
+- [ ] Moderation: reports land in `public.reports`; build a simple review view (or Supabase dashboard routine) and answer within 24 h (Guideline 1.2).
+- [ ] Privacy label: add "Sensitive info" for the new details (orientation, relationship) and "Other user content" for prompts; remove "sexual health test date" (removed from the app).
+- [ ] Demo account for App Review (fill in above).
+- [ ] Terms and privacy policy pages at fortunas.nl/tonight/terms and /privacy describe: anonymous accounts, photo storage, face masks done on the phone, AWS face comparison (selfie deleted after the check), push notifications, account deletion.
+
+Done and live: account deletion (Settings), report and block from profiles, chats and Lounge posts, unmatch, blurred photos released only after a match, explicit first-message filter, Face ID lock, push notifications with discreet previews, private settings table.
