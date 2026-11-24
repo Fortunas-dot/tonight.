@@ -143,7 +143,7 @@ Things that are deliberately "test mode" now and must change before submitting f
 - [ ] `BLOCK_SCREENSHOTS` in App.js back to `true` (the store listing promises screenshots are blocked).
 - [ ] Remove the example people, chats, posts and ideas (`PEOPLE`, `CHATS`, `POSTS`, `IDEAS` in src/data.js) or show them only when the app is offline.
 - [ ] Remove "Restart onboarding (test build)" on Me and "Skip for this test build" on the Photos step.
-- [ ] Verification: the AWS Rekognition check is live; drop the simulated fallback in Verify when keys are missing.
+- [x] Verification: only the real AWS Rekognition check counts; no simulated pass (offline or unavailable shows a retry message).
 - [x] Sign-in: Sign in with Apple (from build 12). Settings › Your account ties the anonymous account to an Apple ID; Welcome › Sign in with Apple restores it on a new phone. Supabase: Apple provider on (client ID com.fortunas.tonight, users without email allowed), manual linking on.
 - [ ] Apple token revocation on account deletion (Guideline 5.1.1(v)): needs a Sign in with Apple key (.p8) to call Apple's revoke endpoint from an edge function.
 - [x] Moderation: Settings › Team › Moderation (moderators only, `app.moderators`) lists every report with a 24-hour countdown; No violation / Remove post / Ban. Moderators get a push per new report. Banned accounts see "Account suspended" and vanish from Discover. Still to do: keep answering within 24 h (Guideline 1.2).

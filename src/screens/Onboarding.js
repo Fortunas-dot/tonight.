@@ -739,13 +739,14 @@ const VERIFY_REASONS = {
   no_match: 'That didn’t match your photos. Make sure one photo shows your face clearly.',
   no_photos: 'Add your photos first, then take the selfie.',
   no_selfie: 'The selfie didn’t upload. Check your connection and try again.',
+  offline: 'No connection right now. Check your internet and try again.',
+  not_configured: 'Verification is briefly unavailable. Try again in a few minutes.',
   error: 'Something went wrong on our side. Try again in a moment.',
 };
 
 export function Verify({ profile, setProfile, next, back }) {
   const [state, setState] = useState(profile.verified ? 'done' : 'idle'); // idle | checking | done | failed
   const [reason, setReason] = useState(null);
-  const [simulated, setSimulated] = useState(false);
   const [shot, setShot] = useState(null);
   const [spin] = useState(() => new Animated.Value(0));
   useEffect(() => {
@@ -775,12 +776,6 @@ export function Verify({ profile, setProfile, next, back }) {
     if (out.uploaded) setProfile((p) => ({ ...p, uploaded: out.uploaded }));
     if (out.verified) {
       success();
-      setSimulated(false);
-      setState('done');
-    } else if (out.reason === 'not_configured' || out.reason === 'offline') {
-      // The real check isn't switched on yet: keep the test-build behaviour.
-      success();
-      setSimulated(true);
       setState('done');
     } else {
       thud();
@@ -837,14 +832,6 @@ export function Verify({ profile, setProfile, next, back }) {
             Compared to your photos, then deleted
           </T>
         </View>
-        {simulated ? (
-          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-            <Icon name="check" size={18} color={C.blueL} />
-            <T v="meta" c={C.safeInk}>
-              Test build: the check is simulated
-            </T>
-          </View>
-        ) : null}
       </View>
       <View style={{ flex: 1 }} />
       {state === 'done' ? (
