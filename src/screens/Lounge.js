@@ -210,7 +210,15 @@ function Actions({ post, onLike, onComments }) {
 }
 
 function moreMenu(post, { onDelete }) {
-  const buttons = post.mine ? [{ text: 'Delete post', style: 'destructive', onPress: onDelete }] : [{ text: 'Report', onPress: () => success() }];
+  const buttons = post.mine ? [{ text: 'Delete post', style: 'destructive', onPress: onDelete }] : [
+        {
+          text: 'Report',
+          onPress: () => {
+            success();
+            if (post.real) api.reportPost(post.id);
+          },
+        },
+      ];
   Alert.alert(post.mine ? 'Your post' : 'Post', post.mine ? '' : 'Ward will review it.', [...buttons, { text: 'Cancel', style: 'cancel' }]);
 }
 

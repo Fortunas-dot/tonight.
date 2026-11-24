@@ -574,3 +574,10 @@ export async function unmatch(matchId) {
   const { error } = await supabase.from('matches').delete().eq('id', matchId);
   return !error;
 }
+
+/** Reports a Lounge post (and its author, when it has one). */
+export async function reportPost(postId, reason = 'Reported from the Lounge') {
+  if (!uid) return;
+  const { data: post } = await supabase.from('posts').select('author').eq('id', postId).maybeSingle();
+  await supabase.from('reports').insert({ reporter: uid, target: post?.author || null, post_id: postId, reason });
+}
