@@ -284,6 +284,9 @@ export function ProfileFields({ bio, setBio, country, setCountry, city, setCity 
 /* ---------- Photos in Edit profile ---------- */
 
 function PhotoGrid({ photos, setPhotos, masked, onMask }) {
+  const [gridW, setGridW] = useState(0);
+  const tileW = gridW ? Math.floor((gridW - 16) / 3) : 0;
+  const tile = { width: tileW, height: Math.round(tileW * 1.25) };
   const add = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [3, 4], quality: 0.8 });
     if (!res.canceled && res.assets?.[0]) setPhotos([...photos, res.assets[0].uri].slice(0, 6));
@@ -301,31 +304,51 @@ function PhotoGrid({ photos, setPhotos, masked, onMask }) {
   };
   const slots = Array.from({ length: 6 }, (_, i) => photos[i]);
   return (
-    <View style={styles.grid}>
-      {slots.map((uri, i) =>
-        uri ? (
-          <Pressable key={`${uri}-${i}`} accessibilityRole="button" accessibilityLabel={i === 0 ? 'Main photo' : `Photo ${i + 1}, tap to make it your main photo`} onPress={() => i && makeMain(i)} style={[styles.slot, i === 0 && styles.slotMain]}>
-            <Image source={{ uri }} style={StyleSheet.absoluteFill} />
-            <Pressable accessibilityRole="button" accessibilityLabel={`Remove photo ${i + 1}`} onPress={() => remove(i)} hitSlop={8} style={styles.slotX}>
-              <Icon name="close" size={11} color={C.ink} stroke={3} />
-            </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Mask photo ${i + 1}`} onPress={() => onMask(i)} hitSlop={6} style={[styles.slotMask, masked[uri] && { backgroundColor: C.pink }]}>
-              <Icon name="mask" size={14} color="#FFFFFF" />
-            </Pressable>
-            {i === 0 ? (
-              <View style={styles.mainTag}>
-                <T c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 9 }}>
-                  MAIN
-                </T>
-              </View>
-            ) : null}
-          </Pressable>
-        ) : (
-          <Pressable key={`empty-${i}`} accessibilityRole="button" accessibilityLabel="Add photo" onPress={add} style={[styles.slot, styles.slotEmpty, i === photos.length && { borderColor: C.pink }]}>
-            <Icon name="plus" size={20} color={i === photos.length ? C.pinkL : C.muted} />
-          </Pressable>
-        ),
-      )}
+    <View style={styles.grid} onLayout={(e) => setGridW(e.nativeEvent.layout.width)}>
+      {!tileW
+        ? null
+        : slots.map((uri, i) =>
+            uri ? (
+              <Pressable
+                key={`${uri}-${i}`}
+                accessibilityRole="button"
+                accessibilityLabel={i === 0 ? 'Main photo' : `Photo ${i + 1}, tap to make it your main photo`}
+                onPress={() => i && makeMain(i)}
+                style={[styles.slot, tile, i === 0 && styles.slotMain]}
+              >
+                <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+                <Pressable accessibilityRole="button" accessibilityLabel={`Remove photo ${i + 1}`} onPress={() => remove(i)} hitSlop={8} style={styles.slotX}>
+                  <Icon name="close" size={11} color={C.ink} stroke={3} />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Mask photo ${i + 1}`}
+                  onPress={() => onMask(i)}
+                  hitSlop={6}
+                  style={[styles.slotMask, masked[uri] && { backgroundColor: C.pink }]}
+                >
+                  <Icon name="mask" size={14} color="#FFFFFF" />
+                </Pressable>
+                {i === 0 ? (
+                  <View style={styles.mainTag}>
+                    <T c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 9 }}>
+                      MAIN
+                    </T>
+                  </View>
+                ) : null}
+              </Pressable>
+            ) : (
+              <Pressable
+                key={`empty-${i}`}
+                accessibilityRole="button"
+                accessibilityLabel="Add photo"
+                onPress={add}
+                style={[styles.slot, tile, styles.slotEmpty, i === photos.length && { borderColor: C.pink }]}
+              >
+                <Icon name="plus" size={20} color={i === photos.length ? C.pinkL : C.muted} />
+              </Pressable>
+            ),
+          )}
     </View>
   );
 }
@@ -479,8 +502,8 @@ const styles = StyleSheet.create({
   section: { marginTop: 18, padding: 16, borderRadius: 22, backgroundColor: 'rgba(23,19,26,0.85)', borderWidth: 1, borderColor: C.line },
   sectionIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: '#3A3439', backgroundColor: 'rgba(255,255,255,0.02)' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8, marginTop: 14 },
-  slot: { width: '31.8%', aspectRatio: 0.8, borderRadius: 14, overflow: 'hidden', backgroundColor: C.surf2 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  slot: { borderRadius: 14, overflow: 'hidden', backgroundColor: C.surf2 },
   slotMain: { borderWidth: 2, borderColor: C.pink },
   slotEmpty: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#4A4148', backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center' },
   slotX: { position: 'absolute', top: 5, right: 5, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
@@ -494,6 +517,17 @@ const styles = StyleSheet.create({
   headBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   preview: { height: 230, borderRadius: 24, overflow: 'hidden', marginTop: 6, borderWidth: 1, borderColor: C.line },
   previewShade: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, paddingTop: 60 },
-  previewTag: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: 'rgba(14,12,16,0.7)' },
+  previewTag: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    height: 26,
+    paddingHorizontal: 10,
+    borderRadius: 13,
+    backgroundColor: 'rgba(14,12,16,0.7)',
+  },
   saveBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 30 },
 });

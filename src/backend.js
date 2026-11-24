@@ -529,3 +529,25 @@ export async function votePoll(postId, option) {
   if (option === null) await supabase.from('poll_votes').delete().eq('post_id', postId).eq('user_id', uid);
   else await supabase.from('poll_votes').upsert({ post_id: postId, user_id: uid, option });
 }
+
+/**
+ * Photo links on the profile are signed and expire after a day. Swap every uploaded photo for a fresh link
+ * (also when the local file is gone). Returns { photos, uploaded, masked } or null when nothing changed.
+ */
+export async function refreshMyPhotos(profile) {
+  if (!uid) return null;
+  const uploaded = profile.uploaded || {};
+  const photos = profile.photos || [];
+  const paths = photos.map((u) => uploaded[u]).filter(Boolean);
+  if (!paths.length) return null;
+  const { data } = await supabase.storage.from(BUCKET).createSignedUrls(paths, URL_TTL);
+  const fresh = Object.fromEntries((data || []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  const nextPhotos = photos.map((u) => (uploaded[u] && fresh[uploaded[u]]) || u);
+  const nextUploaded = {};
+  const nextMasked = {};
+  photos.forEach((u, i) => {
+    if (uploaded[u]) nextUploaded[nextPhotos[i]] = uploaded[u];
+    if (profile.masked?.[u]) nextMasked[nextPhotos[i]] = profile.masked[u];
+  });
+  return { photos: nextPhotos, uploaded: nextUploaded, masked: nextMasked };
+}

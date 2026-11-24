@@ -105,6 +105,11 @@ export default function App() {
               setOnboarded(true);
             }
           }
+          // Swap expired photo links (they last a day) for fresh ones.
+          if (raw) {
+            const fresh = await api.refreshMyPhotos(JSON.parse(raw).profile || {});
+            if (alive && fresh) setProfile((q) => ({ ...q, ...fresh }));
+          }
           if (alive) setOnline(true);
         });
       })
