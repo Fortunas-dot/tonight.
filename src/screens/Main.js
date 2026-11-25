@@ -375,7 +375,7 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
     for (let i = chat.messages.length - 1; i >= 0; i--) if (chat.messages[i].me) return i;
     return -1;
   })();
-  const lastMineSeen = lastMine >= 0 && chat.real && chat.theirRead && chat.messages[lastMine].at && chat.theirRead >= chat.messages[lastMine].at;
+  const lastMineSeen = lastMine >= 0 && chat.real && chat.theirRead && chat.messages[lastMine].at && Date.parse(chat.theirRead) >= Date.parse(chat.messages[lastMine].at);
   const send = () => {
     const t = text.trim();
     if (!t) return;
@@ -590,6 +590,11 @@ export function GuideView({ guide, onBack }) {
   return (
     <Screen scroll>
       <Header title="" onBack={onBack} />
+      {guide.art ? (
+        <View style={{ alignSelf: 'stretch', aspectRatio: 16 / 9, borderRadius: 20, overflow: 'hidden', marginBottom: 16 }}>
+          <Image source={guide.art} accessibilityLabel={guide.artLabel} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        </View>
+      ) : null}
       <T v="small" c={C.pinkL} style={{ fontFamily: F.semi, letterSpacing: 1 }}>
         {guide.cat.toUpperCase()} · {guide.mins} MIN READ
       </T>

@@ -136,6 +136,8 @@ export const GUIDES = [
     cat: 'Talking & consent',
     title: 'Asking for what you want, out loud',
     mins: 4,
+    art: require('../assets/guides/g1.jpg'), // scripts/generate-cartoons.mjs --guide g1, option 1
+    artLabel: 'Illustration: Blaze and Volt, both masked, talking on a couch with a heart speech bubble between them',
     body: [
       'Say what you want before what you don’t: “I love it when…” lands softer than a list of rules.',
       'Check in with simple questions: “This good?” “More?” A yes should be clear and enthusiastic.',

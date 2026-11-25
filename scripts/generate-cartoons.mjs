@@ -132,7 +132,105 @@ async function maskOne(key, slug, from, count) {
   console.log(`${CREW[slug].name}: saved ${r.images.length} masked`);
 }
 
+// ── Guide illustrations: the masked crew (masked-1.png) as references → assets/cartoons-raw/guides/<id>-N.png
+// node scripts/generate-cartoons.mjs --guide g1
+const GUIDE_ART = {
+  g1: {
+    cast: ['blaze', 'volt'],
+    scene: 'the woman from image 1 and the man from image 2 sit close together on a cozy velvet couch at night, ' +
+      'turned toward each other, talking and smiling; she gestures while speaking and he listens attentively, ' +
+      'a small speech bubble with a pink heart floats between them; warm lamp glow, soft pink and blue light',
+  },
+};
+
+// ── Onboarding illustrations → assets/cartoons-raw/onboarding/<id>-N.png   (node scripts/generate-cartoons.mjs --onboarding [id …])
+// Images are referenced in cast order ("image 1", "image 2", …). Ward has no mask: his reference is ward/try-3.png.
+const ONBOARD_ART = {
+  welcome: {
+    cast: ['blaze', 'volt', 'vi', 'ash', 'nova'],
+    scene: 'the five characters from images 1 to 5 stand together as a confident group at a velvet-rope entrance of a secret night club, ' +
+      'a glowing pink door behind them, smiling and inviting, like a members-only society welcoming you in',
+  },
+  code: {
+    cast: ['ward'],
+    scene: 'the Doberman from image 1 sits proudly on guard beside a glowing scroll with seven lines and a pink wax seal with a flame, ' +
+      'alert and calm, a soft candle glow, a sense of a solemn but friendly oath',
+  },
+  boundaries: {
+    cast: ['vi'],
+    scene: 'the person from image 1 happily sorts three big cards labelled with a green check, a yellow question mark and a red cross ' +
+      'into three piles, relaxed and self-assured',
+  },
+  photos: {
+    cast: ['nova'],
+    scene: 'the woman from image 1 stands in front of a round vanity mirror with lights, adjusting her mask with both hands, ' +
+      'a phone in a small stand next to her showing a camera icon, playful and confident',
+  },
+  verify: {
+    cast: ['volt'],
+    scene: 'the man from image 1 holds up a smartphone taking a selfie with a peace sign, a glowing blue shield with a check mark floats next to the phone',
+  },
+  discretion: {
+    cast: ['ash'],
+    scene: 'the man from image 1 holds a finger to his lips in a playful "shh" gesture, a smartphone lies face-down on a table with a small padlock floating above it',
+  },
+  review: {
+    cast: ['ward', 'blaze'],
+    scene: 'the Doberman from image 1 sits by a glowing pink door holding an envelope with a wax seal in his mouth, ' +
+      'the woman from image 2 waits nearby with crossed fingers and a hopeful smile, cozy anticipation',
+  },
+};
+
+async function sceneOne(key, folder, id, g, count, aspect) {
+  const dir = join(out, folder);
+  await mkdir(dir, { recursive: true });
+  const refs = await Promise.all(g.cast.map((s) => dataUri(join(out, s, s === 'ward' ? 'try-3.png' : 'masked-1.png'))));
+  const prompt =
+    `${STYLE.replace('half-body portrait centered, ', '')}. Keep each character exactly as in their reference image: ` +
+    `same face, hair, skin tone, clothes and (for people) the same eye mask, worn over the eyes. Scene: ${g.scene}. ` +
+    `Fully clothed, wholesome, no nudity, no readable text.`;
+  console.log(`${folder} ${id}: ${count} options…`);
+  const r = await fal(key, 'fal-ai/nano-banana-pro/edit', {
+    prompt, image_urls: refs, num_images: count, aspect_ratio: aspect, resolution: '1K', output_format: 'png',
+  });
+  for (const [i, img] of r.images.entries()) await download(img.url, join(dir, `${id}-${i + 1}.png`));
+  await writeFile(join(dir, `${id}.json`), JSON.stringify({ id, cast: g.cast, prompt }, null, 2));
+  console.log(`${folder} ${id}: saved ${r.images.length}`);
+}
+
+async function guideOne(key, id, count) {
+  const g = GUIDE_ART[id];
+  const dir = join(out, 'guides');
+  await mkdir(dir, { recursive: true });
+  const refs = await Promise.all(g.cast.map((s) => dataUri(join(out, s, 'masked-1.png'))));
+  const prompt =
+    `${STYLE.replace('half-body portrait centered, ', '')}. Keep each character exactly as in their reference image: ` +
+    `same face, hair, skin tone, clothes and the same eye mask, worn over the eyes. Scene: ${g.scene}. Fully clothed, wholesome, no nudity.`;
+  console.log(`Guide ${id}: ${count} options…`);
+  const r = await fal(key, 'fal-ai/nano-banana-pro/edit', {
+    prompt, image_urls: refs, num_images: count, aspect_ratio: '16:9', resolution: '1K', output_format: 'png',
+  });
+  for (const [i, img] of r.images.entries()) await download(img.url, join(dir, `${id}-${i + 1}.png`));
+  await writeFile(join(dir, `${id}.json`), JSON.stringify({ id, cast: g.cast, prompt }, null, 2));
+  console.log(`Guide ${id}: saved ${r.images.length}`);
+}
+
 const args = process.argv.slice(2);
+if (args.includes('--onboarding')) {
+  const key = await fromDotEnv('FAL_KEY');
+  if (!key) { console.log('FAL_KEY missing in .env'); process.exit(1); }
+  const named = args.filter((a) => !a.startsWith('--'));
+  const ids = named.length ? named : Object.keys(ONBOARD_ART);
+  const res = await Promise.allSettled(ids.map((id) => sceneOne(key, 'onboarding', id, ONBOARD_ART[id], 2, '4:3')));
+  res.forEach((r, i) => { if (r.status === 'rejected') console.log(`${ids[i]} failed: ${r.reason.message}`); });
+  process.exit(0);
+}
+if (args.includes('--guide')) {
+  const key = await fromDotEnv('FAL_KEY');
+  if (!key) { console.log('FAL_KEY missing in .env'); process.exit(1); }
+  await guideOne(key, args[args.indexOf('--guide') + 1], 3);
+  process.exit(0);
+}
 if (args.includes('--masks')) {
   const key = await fromDotEnv('FAL_KEY');
   if (!key) { console.log('FAL_KEY missing in .env'); process.exit(1); }

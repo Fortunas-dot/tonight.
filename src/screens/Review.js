@@ -8,6 +8,7 @@ import { C, F, GRAD } from '../theme';
 import { Icon } from '../icons';
 import { Card, GhostButton, GradientButton, Photo, Screen, T } from '../ui';
 import * as api from '../backend';
+import { StepArt } from '../art';
 
 function Step({ icon, title, sub, state }) {
   const done = state === 'done';
@@ -95,6 +96,7 @@ export function UnderReview({ profile, status, note, onEdit, onReapply, onRefres
             ? 'Your profile wasn’t accepted yet. You can improve it and apply once more.'
             : `Thanks${profile.name ? `, ${profile.name}` : ''}. Tonight is members-only: a person looks at every profile before it goes live. You’ll get a notification when there’s news.`}
         </T>
+        {!declined ? <StepArt name="review" height={160} style={{ marginTop: 18 }} /> : null}
       </View>
 
       {declined ? (

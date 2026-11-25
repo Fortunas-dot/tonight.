@@ -13,6 +13,7 @@ import * as api from '../backend';
 import { versionLabel } from '../version';
 import { completeness, missingSteps } from '../completeness';
 import { AppleButton, useAppleAvailable } from '../appleAuth';
+import { ART, StepArt } from '../art';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
 
 const STEPS = 6;
@@ -23,16 +24,11 @@ export function Welcome({ next, onRestore, onEmail }) {
   const apple = useAppleAvailable();
   return (
     <Screen strong style={{ justifyContent: 'flex-end' }} bottom={30}>
-      {/* Orb top right, as in the design: a thin ring with a gradient disc inside it */}
-      <View pointerEvents="none" style={{ position: 'absolute', right: -120, top: 90, width: 340, height: 340, borderRadius: 170, borderWidth: 1, borderColor: '#3A2A2E' }} />
-      <LinearGradient
-        pointerEvents="none"
-        colors={GRAD}
-        locations={[0, 0.55, 1]}
-        start={{ x: 0.1, y: 0.1 }}
-        end={{ x: 0.9, y: 0.9 }}
-        style={{ position: 'absolute', right: -60, top: 150, width: 220, height: 220, borderRadius: 110 }}
-      />
+      {/* The masked crew at the door, fading into the background behind the headline */}
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, aspectRatio: 4 / 3 }}>
+        <Image source={ART.welcome.src} accessibilityLabel={ART.welcome.label} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        <LinearGradient colors={['rgba(14,12,16,0.55)', 'rgba(14,12,16,0)', 'rgba(14,12,16,0)', C.bg]} locations={[0, 0.25, 0.55, 1]} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
+      </View>
       <View style={{ position: 'absolute', top: 70, left: 24 }}>
         <T style={{ fontFamily: F.displayX, fontSize: 26, letterSpacing: -0.5 }}>
           tonight
@@ -363,7 +359,7 @@ export function Code({ next }) {
         {sealed ? 'Sealed' : holding ? 'Keep holding…' : all ? 'Press and hold to seal' : 'Take all 7 vows first'}
       </T>
       <Card tone="safe" style={{ marginTop: 10, flexDirection: 'row', gap: 10, alignItems: 'center', padding: 10 }}>
-        <Icon name="shieldCheck" size={20} color={C.blueL} />
+        <StepArt name="code" height={60} style={{ marginTop: 0, borderRadius: 12 }} />
         <T v="small" c={C.safeInk} style={{ flex: 1 }}>
           Ward, our watchdog, guards this Code to protect our members. Break a vow and you’re out. Anything unsafe is one strike.
         </T>
@@ -545,6 +541,7 @@ export function Photos({ profile, setProfile, next, back }) {
       <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
         At least 2 photos, one with your face. No nudity on public photos.
       </T>
+      <StepArt name="photos" height={150} />
       <View style={{ marginTop: 16, gap }}>
         <View style={{ flexDirection: 'row', gap }}>
           {slot(0, big)}
@@ -668,6 +665,7 @@ export function Boundaries({ profile, setProfile, next, back }) {
       <T v="title" style={{ marginTop: 12 }}>
         What are you after?
       </T>
+      <StepArt name="boundaries" height={150} />
       <View style={[styles.wrap, { marginTop: 14 }]}>
         {INTENTS.map((i) => (
           <Chip key={i} label={i} on={intents.includes(i)} onPress={() => tog(intents, setIntents, i)} />
@@ -810,6 +808,7 @@ export function Verify({ profile, setProfile, next, back }) {
       <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
         Everyone here did this. It’s why there are no bots.
       </T>
+      <StepArt name="verify" height={130} />
       <View style={[styles.oval, state === 'failed' && { borderColor: '#5A2A31' }, state === 'done' && { borderColor: C.blue }]}>
         {shot && state !== 'done' ? <Image source={{ uri: shot }} style={[StyleSheet.absoluteFill, { opacity: 0.45 }]} /> : null}
         {state === 'checking' ? (
@@ -867,6 +866,7 @@ export function Discretion({ profile, setProfile, next, back }) {
       <T v="title" style={{ marginTop: 12 }}>
         Keep it between us.
       </T>
+      <StepArt name="discretion" height={150} />
       <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 19, padding: 1.5, marginTop: 18 }}>
         <View style={{ backgroundColor: C.safeBg, borderRadius: 18, padding: 14, flexDirection: 'row', gap: 14, alignItems: 'center' }}>
           <LinearGradient colors={[C.pink, C.blue]} style={{ width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>

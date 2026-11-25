@@ -771,6 +771,11 @@ function GuidesTab({ onGuide }) {
           <Pressable accessibilityRole="button" accessibilityLabel={`Guide of the week: ${featured.title}`} onPress={() => onGuide(featured)}>
             <LinearGradient colors={['#4A1238', '#2A1A5A', '#14285A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.featured}>
               <View style={[styles.featuredGlow, { backgroundColor: fs.colors[0] }]} />
+              {featured.art ? (
+                <View style={styles.featuredArt}>
+                  <Image source={featured.art} accessibilityLabel={featured.artLabel} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                </View>
+              ) : null}
               <View style={styles.featuredBadge}>
                 <Icon name="spark" size={12} color="#FFD27A" />
                 <T c="#FFD27A" style={{ fontFamily: F.bold, fontSize: 10, letterSpacing: 0.6 }}>
@@ -1298,6 +1303,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   featured: { marginTop: 14, borderRadius: 24, padding: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  featuredArt: { alignSelf: 'stretch', aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', marginBottom: 14 },
   featuredGlow: { position: 'absolute', right: -60, top: -60, width: 180, height: 180, borderRadius: 90, opacity: 0.35 },
   featuredBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.45)' },
   readBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', height: 38, paddingHorizontal: 16, borderRadius: 19, backgroundColor: C.ink, marginTop: 16 },
