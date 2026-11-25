@@ -338,6 +338,10 @@ export default function App() {
         } else setStep(step + 1);
       },
       back: () => setStep(Math.max(0, step - 1)),
+      goTo: (name) => {
+        const i = FLOW.indexOf(name);
+        if (i >= 0) setStep(i);
+      },
       // Welcome › "Sign in with Apple": bring back the account tied to that Apple ID.
       onRestore: async () => {
         let token;

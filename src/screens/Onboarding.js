@@ -11,6 +11,7 @@ import { FireBurst } from './FireBurst';
 import { Field, ProfileFields, Section } from './ProfileFields';
 import * as api from '../backend';
 import { versionLabel } from '../version';
+import { completeness, missingSteps } from '../completeness';
 import { AppleButton, useAppleAvailable } from '../appleAuth';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
 
@@ -896,7 +897,54 @@ export function Discretion({ profile, setProfile, next, back }) {
   );
 }
 
-export function Preview({ profile, next, back }) {
+// Where each missing piece is filled in during onboarding.
+const STEP_FOR = { photos: 'photos', verified: 'verify', bio: 'basics', prompt: 'basics', place: 'basics', basics: 'basics', intents: 'boundaries', boundaries: 'boundaries', turnOns: 'boundaries' };
+
+function Strength({ profile, goTo }) {
+  const { percent } = completeness(profile);
+  const missing = missingSteps(profile)
+    .filter((m) => STEP_FOR[m.id])
+    .slice(0, 3);
+  const strong = percent >= 80;
+  return (
+    <Card style={{ marginTop: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <T style={{ fontFamily: F.semi }}>Application strength</T>
+        <T style={{ fontFamily: F.display, fontSize: 18 }} c={strong ? C.green : C.pinkL}>
+          {percent}%
+        </T>
+      </View>
+      <View style={styles.strengthTrack}>
+        <LinearGradient colors={strong ? ['#2BC48A', '#3B7BFF'] : GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: `${Math.max(6, percent)}%`, height: 6, borderRadius: 3 }} />
+      </View>
+      <T v="small" c={C.muted} style={{ marginTop: 8 }}>
+        {strong
+          ? 'Strong application. Reviewers can see who you are and what you’re after.'
+          : 'Reviewers look at clear photos of you, an honest bio and filled-in boundaries. The tips below help most.'}
+      </T>
+      {missing.map((m, i) => (
+        <Pressable
+          key={m.id}
+          accessibilityRole="button"
+          accessibilityLabel={`${m.label}, adds ${m.gain} percent`}
+          onPress={() => goTo?.(STEP_FOR[m.id])}
+          style={[styles.tipRow, i === 0 && { borderTopWidth: 0 }]}
+        >
+          <View style={styles.tipPlus}>
+            <Icon name="plus" size={14} color={C.pinkL} stroke={2.4} />
+          </View>
+          <T style={{ flex: 1, fontSize: 14 }}>{m.label}</T>
+          <T v="small" c={C.green} style={{ fontFamily: F.semi }}>
+            +{m.gain}%
+          </T>
+          <Icon name="chev" size={14} color={C.muted} />
+        </Pressable>
+      ))}
+    </Card>
+  );
+}
+
+export function Preview({ profile, next, back, goTo }) {
   return (
     <Screen scroll>
       <Header onBack={back} step={STEPS} total={STEPS} />
@@ -949,6 +997,7 @@ export function Preview({ profile, next, back }) {
           </View>
         </View>
       </LinearGradient>
+      <Strength profile={profile} goTo={goTo} />
       <View style={{ height: 22 }} />
       <GradientButton title="Submit my application" onPress={next} />
       <GhostButton title="Edit my answers" onPress={back} border={false} color={C.muted} style={{ marginTop: 4 }} />
@@ -957,6 +1006,9 @@ export function Preview({ profile, next, back }) {
 }
 
 const styles = StyleSheet.create({
+  strengthTrack: { height: 6, borderRadius: 3, backgroundColor: '#241F26', marginTop: 10, overflow: 'hidden' },
+  tipRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.line, marginTop: 4 },
+  tipPlus: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.pinkBg, alignItems: 'center', justifyContent: 'center' },
   emailSignIn: { height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: '#3A3439', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   memberPill: {
     flexDirection: 'row',

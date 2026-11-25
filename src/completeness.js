@@ -12,6 +12,13 @@ const STEPS = [
   { id: 'basics', weight: 5, label: 'Add your name and age', done: (p) => !!p.name && !!p.age },
 ];
 
+/** Everything still missing, most valuable first: [{ id, label, gain }]. */
+export function missingSteps(profile = {}) {
+  return STEPS.filter((s) => !s.done(profile))
+    .map((s) => ({ id: s.id, label: s.label, gain: s.weight - (s.partial ? s.partial(profile) : 0) }))
+    .sort((a, b) => b.gain - a.gain);
+}
+
 /** { percent, next: { label, gain, id } | null } */
 export function completeness(profile = {}) {
   let percent = 0;
