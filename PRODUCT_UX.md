@@ -45,17 +45,26 @@ Swinburne University (consent/safety), Fast Company (Pure).
 
 - **Lounge (Talk):** posts and replies can include photos: posters tag spicy ones (backed by an AI check), they arrive blurred until tapped, faces are auto-blurred unless the poster opts in, and spicy content can be turned off; posts go under an alias that is never linked to your dating profile; verified users only;
   topics (Confidence, First times, Kink 101, Health); live expert Q&As; educator badges on replies; report/mute on every post.
-- **Guides (wiki):** positions, talking & consent, sexual health, foreplay, kink basics, aftercare. Abstract line-art only,
-  every guide reviewed by a sex educator. “Add to my wishlist” feeds matching: matches only see items you both added.
+- **Guides (wiki):** positions, talking & consent, sexual health, foreplay, kink basics, aftercare. Each guide reads like a
+  short blog article (lead, headed sections, "Try saying" bubbles, tips, a pull quote, an "In short" box) with a 16:9 header
+  illustration of the masked cartoon crew (§3c); never explicit, always clothed. Every guide reviewed by a sex educator.
+  “Add to my wishlist” feeds matching: matches only see items you both added.
 - Why: gives a reason to open the app between dates, builds trust, and serves the consent/safety info women ask for.
 
 ## 3c. Characters (“the crew”)
 
-- **Blaze** (pink flame): the flirt. Used for likes, matches, Go live, playful nudges.
-- **Volt** (blue, lightning tuft): the bold one. Used for verification, safety check-ins, plans, reminders.
-- **Vi** (violet, heart antenna): the sweet one. Used for empty states, Guides, consent prompts, aftercare.
-- Moments: someone likes you, verified & safe, it's mutual, quiet right now, cozy aftercare. Cute, never explicit.
-- Source SVGs: `design-src/Characters.dc.html` (reusable `<g id="c-blaze|c-volt|c-vi">`); example use: `EmptyLive.dc.html`.
+Style: "Cartoon people" (canvas option C, chosen), flat vector, pink/blue/violet on the app's dark background. Every
+person wears one of the app's own photo masks (same art as scripts/mask-people.mjs), so the crew looks like members.
+- **Blaze**, woman, long dark hair, hoop earrings, pink top, **bunny mask**: the flirt. Likes, matches, Go live.
+- **Volt**, Black man, quiff and beard, blue open-collar shirt, **masquerade mask**: the bold one. Verification, plans.
+- **Vi**, androgynous, violet curls, freckles, violet hoodie, **masquerade mask**: the sweet one. Boundaries, consent, aftercare.
+- **Ash**, white man, tousled light-brown hair, stubble, denim jacket, **masquerade mask**: the easy-going one. Discretion, health.
+- **Nova**, East Asian woman, black bob with bangs, star earrings, violet top, **kitten mask**: the playful one. Photos, aftercare.
+- **Ward** (§3g) has no mask: he guards the members.
+- Generated with fal.ai: `scripts/generate-cartoons.mjs` (crew `try-N`, `--masks`, `--guide gN`, `--onboarding`). Raw options
+  live in `assets/cartoons-raw/` (git-ignored); picks are exported to `assets/guides/` and `assets/onboarding/` (see `src/art.js`).
+- Where they appear: guide headers and list thumbnails, and onboarding (Welcome hero, Code's Ward note, Boundaries,
+  Photos, Verify, Discretion, "Your application is in"). Cute, never explicit, always clothed.
 
 ## 3d. Me, Ideas, Support, Screenshot protection
 

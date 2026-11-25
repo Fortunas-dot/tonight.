@@ -171,6 +171,8 @@ export const GUIDES = [
     cat: 'Sexual health',
     title: 'Getting tested without the awkwardness',
     mins: 5,
+    art: require('../assets/guides/g2.jpg'), // --guide g2, option 2
+    artLabel: 'Illustration: Vi and Ash, masked, at a friendly clinic desk holding test kits',
     lead: 'Getting tested is one of the most attractive things you can do. It says you take care of yourself and the people you meet. And it’s a lot less awkward than most people think: a few questions, a quick swab or blood test, done.',
     blocks: [
       { h: 'How often should you go?' },
@@ -206,6 +208,8 @@ export const GUIDES = [
     cat: 'Aftercare',
     title: 'Aftercare: the part people forget',
     mins: 4,
+    art: require('../assets/guides/g3.jpg'), // --guide g3, option 1
+    artLabel: 'Illustration: Nova and Ash, masked, under a blanket on the couch with mugs of tea',
     lead: 'What happens after sex says a lot about how it felt. A few minutes of care turns a good night into one you both feel good about tomorrow. It isn’t only for couples or for kink. It’s for anyone who wants the other person to leave feeling respected.',
     blocks: [
       { h: 'What aftercare is' },
@@ -233,6 +237,8 @@ export const GUIDES = [
     cat: 'First meet',
     title: 'A safe and fun first meet',
     mins: 4,
+    art: require('../assets/guides/g4.jpg'), // --guide g4, option 2
+    artLabel: 'Illustration: Blaze and Volt, masked, laughing over drinks on a bar terrace while Ward keeps watch',
     lead: 'The first meet is where chat turns real. A little planning makes it safer, and it makes it more fun too, because you can relax and actually enjoy yourself.',
     blocks: [
       { h: 'Meet somewhere public first' },

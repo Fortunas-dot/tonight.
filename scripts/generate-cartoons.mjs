@@ -133,13 +133,30 @@ async function maskOne(key, slug, from, count) {
 }
 
 // ── Guide illustrations: the masked crew (masked-1.png) as references → assets/cartoons-raw/guides/<id>-N.png
-// node scripts/generate-cartoons.mjs --guide g1
+// node scripts/generate-cartoons.mjs --guide g1 [g2 …]   (3 options each, 16:9)
 const GUIDE_ART = {
   g1: {
     cast: ['blaze', 'volt'],
     scene: 'the woman from image 1 and the man from image 2 sit close together on a cozy velvet couch at night, ' +
       'turned toward each other, talking and smiling; she gestures while speaking and he listens attentively, ' +
       'a small speech bubble with a pink heart floats between them; warm lamp glow, soft pink and blue light',
+  },
+  g2: {
+    cast: ['vi', 'ash'],
+    scene: 'the person from image 1 and the man from image 2 stand at the bright, friendly reception desk of a modern sexual health clinic, ' +
+      'relaxed and smiling, each holding a small sealed test kit box with a plus sign; a wall calendar behind them has one day circled in pink ' +
+      'and a small green check mark; calm, reassuring, not clinical-cold',
+  },
+  g3: {
+    cast: ['nova', 'ash'],
+    scene: 'the woman from image 1 and the man from image 2 sit snuggled together under a soft blanket on a couch late at night, ' +
+      'both in comfy clothes, holding warm mugs of tea, a glass of water on the side table, smiling at each other; cozy, tender, warm lamp light',
+  },
+  g4: {
+    cast: ['blaze', 'volt', 'ward'],
+    scene: 'the woman from image 1 and the man from image 2 sit at a small table on a lively bar terrace at dusk with two drinks, laughing; ' +
+      'her phone on the table shows a small blue shield with a check mark; the Doberman from image 3 sits calmly nearby keeping watch; ' +
+      'string lights, other people blurred in the background',
   },
 };
 
@@ -198,23 +215,6 @@ async function sceneOne(key, folder, id, g, count, aspect) {
   console.log(`${folder} ${id}: saved ${r.images.length}`);
 }
 
-async function guideOne(key, id, count) {
-  const g = GUIDE_ART[id];
-  const dir = join(out, 'guides');
-  await mkdir(dir, { recursive: true });
-  const refs = await Promise.all(g.cast.map((s) => dataUri(join(out, s, 'masked-1.png'))));
-  const prompt =
-    `${STYLE.replace('half-body portrait centered, ', '')}. Keep each character exactly as in their reference image: ` +
-    `same face, hair, skin tone, clothes and the same eye mask, worn over the eyes. Scene: ${g.scene}. Fully clothed, wholesome, no nudity.`;
-  console.log(`Guide ${id}: ${count} options…`);
-  const r = await fal(key, 'fal-ai/nano-banana-pro/edit', {
-    prompt, image_urls: refs, num_images: count, aspect_ratio: '16:9', resolution: '1K', output_format: 'png',
-  });
-  for (const [i, img] of r.images.entries()) await download(img.url, join(dir, `${id}-${i + 1}.png`));
-  await writeFile(join(dir, `${id}.json`), JSON.stringify({ id, cast: g.cast, prompt }, null, 2));
-  console.log(`Guide ${id}: saved ${r.images.length}`);
-}
-
 const args = process.argv.slice(2);
 if (args.includes('--onboarding')) {
   const key = await fromDotEnv('FAL_KEY');
@@ -228,7 +228,9 @@ if (args.includes('--onboarding')) {
 if (args.includes('--guide')) {
   const key = await fromDotEnv('FAL_KEY');
   if (!key) { console.log('FAL_KEY missing in .env'); process.exit(1); }
-  await guideOne(key, args[args.indexOf('--guide') + 1], 3);
+  const ids = args.filter((a) => !a.startsWith('--'));
+  const res = await Promise.allSettled(ids.map((id) => sceneOne(key, 'guides', id, GUIDE_ART[id], 3, '16:9')));
+  res.forEach((r, i) => { if (r.status === 'rejected') console.log(`${ids[i]} failed: ${r.reason.message}`); });
   process.exit(0);
 }
 if (args.includes('--masks')) {

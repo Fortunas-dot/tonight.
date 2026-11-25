@@ -852,7 +852,13 @@ function GuidesTab({ onGuide }) {
           return (
             <Rise key={g.id} delay={i * 50}>
               <Pressable accessibilityRole="button" onPress={() => onGuide(g)} style={[styles.guideRow, i === list.length - 1 && { borderBottomWidth: 0 }]}>
-                <T style={{ fontFamily: F.displayX, fontSize: 20, width: 22, color: i % 2 ? C.blue : C.pink }}>{i + 1}</T>
+                {g.art ? (
+                  <View style={styles.guideThumb}>
+                    <Image source={g.art} accessibilityIgnoresInvertColors style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  </View>
+                ) : (
+                  <T style={{ fontFamily: F.displayX, fontSize: 20, width: 22, color: i % 2 ? C.blue : C.pink }}>{i + 1}</T>
+                )}
                 <View style={{ flex: 1 }}>
                   <T style={{ fontFamily: F.semi, fontSize: 15, lineHeight: 20 }}>{g.title}</T>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
@@ -1311,6 +1317,7 @@ const styles = StyleSheet.create({
   tile: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 72, padding: 12, borderRadius: 18, backgroundColor: '#151217', borderWidth: 1.5, borderColor: C.line },
   tileIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   guideRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line },
+  guideThumb: { width: 76, height: 50, borderRadius: 10, overflow: 'hidden', backgroundColor: C.surf2 },
   sheet: { backgroundColor: '#141116', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 10, borderWidth: 1, borderColor: C.line },
   grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#3A3439', marginBottom: 12 },
   activity: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line },
