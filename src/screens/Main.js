@@ -585,6 +585,65 @@ export function Plan({ chat, onBack, onSend, onFakeCall, onUnmatch }) {
 
 /* ---------- Guides ---------- */
 
+// One block of a guide article (see GUIDES in data.js).
+function GuideBlock({ b }) {
+  const para = { fontSize: 16, lineHeight: 25 };
+  if (b.h) return <T style={{ fontFamily: F.display, fontSize: 21, lineHeight: 26, marginTop: 28 }}>{b.h}</T>;
+  if (b.p)
+    return (
+      <T c={C.ink2} style={[para, { marginTop: 12 }]}>
+        {b.p}
+      </T>
+    );
+  if (b.quote)
+    return (
+      <View style={{ marginTop: 22, paddingLeft: 16, borderLeftWidth: 3, borderLeftColor: C.pink }}>
+        <T style={{ fontFamily: F.display, fontSize: 20, lineHeight: 28 }}>“{b.quote}”</T>
+      </View>
+    );
+  if (b.tip)
+    return (
+      <View style={{ marginTop: 16, flexDirection: 'row', gap: 10, padding: 14, borderRadius: 16, backgroundColor: 'rgba(240,40,122,0.10)', borderWidth: 1, borderColor: 'rgba(240,40,122,0.28)' }}>
+        <Icon name="spark" size={18} color={C.pinkL} />
+        <T c={C.ink} style={{ flex: 1, fontSize: 15, lineHeight: 22 }}>
+          <T c={C.pinkL} style={{ fontFamily: F.bold }}>
+            Tip:{' '}
+          </T>
+          {b.tip}
+        </T>
+      </View>
+    );
+  if (b.say)
+    return (
+      <View style={{ marginTop: 14, gap: 8 }}>
+        <T v="small" c={C.muted} style={{ fontFamily: F.semi, letterSpacing: 1 }}>
+          TRY SAYING
+        </T>
+        {b.say.map((line) => (
+          <View key={line} style={{ alignSelf: 'flex-start', maxWidth: '88%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18, borderBottomLeftRadius: 6, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line2 }}>
+            <T c={C.ink} style={{ fontSize: 15, lineHeight: 21 }}>
+              {line}
+            </T>
+          </View>
+        ))}
+      </View>
+    );
+  if (b.list)
+    return (
+      <View style={{ marginTop: 12, gap: 8 }}>
+        {b.list.map((item) => (
+          <View key={item} style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.pink, marginTop: 10 }} />
+            <T c={C.ink2} style={[para, { flex: 1 }]}>
+              {item}
+            </T>
+          </View>
+        ))}
+      </View>
+    );
+  return null;
+}
+
 export function GuideView({ guide, onBack }) {
   const [saved, setSaved] = useState(false);
   return (
@@ -598,22 +657,41 @@ export function GuideView({ guide, onBack }) {
       <T v="small" c={C.pinkL} style={{ fontFamily: F.semi, letterSpacing: 1 }}>
         {guide.cat.toUpperCase()} · {guide.mins} MIN READ
       </T>
-      <T v="title" style={{ marginTop: 6 }}>
+      <T v="title" style={{ marginTop: 6, fontSize: 30, lineHeight: 35 }}>
         {guide.title}
       </T>
-      <View style={{ marginTop: 16, gap: 14 }}>
-        {guide.body.map((b, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
-            <LinearGradient colors={[GRAD[i % 3], GRAD[(i + 1) % 3]]} style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-              <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold }}>
-                {i + 1}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
+        <LinearGradient colors={GRAD} style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="spark" size={14} color="#FFFFFF" />
+        </LinearGradient>
+        <T v="meta" c={C.muted}>
+          Tonight Guides · Reviewed by a sex educator
+        </T>
+      </View>
+      {guide.lead ? (
+        <T style={{ marginTop: 18, fontSize: 18, lineHeight: 27, fontFamily: F.semi }} c={C.ink}>
+          {guide.lead}
+        </T>
+      ) : null}
+      {(guide.blocks || []).map((b, i) => (
+        <GuideBlock key={i} b={b} />
+      ))}
+      <View style={{ marginTop: 28, borderRadius: 18, padding: 16, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line2 }}>
+        <T style={{ fontFamily: F.display, fontSize: 17 }}>In short</T>
+        <View style={{ marginTop: 12, gap: 12 }}>
+          {guide.body.map((b, i) => (
+            <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
+              <LinearGradient colors={[GRAD[i % 3], GRAD[(i + 1) % 3]]} style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold }}>
+                  {i + 1}
+                </T>
+              </LinearGradient>
+              <T style={{ flex: 1 }} c={C.ink2}>
+                {b}
               </T>
-            </LinearGradient>
-            <T style={{ flex: 1 }} c={C.ink2}>
-              {b}
-            </T>
-          </View>
-        ))}
+            </View>
+          ))}
+        </View>
       </View>
       <Card tone="safe" style={{ marginTop: 20, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
         <Icon name="shieldCheck" size={18} color={C.blueL} />
