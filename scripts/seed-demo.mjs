@@ -13,7 +13,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
-import { loadPeople, SHOTS } from './generate-people.mjs';
+import { loadPeople } from './generate-people.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SESSIONS = join(root, 'scripts', '.demo-sessions.json');
@@ -76,12 +76,12 @@ function rowFor(p, id, photos) {
 }
 
 async function seed() {
-  const { people } = await loadPeople();
+  const { people, show } = await loadPeople();
   const ids = [];
   for (const p of people) {
     const dir = join(root, 'assets', 'demo-raw', p.slug);
-    // The masked version (scripts/mask-people.mjs) when there is one, like a member who masked their photos.
-    const files = ['1', ...SHOTS.map((_, i) => `${i + 2}`)]
+    // The photos in Show, masked (scripts/mask-people.mjs) when there is a masked version, like a member who masked theirs.
+    const files = show
       .map((n) => (existsSync(join(dir, `masked-${n}.png`)) ? `masked-${n}.png` : `${n}.jpg`))
       .filter((f) => existsSync(join(dir, f)));
     if (!files.length) { console.log(`${p.name}: no photos yet — run generate-people.mjs first`); continue; }

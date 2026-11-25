@@ -13,7 +13,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Resvg } from '@resvg/resvg-js';
-import { loadPeople, SHOTS } from './generate-people.mjs';
+import { loadPeople } from './generate-people.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const fitSrc = await readFile(join(root, 'src', 'faceFit.js'), 'utf8');
@@ -120,23 +120,28 @@ function placeFor(face) {
   return fitMask({ eyeL, eyeR, box, oval: [], bridge: [] });
 }
 
-const { people } = await loadPeople();
+const { people, show } = await loadPeople();
 const wanted = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const todo = people.filter((p) => !wanted.length || wanted.includes(p.slug));
-const files = todo.flatMap((p) => ['1.jpg', ...SHOTS.map((_, i) => `${i + 2}.jpg`)].map((f) => join(root, 'assets', 'demo-raw', p.slug, f)).filter(existsSync));
-const faces = JSON.parse(execFileSync('python', ['-I', join(root, 'scripts', 'find-faces.py'), ...files], { encoding: 'utf8', maxBuffer: 1 << 24 }));
-// Hand-measured faces win over detection (scripts/mask-overrides.json, keyed "<slug>/<n>.jpg").
+// The photos the app shows (Show in people-prompts.md), each given a phone-camera finish first (roughen.py → rough-N.jpg).
+const jobs = todo.flatMap((p) =>
+  show
+    .map((n) => ({ p, n, src: join(root, 'assets', 'demo-raw', p.slug, `${n}.jpg`), file: join(root, 'assets', 'demo-raw', p.slug, `rough-${n}.jpg`) }))
+    .filter((j) => existsSync(j.src)),
+);
+execFileSync('python', ['-I', join(root, 'scripts', 'roughen.py'), ...jobs.flatMap((j) => [j.src, j.file])]);
+const faces = JSON.parse(execFileSync('python', ['-I', join(root, 'scripts', 'find-faces.py'), ...jobs.map((j) => j.file)], { encoding: 'utf8', maxBuffer: 1 << 24 }));
+// Hand-measured faces win over detection (scripts/mask-overrides.json, keyed "<slug>/rough-<n>.jpg", rough-photo pixels).
 const overrides = JSON.parse(await readFile(join(root, 'scripts', 'mask-overrides.json'), 'utf8'));
-for (const file of files) {
-  const o = overrides[file.split(/[\\/]/).slice(-2).join('/')];
-  if (o) faces[file] = { ...faces[file], ...o };
+for (const j of jobs) {
+  const o = overrides[`${j.p.slug}/rough-${j.n}.jpg`];
+  if (o) faces[j.file] = { ...faces[j.file], ...o };
 }
 
 for (const p of todo) {
   const mask = p.Mask || 'masq';
   if (!ART[mask]) { console.log(`${p.name}: unknown mask "${mask}"`); continue; }
-  for (const file of files.filter((f) => f.includes(`${join('demo-raw', p.slug)}`))) {
-    const n = file.match(/(\d)\.jpg$/)[1];
+  for (const { n, file } of jobs.filter((j) => j.p === p)) {
     const place = placeFor(faces[file]);
     if (!place) { console.log(`${p.name} ${n}.jpg: no face found — left bare`); continue; }
     const photo = `data:image/jpeg;base64,${(await readFile(file)).toString('base64')}`;

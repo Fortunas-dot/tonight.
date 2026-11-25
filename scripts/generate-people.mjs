@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BOREAL = 'https://huggingface.co/kudzueye/boreal-flux-dev-v2/resolve/main/boreal-v2.safetensors';
-export const SHOTS = ['Night out', 'Daytime'];
+export const SHOTS = ['Night out', 'Daytime', 'Mirror', 'Selfie', 'Party', 'Candid'];
 const SHOT_MODEL = 'nano-banana-pro/edit → flux-lora i2i + boreal-v2';
 
 // "## Name (slug)" sections with "- **Key:** value" lines; "## Settings" holds the shared values.
@@ -40,6 +40,8 @@ export async function loadPeople() {
   const [width, height] = (settings.Size || '768x1024').split('x').map(Number);
   return {
     settings: { prefix: settings.Prefix || 'phone photo of', strength: Number(settings['Boreal strength'] || 0.85), width, height },
+    // Which photos the app shows, in order (1 is the portrait, 2… the SHOTS); missing ones are skipped.
+    show: (settings.Show || '1, 2, 3').split(/,\s*/).filter(Boolean),
     people,
   };
 }
