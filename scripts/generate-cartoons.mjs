@@ -215,7 +215,53 @@ async function sceneOne(key, folder, id, g, count, aspect) {
   console.log(`${folder} ${id}: saved ${r.images.length}`);
 }
 
+// ── App Store product page art (must suit a 4+ rating: clothed, friendly, no innuendo). Key art stays in the centre
+// so it lands inside Apple's safe areas. node scripts/generate-cartoons.mjs --store → assets/cartoons-raw/store/
+const STORE_ART = {
+  header: {
+    aspect: '21:9',
+    cast: ['blaze', 'volt', 'vi', 'ash', 'nova'],
+    scene: 'one single seamless ultra-wide panorama of a wet night city street, shot from a distance (no panels, no frames, no split, no inset): ' +
+      'far away in the exact horizontal centre the five characters from images 1 to 5 stand side by side as a SMALL group in front of a tall ' +
+      'glowing pink doorway with a velvet rope, smiling and welcoming; the whole group is narrow, taking up only about 40 percent of the image ' +
+      'width and the middle 40 percent of the height, with their faces at the vertical centre of the image; the street, neon signs in pink ' +
+      'and blue, bokeh lights, reflections and gentle haze continue naturally to the far left and far right edges',
+  },
+  search: {
+    aspect: '3:2',
+    cast: ['blaze', 'volt', 'vi', 'ash', 'nova'],
+    scene: 'the five characters from images 1 to 5 stand together as a compact group in the centre of the frame in front of a tall glowing pink ' +
+      'doorway with a velvet rope, smiling and welcoming; the group fills the middle half of the width and the middle of the height; ' +
+      'around them a moody night street with soft pink and blue neon glow, bokeh lights and gentle haze, nothing important near the edges',
+  },
+};
+
+async function storeOne(key, id, count) {
+  const g = STORE_ART[id];
+  const dir = join(out, 'store');
+  await mkdir(dir, { recursive: true });
+  const refs = await Promise.all(g.cast.map((s) => dataUri(join(out, s, 'masked-1.png'))));
+  const prompt =
+    `${STYLE.replace('half-body portrait centered, ', '').replace('plain very dark plum background (#0E0C10), ', '')}. Keep each character exactly as in their reference image: ` +
+    `same face, hair, skin tone, clothes and the same eye mask, worn over the eyes. Scene: ${g.scene}. ` +
+    `Fully clothed, friendly, suitable for all ages, no text, no logos.`;
+  console.log(`store ${id}: ${count} options…`);
+  const r = await fal(key, 'fal-ai/nano-banana-pro/edit', {
+    prompt, image_urls: refs, num_images: count, aspect_ratio: g.aspect, resolution: '4K', output_format: 'png',
+  });
+  for (const [i, img] of r.images.entries()) await download(img.url, join(dir, `${id}-${i + 1}.png`));
+  console.log(`store ${id}: saved ${r.images.length}`);
+}
+
 const args = process.argv.slice(2);
+if (args.includes('--store')) {
+  const key = await fromDotEnv('FAL_KEY');
+  if (!key) { console.log('FAL_KEY missing in .env'); process.exit(1); }
+  const only = args.filter((a) => !a.startsWith('--'));
+  const res = await Promise.allSettled((only.length ? only : Object.keys(STORE_ART)).map((id) => storeOne(key, id, 2)));
+  res.forEach((r) => { if (r.status === 'rejected') console.log(`failed: ${r.reason.message}`); });
+  process.exit(0);
+}
 if (args.includes('--onboarding')) {
   const key = await fromDotEnv('FAL_KEY');
   if (!key) { console.log('FAL_KEY missing in .env'); process.exit(1); }
