@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Linking, Platform, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -62,6 +62,9 @@ export default function App() {
   const [review, setReview] = useState(null);
   const [reviewEdit, setReviewEdit] = useState(false);
   const [emailLogin, setEmailLogin] = useState(false);
+  // Links from Tonight's emails (tonight://auth…): confirm an email or sign in. A screen waiting for one
+  // (EmailAuth) moves on by itself; a link that opened the app cold signs in and brings the profile back.
+  const linkState = useRef({ onboarded: false, waiting: false });
   const [deck, setDeck] = useState([]);
   const [likesYou, setLikesYou] = useState([]);
   const [feedKey, setFeedKey] = useState(0); // bump to reload the Lounge feed
@@ -159,6 +162,32 @@ export default function App() {
     return () => {
       alive = false;
     };
+  }, [online]);
+
+  useEffect(() => {
+    linkState.current = { onboarded, waiting: emailLogin };
+  }, [onboarded, emailLogin]);
+  useEffect(() => {
+    if (!online) return;
+    const handle = async (url, cold) => {
+      const r = await api.handleAuthLink(url);
+      if (!r) return;
+      if (r.error) Alert.alert('That link didn’t work', 'It may have expired. Ask for a new email and try again.');
+      else if (cold && !linkState.current.onboarded && !linkState.current.waiting) {
+        const remote = await api.loadMyProfile();
+        if (remote?.onboarded) {
+          setProfile(remote.profile);
+          setOnboarded(true);
+          setStep(0);
+          setTab('discover');
+        }
+      }
+    };
+    Linking.getInitialURL()
+      .then((u) => u && handle(u, true))
+      .catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => handle(url, false));
+    return () => sub.remove();
   }, [online]);
 
   // Membership status: on start, every minute while waiting, and when a decision notification comes in.

@@ -145,6 +145,8 @@ Things that are deliberately "test mode" now and must change before submitting f
 - [ ] Remove "Restart onboarding (test build)" on Me and "Skip for this test build" on the Photos step.
 - [x] Verification: only the real AWS Rekognition check counts; no simulated pass (offline or unavailable shows a retry message).
 - [x] Sign-in: Sign in with Apple (from build 12). Settings › Your account ties the anonymous account to an Apple ID; Welcome › Sign in with Apple restores it on a new phone. Supabase: Apple provider on (client ID com.fortunas.tonight, users without email allowed), manual linking on.
+- [x] Email + password: Settings › Your account › Use email and password (confirmation link), Welcome › Sign in with email, Forgot password (login link). Links open the app via tonight://auth (allowed in Supabase › Auth › URL Configuration).
+- [ ] Own email service (SMTP) before launch: Supabase's built-in sender only delivers to team members and a few emails per hour. Set up e.g. Resend/Postmark under Auth › Emails › SMTP Settings; then the templates can be branded.
 - [ ] Apple token revocation on account deletion (Guideline 5.1.1(v)): needs a Sign in with Apple key (.p8) to call Apple's revoke endpoint from an edge function.
 - [x] Moderation: Settings › Team › Moderation (moderators only, `app.moderators`) lists every report with a 24-hour countdown; No violation / Remove post / Ban. Moderators get a push per new report. Banned accounts see "Account suspended" and vanish from Discover. Still to do: keep answering within 24 h (Guideline 1.2).
 - [ ] Privacy label: add "Sensitive info" for the new details (orientation, relationship) and "Other user content" for prompts; remove "sexual health test date" (removed from the app).

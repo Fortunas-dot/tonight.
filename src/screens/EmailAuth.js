@@ -1,7 +1,8 @@
 // Email and password, next to Sign in with Apple:
-// - KeepWithEmail (Settings): ties this account to an email (6-digit code from the email), then a password.
-// - EmailSignIn (Welcome): sign in on a new phone; "Forgot password?" sends a code and lets you set a new one.
-import { useState } from 'react';
+// - KeepWithEmail (Settings): ties this account to an email (tap the link in the email), then a password.
+// - EmailSignIn (Welcome): sign in on a new phone; "Forgot password?" emails a login link, then a new password.
+// The links open the app (tonight://auth); App.js passes them to api.handleAuthLink, which tells these screens.
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { C, F } from '../theme';
 import { Icon } from '../icons';
@@ -14,7 +15,8 @@ const MIN_PW = 8;
 const MESSAGES = {
   taken: 'That email already belongs to a Tonight account. Sign in with it on the welcome screen instead.',
   rate: 'Too many emails in a short time. Wait a few minutes and try again.',
-  code: 'That code is wrong or has expired. Check the email or ask for a new one.',
+  code: 'That link didn’t work or has expired. Ask for a new one.',
+  notyet: 'Not confirmed yet. Open the email on this phone and tap the link in it.',
   credentials: 'Email or password is wrong.',
   weak: `Pick a stronger password: at least ${MIN_PW} characters.`,
   email: 'That doesn’t look like an email address.',
@@ -71,6 +73,43 @@ function Problem({ kind }) {
   );
 }
 
+function WaitForLink({ email, what, onResend, onCheck, busy, problem }) {
+  return (
+    <>
+      <View style={styles.mailIcon}>
+        <Icon name="send" size={28} color={C.pinkL} />
+      </View>
+      <T v="title" style={{ marginTop: 16 }}>
+        Check your email
+      </T>
+      <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
+        {what} Open it on this phone and tap the link: Tonight opens and carries on by itself.
+      </T>
+      <View style={styles.steps}>
+        {['Open your mail app', `Find the email from Tonight (Supabase Auth) to ${email}`, 'Tap the link in it'].map((t, i) => (
+          <View key={t} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <View style={styles.stepNum}>
+              <T v="small" style={{ fontFamily: F.semi }}>
+                {i + 1}
+              </T>
+            </View>
+            <T v="meta" c={C.ink2} style={{ flex: 1 }}>
+              {t}
+            </T>
+          </View>
+        ))}
+      </View>
+      <T v="small" c={C.faint} style={{ marginTop: 10 }}>
+        Nothing after a minute? Check your spam folder.
+      </T>
+      <Problem kind={problem} />
+      <View style={{ height: 24 }} />
+      {onCheck ? <GradientButton title={busy ? 'Checking…' : 'I’ve tapped the link'} disabled={busy} onPress={onCheck} /> : null}
+      <GhostButton title="Send the email again" onPress={onResend} border={false} color={C.muted} style={{ marginTop: 4 }} />
+    </>
+  );
+}
+
 function Wrap({ children }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -83,7 +122,6 @@ function Wrap({ children }) {
 export function KeepWithEmail({ onBack, onDone }) {
   const [step, setStep] = useState('email'); // email | code | password
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
   const [pw, setPw] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(null);
@@ -107,20 +145,9 @@ export function KeepWithEmail({ onBack, onDone }) {
         thud();
         return setProblem(r);
       }
-      setCode('');
       setStep('code');
     });
 
-  const checkCode = () =>
-    run(async () => {
-      const r = await api.confirmEmailLink(email, code);
-      if (r !== 'ok') {
-        thud();
-        return setProblem(r);
-      }
-      success();
-      setStep('password');
-    });
 
   const savePw = () =>
     run(async () => {
@@ -134,6 +161,26 @@ export function KeepWithEmail({ onBack, onDone }) {
       onDone(email.trim().toLowerCase());
     });
 
+  // The link in the email opens the app; once it's handled, the email is confirmed.
+  useEffect(() => {
+    if (step !== 'code') return undefined;
+    return api.onAuthLink((r) => {
+      if (r.error) return setProblem('code');
+      success();
+      setProblem(null);
+      setStep('password');
+    });
+  }, [step]);
+
+  const checkConfirmed = () =>
+    run(async () => {
+      const links = await api.accountLinks();
+      if (links.email && links.email === email.trim().toLowerCase()) {
+        success();
+        setStep('password');
+      } else setProblem('notyet');
+    });
+
   return (
     <Wrap>
       <Screen scroll>
@@ -144,7 +191,7 @@ export function KeepWithEmail({ onBack, onDone }) {
               Your email
             </T>
             <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
-              We send you a 6-digit code to check it’s yours. We only use it to restore your account, never for marketing, and it’s never shown to anyone.
+              We email you a link to check it’s yours. We only use your email to restore your account, never for marketing, and it’s never shown to anyone.
             </T>
             <Input
               label="Email"
@@ -159,34 +206,10 @@ export function KeepWithEmail({ onBack, onDone }) {
             />
             <Problem kind={problem} />
             <View style={{ height: 24 }} />
-            <GradientButton title={busy ? 'Sending…' : 'Send me a code'} disabled={busy || !email.trim()} onPress={sendCode} />
+            <GradientButton title={busy ? 'Sending…' : 'Send me the link'} disabled={busy || !email.trim()} onPress={sendCode} />
           </>
         ) : step === 'code' ? (
-          <>
-            <T v="title" style={{ marginTop: 8 }}>
-              Check your email
-            </T>
-            <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
-              We sent a 6-digit code to {email.trim().toLowerCase()}. It can take a minute; check your spam folder too.
-            </T>
-            <Input
-              label="Code"
-              icon="lock"
-              value={code}
-              onChangeText={(t) => setCode(t.replace(/\D/g, ''))}
-              keyboardType="number-pad"
-              autoComplete="one-time-code"
-              textContentType="oneTimeCode"
-              placeholder="000000"
-              maxLength={6}
-              autoFocus
-              big
-            />
-            <Problem kind={problem} />
-            <View style={{ height: 24 }} />
-            <GradientButton title={busy ? 'Checking…' : 'Confirm'} disabled={busy || code.length < 6} onPress={checkCode} />
-            <GhostButton title="Send a new code" onPress={sendCode} border={false} color={C.muted} style={{ marginTop: 4 }} />
-          </>
+          <WaitForLink email={email.trim().toLowerCase()} what="We sent a confirmation link." busy={busy} problem={problem} onCheck={checkConfirmed} onResend={sendCode} />
         ) : (
           <>
             <T v="title" style={{ marginTop: 8 }}>
@@ -212,7 +235,6 @@ export function EmailSignIn({ onBack, onSignedIn }) {
   const [step, setStep] = useState('login'); // login | code | password
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
-  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(null);
   const [note, setNote] = useState(null);
@@ -246,22 +268,22 @@ export function EmailSignIn({ onBack, onSignedIn }) {
       const r = await api.sendLoginCode(email);
       // Same answer whether or not the address has an account, so nobody can find out who is a member.
       if (r === 'rate') return setProblem('rate');
-      setCode('');
-      setNote(`If ${email.trim().toLowerCase()} has a Tonight account, a 6-digit code is on its way.`);
+      setNote(`If ${email.trim().toLowerCase()} has a Tonight account, a login link is on its way.`);
       setStep('code');
     });
 
-  const checkCode = () =>
-    run(async () => {
-      const r = await api.verifyLoginCode(email, code);
-      if (r.error) {
-        thud();
-        return setProblem('code');
-      }
+
+  // Tapping the login link signs this phone in; then a new password.
+  useEffect(() => {
+    if (step !== 'code') return undefined;
+    return api.onAuthLink((r) => {
+      if (r.error) return setProblem('code');
       success();
+      setProblem(null);
       setPw('');
       setStep('password');
     });
+  }, [step]);
 
   const newPw = () =>
     run(async () => {
@@ -309,31 +331,7 @@ export function EmailSignIn({ onBack, onSignedIn }) {
             <GradientButton title={busy ? 'Signing in…' : 'Sign in'} disabled={busy || !email.trim() || !pw} onPress={login} />
           </>
         ) : step === 'code' ? (
-          <>
-            <T v="title" style={{ marginTop: 8 }}>
-              Check your email
-            </T>
-            <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
-              {note} Check your spam folder too.
-            </T>
-            <Input
-              label="Code"
-              icon="lock"
-              value={code}
-              onChangeText={(t) => setCode(t.replace(/\D/g, ''))}
-              keyboardType="number-pad"
-              autoComplete="one-time-code"
-              textContentType="oneTimeCode"
-              placeholder="000000"
-              maxLength={6}
-              autoFocus
-              big
-            />
-            <Problem kind={problem} />
-            <View style={{ height: 24 }} />
-            <GradientButton title={busy ? 'Checking…' : 'Continue'} disabled={busy || code.length < 6} onPress={checkCode} />
-            <GhostButton title="Send a new code" onPress={forgot} border={false} color={C.muted} style={{ marginTop: 4 }} />
-          </>
+          <WaitForLink email={email.trim().toLowerCase()} what={note} busy={busy} problem={problem} onResend={forgot} />
         ) : (
           <>
             <T v="title" style={{ marginTop: 8 }}>
@@ -357,5 +355,8 @@ const styles = StyleSheet.create({
   box: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.surf, borderRadius: 16, borderWidth: 1.5, borderColor: C.surf, paddingHorizontal: 14, minHeight: 56 },
   boxFocus: { borderColor: C.pink },
   input: { flex: 1, color: C.ink, fontFamily: F.body, fontSize: 16, paddingVertical: 14 },
+  mailIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.pinkBg, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  steps: { gap: 12, marginTop: 18, backgroundColor: C.surf, borderRadius: 16, padding: 14 },
+  stepNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' },
   problem: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginTop: 14, backgroundColor: '#2A1418', borderRadius: 12, padding: 12 },
 });
