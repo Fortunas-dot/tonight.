@@ -860,6 +860,12 @@ export async function deleteAccount() {
   return true;
 }
 
+/** Signs out on this phone only. The account stays on the server; sign back in on the welcome screen. */
+export async function signOut() {
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+  uid = null;
+}
+
 /** Comments on my posts and replies to my comments (the Lounge bell). */
 export async function loungeActivity() {
   if (!uid) return [];

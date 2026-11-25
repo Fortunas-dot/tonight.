@@ -56,6 +56,24 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted, onRestart
   const set = (patch) => setProfile((p) => ({ ...p, settings: { ...(p.settings || {}), ...patch } }));
   const setNotify = (k, v) => set({ notify: { ...notify, [k]: v } });
 
+  // Without Apple or email the account only lives on this phone, so signing out would lose it for good.
+  const kept = !!(links && (links.apple || links.email));
+  const signOutNow = async () => {
+    await api.signOut();
+    tap();
+    onDeleted();
+  };
+  const confirmSignOut = () =>
+    kept
+      ? Alert.alert('Sign out?', `Sign back in on the welcome screen with ${links.apple ? 'Apple' : 'your email'} to get everything back.`, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign out', onPress: signOutNow },
+        ])
+      : Alert.alert('Keep your account first', 'Your account isn’t tied to Apple or an email yet. If you sign out now, you can’t get back into it: your profile, matches and chats are lost. Use “Keep your account” above first.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign out anyway', style: 'destructive', onPress: signOutNow },
+        ]);
+
   const confirmDelete = () =>
     Alert.alert('Delete your account?', 'This removes your profile, photos, matches, chats, posts and comments for good. It cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
@@ -321,6 +339,10 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted, onRestart
         <Row icon="doc" iconColor={C.muted} iconBg={C.surf2} title="Privacy policy" onPress={() => Linking.openURL('https://fortunas.nl/tonight/privacy')} last />
       </Card>
 
+      <Pressable accessibilityRole="button" onPress={confirmSignOut} style={styles.signOut}>
+        <Icon name="logout" size={18} color={C.ink} />
+        <T v="label">Sign out</T>
+      </Pressable>
       <Pressable accessibilityRole="button" onPress={confirmDelete} disabled={deleting} style={styles.delete}>
         {deleting ? <ActivityIndicator color={C.red} /> : <Icon name="trash" size={18} color={C.red} />}
         <T v="label" c={C.red}>
@@ -441,5 +463,6 @@ const styles = StyleSheet.create({
   account: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: 22, borderWidth: 1, borderColor: C.line, marginTop: 4 },
   blockRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 8 },
   unblock: { height: 32, paddingHorizontal: 14, borderRadius: 16, backgroundColor: C.surf2, justifyContent: 'center' },
-  delete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 26, borderWidth: 1.5, borderColor: '#5A2A31', marginTop: 28 },
+  signOut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 26, borderWidth: 1.5, borderColor: C.line2, marginTop: 28 },
+  delete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 26, borderWidth: 1.5, borderColor: '#5A2A31', marginTop: 12 },
 });

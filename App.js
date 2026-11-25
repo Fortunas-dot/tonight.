@@ -466,7 +466,9 @@ export default function App() {
                 setTab('discover');
               }}
               onDeleted={() => {
+                // Also used for signing out: forget everything of this account on the phone, then start fresh.
                 AsyncStorage.removeItem(STORE).catch(() => {});
+                setReview(null);
                 setProfile({});
                 setOnboarded(false);
                 setStep(0);
