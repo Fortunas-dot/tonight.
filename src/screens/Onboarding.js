@@ -44,9 +44,16 @@ export function Welcome({ next, onRestore }) {
         <T v="display" style={{ fontSize: 46, lineHeight: 48 }}>
           Adults.{'\n'}Clear intentions.{'\n'}No games.
         </T>
+        <View style={styles.memberPill}>
+          <Icon name="lock" size={13} color={C.pinkL} />
+          <T v="small" c={C.ink2} style={{ fontFamily: F.semi, letterSpacing: 0.4 }}>
+            MEMBERS ONLY · BY APPLICATION
+          </T>
+        </View>
       </Rise>
       <Rise delay={120} style={{ marginTop: 26, gap: 14 }}>
         {[
+          ['spark', 'Every profile is reviewed by hand. Not everyone gets in.'],
           ['shieldCheck', 'Every face is live-verified. No bots.'],
           ['filter', 'You set the boundaries. We match on them.'],
           ['eyeOff', 'Nothing explicit reaches you without your yes.'],
@@ -895,7 +902,7 @@ export function Preview({ profile, next, back }) {
         Looking good{profile.name ? `, ${profile.name}` : ''}
       </T>
       <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
-        This is exactly what others will see.
+        This is your application. Members see exactly this once you’re in.
       </T>
       <View style={{ height: 360, borderRadius: 24, overflow: 'hidden', marginTop: 14 }}>
         {profile.photos?.[0] ? <Photo uri={profile.photos[0]} blur={profile.blurFace} style={StyleSheet.absoluteFill} /> : <Photo style={StyleSheet.absoluteFill} label="YOUR PHOTO" />}
@@ -933,21 +940,34 @@ export function Preview({ profile, next, back }) {
         <View style={{ backgroundColor: C.safeBg, borderRadius: 16, padding: 12, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
           <Icon name="bulb" size={20} color={C.pinkL} />
           <View style={{ flex: 1 }}>
-            <T style={{ fontFamily: F.semi, fontSize: 14 }}>You’re joining a community</T>
+            <T style={{ fontFamily: F.semi, fontSize: 14 }}>Membership by application</T>
             <T v="small" c={C.safeInk}>
-              We build what members ask for. Vote and suggest on the Ideas board.
+              Every profile is reviewed by hand before it goes live. Not everyone gets in. Clear photos and an honest bio help.
             </T>
           </View>
         </View>
       </LinearGradient>
       <View style={{ height: 22 }} />
-      <GradientButton title="Start exploring" onPress={next} />
+      <GradientButton title="Submit my application" onPress={next} />
       <GhostButton title="Edit my answers" onPress={back} border={false} color={C.muted} style={{ marginTop: 4 }} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  memberPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#4A2436',
+    backgroundColor: 'rgba(240,40,122,0.08)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
   emblem: { shadowColor: C.orange, shadowOffset: { width: 0, height: 0 }, borderRadius: 40 },
   emblemRing: { width: 78, height: 78, borderRadius: 39, padding: 2 },
   emblemInner: { flex: 1, borderRadius: 37, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },

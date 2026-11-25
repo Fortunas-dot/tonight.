@@ -149,6 +149,7 @@ Things that are deliberately "test mode" now and must change before submitting f
 - [x] Moderation: Settings › Team › Moderation (moderators only, `app.moderators`) lists every report with a 24-hour countdown; No violation / Remove post / Ban. Moderators get a push per new report. Banned accounts see "Account suspended" and vanish from Discover. Still to do: keep answering within 24 h (Guideline 1.2).
 - [ ] Privacy label: add "Sensitive info" for the new details (orientation, relationship) and "Other user content" for prompts; remove "sexual health test date" (removed from the app).
 - [ ] Demo account for App Review (fill in above).
+- [ ] Membership review: new profiles wait for a moderator (Settings › Team › Moderation › Applications). Accept the App Review demo account in advance, or App Review gets stuck on "Your application is in". Say in the review notes that membership is reviewed by hand. The acceptance rate shown to applicants is the real one (from 30 decisions on); never show a made-up figure.
 - [ ] Terms and privacy policy pages at fortunas.nl/tonight/terms and /privacy describe: anonymous accounts, photo storage, face masks done on the phone, AWS face comparison (selfie deleted after the check), push notifications, account deletion.
 
 Done and live: account deletion (Settings), report and block from profiles, chats and Lounge posts, unmatch, blurred photos released only after a match, explicit first-message filter, Face ID lock, push notifications with discreet previews, private settings table.

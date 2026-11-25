@@ -21,6 +21,7 @@ import { EditProfile } from './src/screens/ProfileFields';
 import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
 import { Privacy, Settings } from './src/screens/Settings';
 import { Moderation, Suspended } from './src/screens/Moderation';
+import { UnderReview } from './src/screens/Review';
 import { LockGate } from './src/screens/Lock';
 import { Intro } from './src/screens/Intro';
 import { FakeCall } from './src/screens/FakeCall';
@@ -56,6 +57,9 @@ export default function App() {
   const [ideas, setIdeas] = useState(IDEAS);
   const [online, setOnline] = useState(false);
   const [banned, setBanned] = useState(false);
+  // Membership: null until known; the app opens up once a moderator accepts the application.
+  const [review, setReview] = useState(null);
+  const [reviewEdit, setReviewEdit] = useState(false);
   const [deck, setDeck] = useState([]);
   const [likesYou, setLikesYou] = useState([]);
   const [feedKey, setFeedKey] = useState(0); // bump to reload the Lounge feed
@@ -136,6 +140,7 @@ export default function App() {
     registerForPush();
     return onNotificationTap((data) => {
       setStack([]);
+      if (data.kind === 'review') api.myReview().then((r) => r && setReview(r));
       if (data.kind === 'moderation') {
         setTab('me');
         setStack([{ name: 'moderation' }]);
@@ -153,6 +158,18 @@ export default function App() {
       alive = false;
     };
   }, [online]);
+
+  // Membership status: on start, every minute while waiting, and when a decision notification comes in.
+  const checkReview = useCallback(() => {
+    api.myReview().then((r) => r && setReview(r));
+  }, []);
+  useEffect(() => {
+    if (!online || !onboarded) return;
+    checkReview();
+    if (review && review.status === 'approved') return;
+    const t = setInterval(checkReview, 60000);
+    return () => clearInterval(t);
+  }, [online, onboarded, review, checkReview]);
 
   useEffect(() => {
     if (!online || !onboarded) return;
@@ -188,6 +205,29 @@ export default function App() {
       <SafeAreaProvider>
         <StatusBar style="light" />
         <Suspended />
+      </SafeAreaProvider>
+    );
+  }
+  if (onboarded && review && review.status !== 'approved') {
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, backgroundColor: C.bg }} onLayout={onLayout}>
+          <StatusBar style="light" />
+          {reviewEdit ? (
+            <EditProfile profile={profile} setProfile={setProfile} onBack={() => setReviewEdit(false)} />
+          ) : (
+            <UnderReview
+              profile={profile}
+              status={review.status}
+              note={review.note}
+              onEdit={() => setReviewEdit(true)}
+              onRefresh={checkReview}
+              onReapply={async () => {
+                if (await api.reapply()) setReview({ status: 'pending', note: null });
+              }}
+            />
+          )}
+        </View>
       </SafeAreaProvider>
     );
   }
@@ -240,6 +280,8 @@ export default function App() {
       setProfile,
       next: () => {
         if (step === FLOW.length - 1) {
+          // The application goes in now; the app opens up once it's accepted.
+          setReview((r) => r || { status: 'pending', note: null });
           setOnboarded(true);
           setStep(0);
         } else setStep(step + 1);

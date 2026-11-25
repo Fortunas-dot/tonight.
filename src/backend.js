@@ -535,6 +535,50 @@ export async function likeComment(id, on) {
   else await supabase.from('comment_likes').delete().eq('comment_id', id).eq('user_id', uid);
 }
 
+/* ---------- Membership review ---------- */
+
+/** My application: { status: 'pending' | 'approved' | 'rejected', note } or null when unknown (offline, no profile yet). */
+export async function myReview() {
+  if (!uid) return null;
+  const { data, error } = await supabase.from('profiles').select('review_status, review_note, onboarded').eq('id', uid).maybeSingle();
+  if (error || !data || !data.onboarded) return null;
+  return { status: data.review_status || 'pending', note: data.review_note || null };
+}
+
+/** After a decline: send the (improved) profile in again. */
+export async function reapply() {
+  const { error } = await supabase.rpc('reapply');
+  if (error) console.warn('[backend] reapply failed', error.message);
+  return !error;
+}
+
+/** { decided, approved } over all applications, for an honest acceptance rate. */
+export async function acceptanceStats() {
+  const { data } = await supabase.rpc('acceptance_stats');
+  return data || null;
+}
+
+/** Applications waiting for review, oldest first, with signed photos. */
+export async function modApplications() {
+  const { data, error } = await supabase.rpc('mod_applications');
+  if (error) {
+    console.warn('[backend] applications failed', error.message);
+    return [];
+  }
+  const list = data || [];
+  const paths = [...new Set(list.flatMap((a) => (a.photos || []).slice(0, 6)))];
+  const urls = paths.length ? await supabase.storage.from(BUCKET).createSignedUrls(paths, URL_TTL) : { data: [] };
+  const byPath = Object.fromEntries((urls.data || []).filter((u) => u.signedUrl).map((u) => [u.path, u.signedUrl]));
+  return list.map((a) => ({ ...a, photoUrls: (a.photos || []).map((p) => byPath[p]).filter(Boolean) }));
+}
+
+/** decision: 'approved' | 'rejected'; note is shown to the applicant on a decline. */
+export async function modDecide(userId, decision, note = null) {
+  const { error } = await supabase.rpc('mod_decide', { applicant: userId, decision, note });
+  if (error) console.warn('[backend] decide failed', error.message);
+  return !error;
+}
+
 /* ---------- Moderation ---------- */
 
 export async function isModerator() {
