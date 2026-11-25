@@ -1,7 +1,7 @@
 // Profile fields (name, age, description, country, city) with a polished look, shared by
 // onboarding step 1 and Me › Edit profile.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Image, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { MaskEditor } from './MaskEditor';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -93,26 +93,24 @@ export function Section({ icon, title, caption, children }) {
 }
 
 /**
- * A search box that only accepts a choice from its list (countries, or cities from the place search).
+ * A picker that only accepts a choice from its list (countries, or cities from the place search).
  * search(query) returns names or { name, region, country } objects; what you type is reverted unless you pick one.
  */
 export function SearchSelect({ label, icon, value, onChange, placeholder, search, emptyHint, disabled, disabledHint }) {
-  const [focus, setFocus] = useState(false);
-  const [query, setQuery] = useState(value || '');
+  // Opens a full-screen search: the box sits at the top and the results right under it, so they are never hidden
+  // behind the keyboard (an inline dropdown at the bottom of a long form always was).
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const [items, setItems] = useState([]);
   const [busy, setBusy] = useState(false);
-  const [lastValue, setLastValue] = useState(value);
-  if (value !== lastValue) {
-    setLastValue(value);
-    setQuery(value || '');
-  }
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    if (!focus) return undefined;
+    if (!open) return undefined;
     let alive = true;
     const t = setTimeout(async () => {
       setBusy(true);
-      const res = await search(query === value ? '' : query);
+      const res = await search(query);
       if (alive) {
         setItems(res);
         setBusy(false);
@@ -122,21 +120,30 @@ export function SearchSelect({ label, icon, value, onChange, placeholder, search
       alive = false;
       clearTimeout(t);
     };
-  }, [focus, query, value, search]);
+  }, [open, query, search]);
 
+  const show = () => {
+    if (disabled) return;
+    tap();
+    setQuery('');
+    setItems([]);
+    setOpen(true);
+  };
+  const close = () => {
+    Keyboard.dismiss();
+    setOpen(false);
+  };
   const pick = (item) => {
     const name = typeof item === 'string' ? item : item.name;
     tap();
-    setQuery(name);
-    setFocus(false);
-    Keyboard.dismiss();
+    close();
     onChange(name, item);
   };
 
   return (
     <View style={{ marginTop: 14 }}>
       <View style={styles.labelRow}>
-        <T v="label" c={focus ? C.ink : C.muted}>
+        <T v="label" c={C.muted}>
           {label}
         </T>
         {value ? (
@@ -148,71 +155,88 @@ export function SearchSelect({ label, icon, value, onChange, placeholder, search
           </View>
         ) : null}
       </View>
-      <View style={[styles.box, focus && styles.boxFocus, disabled && { opacity: 0.45 }]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || placeholder}`} onPress={show} disabled={disabled} style={[styles.box, disabled && { opacity: 0.45 }]}>
         <View style={styles.boxIcon}>
-          <Icon name={focus ? 'search' : icon} size={18} color={focus ? C.pinkL : C.muted} />
+          <Icon name={icon} size={18} color={value ? C.pinkL : C.muted} />
         </View>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          editable={!disabled}
-          placeholder={disabled ? disabledHint : placeholder}
-          placeholderTextColor={C.faint}
-          onFocus={() => {
-            setFocus(true);
-          }}
-          onBlur={() => {
-            // Only a picked value counts: free text goes back to the last choice.
-            setTimeout(() => {
-              setFocus(false);
-              setQuery(value || '');
-            }, 150);
-          }}
-          autoCapitalize="words"
-          autoCorrect={false}
-          selectionColor={C.pink}
-          style={styles.input}
-          accessibilityLabel={label}
-        />
-        {query && focus ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${label}`} onPress={() => setQuery('')} hitSlop={8} style={styles.clear}>
-            <Icon name="close" size={12} color={C.ink} stroke={2.6} />
-          </Pressable>
-        ) : null}
-      </View>
-      {focus ? (
-        <View style={styles.dropdown}>
-          {busy && !items.length ? (
-            <T v="small" c={C.muted} style={{ padding: 14 }}>
-              Searching…
-            </T>
-          ) : items.length ? (
-            items.map((it, i) => {
-              const name = typeof it === 'string' ? it : it.name;
-              const sub = typeof it === 'string' ? '' : [it.region, it.country].filter(Boolean).join(', ');
-              const on = name === value;
-              return (
-                <Pressable key={`${name}-${sub}-${i}`} accessibilityRole="button" onPress={() => pick(it)} style={[styles.option, i === items.length - 1 && { borderBottomWidth: 0 }]}>
-                  <Icon name={icon} size={16} color={on ? C.pinkL : C.muted} />
-                  <View style={{ flex: 1 }}>
-                    <T style={{ fontFamily: on ? F.semi : F.medium }}>{name}</T>
-                    {sub ? (
-                      <T v="small" c={C.muted}>
-                        {sub}
-                      </T>
-                    ) : null}
-                  </View>
-                  {on ? <Icon name="check" size={16} color={C.pinkL} stroke={2.4} /> : null}
-                </Pressable>
-              );
-            })
-          ) : (
-            <T v="small" c={C.muted} style={{ padding: 14 }}>
-              {emptyHint}
-            </T>
-          )}
+        <T style={[styles.input, { paddingVertical: 15 }]} c={value ? C.ink : C.faint} numberOfLines={1}>
+          {value || (disabled ? disabledHint : placeholder)}
+        </T>
+        <Icon name="down" size={14} color={C.muted} stroke={2.2} />
+      </Pressable>
+
+      <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
+        <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: Platform.OS === 'ios' ? 14 : insets.top + 8 }}>
+          <View style={styles.sheetHead}>
+            <T style={{ fontFamily: F.display, fontSize: 20 }}>{label}</T>
+            <Pressable accessibilityRole="button" onPress={close} hitSlop={10}>
+              <T v="label" c={C.pinkL}>
+                Cancel
+              </T>
+            </Pressable>
+          </View>
+          <View style={[styles.box, styles.boxFocus, { marginHorizontal: 16 }]}>
+            <View style={styles.boxIcon}>
+              <Icon name="search" size={18} color={C.pinkL} />
+            </View>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              autoFocus
+              placeholder={placeholder}
+              placeholderTextColor={C.faint}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="search"
+              selectionColor={C.pink}
+              style={styles.input}
+              accessibilityLabel={`Search ${label}`}
+            />
+            {query ? (
+              <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${label}`} onPress={() => setQuery('')} hitSlop={8} style={styles.clear}>
+                <Icon name="close" size={12} color={C.ink} stroke={2.6} />
+              </Pressable>
+            ) : null}
+          </View>
+          <ScrollView
+            style={{ flex: 1 }}
+            automaticallyAdjustKeyboardInsets
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: insets.bottom + 24 }}
+          >
+            {busy && !items.length ? (
+              <T v="small" c={C.muted} style={{ padding: 14 }}>
+                Searching…
+              </T>
+            ) : items.length ? (
+              items.map((it, i) => {
+                const name = typeof it === 'string' ? it : it.name;
+                const sub = typeof it === 'string' ? '' : [it.region, it.country].filter(Boolean).join(', ');
+                const on = name === value;
+                return (
+                  <Pressable key={`${name}-${sub}-${i}`} accessibilityRole="button" onPress={() => pick(it)} style={[styles.option, i === items.length - 1 && { borderBottomWidth: 0 }]}>
+                    <Icon name={icon} size={16} color={on ? C.pinkL : C.muted} />
+                    <View style={{ flex: 1 }}>
+                      <T style={{ fontFamily: on ? F.semi : F.medium }}>{name}</T>
+                      {sub ? (
+                        <T v="small" c={C.muted}>
+                          {sub}
+                        </T>
+                      ) : null}
+                    </View>
+                    {on ? <Icon name="check" size={16} color={C.pinkL} stroke={2.4} /> : null}
+                  </Pressable>
+                );
+              })
+            ) : (
+              <T v="small" c={C.muted} style={{ padding: 14 }}>
+                {emptyHint}
+              </T>
+            )}
+          </ScrollView>
         </View>
-      ) : null}
+      </Modal>
     </View>
   );
 }
@@ -692,7 +716,7 @@ const styles = StyleSheet.create({
   promptCard: { marginTop: 12, padding: 14, borderRadius: 16, backgroundColor: '#1A1218', borderWidth: 1, borderColor: '#4A1A33' },
   promptInput: { color: C.ink, fontFamily: F.display, fontSize: 18, lineHeight: 24, minHeight: 50, marginTop: 6, padding: 0, textAlignVertical: 'top' },
   addPrompt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 48, marginTop: 12, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#4A1A33' },
-  dropdown: { marginTop: 6, borderRadius: 16, borderWidth: 1, borderColor: C.line2, backgroundColor: '#1A161C', overflow: 'hidden' },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 14 },
   option: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line },
   starter: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 30, paddingHorizontal: 10, borderRadius: 15, backgroundColor: C.pinkBg, borderWidth: 1, borderColor: '#4A1A33' },
   head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingBottom: 4 },

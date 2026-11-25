@@ -23,22 +23,20 @@ const STEPS = 6;
 export function Welcome({ next, onRestore, onEmail }) {
   const apple = useAppleAvailable();
   return (
-    <Screen strong style={{ justifyContent: 'flex-end' }} bottom={30}>
-      {/* The masked crew at the door, fading into the background behind the headline */}
-      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, aspectRatio: 4 / 3 }}>
-        <Image source={ART.welcome.src} accessibilityLabel={ART.welcome.label} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-        <LinearGradient colors={['rgba(14,12,16,0.55)', 'rgba(14,12,16,0)', 'rgba(14,12,16,0)', C.bg]} locations={[0, 0.25, 0.55, 1]} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
-      </View>
-      <View style={{ position: 'absolute', top: 70, left: 24 }}>
-        <T style={{ fontFamily: F.displayX, fontSize: 26, letterSpacing: -0.5 }}>
-          tonight
-          <T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 26 }}>
-            .
-          </T>
+    <Screen scroll strong bottom={30}>
+      {/* Top to bottom, nothing on top of anything: logo, the masked crew at the door, then the pitch. Scrolls on small phones. */}
+      <T style={{ fontFamily: F.displayX, fontSize: 26, letterSpacing: -0.5, marginTop: 6 }}>
+        tonight
+        <T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 26 }}>
+          .
         </T>
+      </T>
+      <View style={styles.welcomeArt}>
+        <Image source={ART.welcome.src} accessibilityLabel={ART.welcome.label} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0)', C.bg]} locations={[0, 0.7, 1]} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
       </View>
       <Rise>
-        <T v="display" style={{ fontSize: 46, lineHeight: 48 }}>
+        <T v="display" style={{ fontSize: 40, lineHeight: 43 }}>
           Adults.{'\n'}Clear intentions.{'\n'}No games.
         </T>
         <View style={styles.memberPill}>
@@ -48,7 +46,7 @@ export function Welcome({ next, onRestore, onEmail }) {
           </T>
         </View>
       </Rise>
-      <Rise delay={120} style={{ marginTop: 26, gap: 14 }}>
+      <Rise delay={120} style={{ marginTop: 22, gap: 12 }}>
         {[
           ['spark', 'Every profile is reviewed by hand. Not everyone gets in.'],
           ['shieldCheck', 'Every face is live-verified. No bots.'],
@@ -64,7 +62,7 @@ export function Welcome({ next, onRestore, onEmail }) {
           </View>
         ))}
       </Rise>
-      <Rise delay={240} style={{ marginTop: 34, gap: 10 }}>
+      <Rise delay={240} style={{ marginTop: 28, gap: 10 }}>
         <GradientButton title="Apply for membership" onPress={next} />
         <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 6 }}>
           Already a member?
@@ -358,9 +356,9 @@ export function Code({ next }) {
       <T v="label" c={C.ink2} style={{ marginTop: 8, letterSpacing: 1 }}>
         {sealed ? 'Sealed' : holding ? 'Keep holding…' : all ? 'Press and hold to seal' : 'Take all 7 vows first'}
       </T>
-      <Card tone="safe" style={{ marginTop: 10, flexDirection: 'row', gap: 10, alignItems: 'center', padding: 10 }}>
-        <StepArt name="code" height={60} style={{ marginTop: 0, borderRadius: 12 }} />
-        <T v="small" c={C.safeInk} style={{ flex: 1 }}>
+      <Card tone="safe" style={{ marginTop: 14, alignItems: 'center', padding: 12, alignSelf: 'stretch' }}>
+        <StepArt name="code" height={150} style={{ marginTop: 0, borderRadius: 14 }} />
+        <T v="small" c={C.safeInk} style={{ textAlign: 'center', marginTop: 10, lineHeight: 18 }}>
           Ward, our watchdog, guards this Code to protect our members. Break a vow and you’re out. Anything unsafe is one strike.
         </T>
       </Card>
@@ -1010,6 +1008,8 @@ const styles = StyleSheet.create({
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.line, marginTop: 4 },
   tipPlus: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.pinkBg, alignItems: 'center', justifyContent: 'center' },
   emailSignIn: { height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: '#3A3439', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  // Edge to edge (the screen has 24 side padding); 2:1 keeps the headline and "Apply" on screen on a normal iPhone.
+  welcomeArt: { marginHorizontal: -24, marginTop: 10, marginBottom: 6, aspectRatio: 2, overflow: 'hidden' },
   memberPill: {
     flexDirection: 'row',
     alignItems: 'center',
