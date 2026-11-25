@@ -124,8 +124,8 @@ Subscription group: **Tonight Plus**
 | Plus Monthly | com.fortunas.tonight.plus.monthly | 1 month | ⚠ [PRICE] |
 Display name: Tonight Plus · Description: Unlimited live windows, travel mode and incognito.
 
-## App Review notes (draft)
-Tonight is an 18+ dating app. All users pass live selfie verification. Photos in chat are blurred by default;
+## App Review notes (in App Store Connect since 25 Nov 2026)
+Tonight is an 18+ dating app. Every member verifies with a selfie that is matched against their profile photos. Photos in chat are blurred by default;
 private-photo sharing requires both users to opt in. Users can report, block and mute from every profile, chat and
 Lounge post; reports are reviewed by our team within 24 hours. Membership is by application and reviewed by hand; the demo account below is already accepted. To sign in: on the welcome screen tap “Sign in with email” (under “Already a member?”) and use the demo account (email apple.review@fortunas.nl, password in App Store Connect › App Review Information). Discover, Likes you, Chats and the Ideas board also show clearly labelled example profiles and chats, so new members see how the app works before they have matches; they are not real people and cannot be messaged for real.
 
