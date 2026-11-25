@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 let mod;
+let lastCode = null;
+/** The authorization code from the latest Apple sign-in (used once, then cleared). */
+export const lastAppleCode = () => {
+  const c = lastCode;
+  lastCode = null;
+  return c;
+};
 function apple() {
   if (mod !== undefined) return mod;
   mod = null;
@@ -42,12 +49,16 @@ export function AppleButton({ kind = 'continue', onPress, style }) {
   return <m.AppleAuthenticationButton buttonType={type} buttonStyle={m.AppleAuthenticationButtonStyle.WHITE} cornerRadius={28} style={[{ height: 54 }, style]} onPress={onPress} />;
 }
 
-/** Asks Apple for an identity token. Returns the token, or null when cancelled. No name or email is requested. */
+/**
+ * Asks Apple for an identity token. Returns the token, or null when cancelled. No name or email is requested.
+ * The one-time authorization code that comes with it is kept in lastAppleCode() for api.storeAppleCode.
+ */
 export async function appleToken() {
   const m = apple();
   if (!m) return null;
   try {
     const cred = await m.signInAsync({ requestedScopes: [] });
+    lastCode = cred.authorizationCode || null;
     return cred.identityToken || null;
   } catch (e) {
     if (e?.code === 'ERR_REQUEST_CANCELED') return null;

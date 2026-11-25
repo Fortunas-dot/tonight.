@@ -150,6 +150,15 @@ export const scalePlacement = (p, k) => {
   return { ...p, sl: p.sl * k, sr: p.sr * k, sy: p.sy * k, ex: ears.ex * k, ey: ears.ey * k, es: ears.es * k };
 };
 
+/** Turns a placement by deg degrees (two-finger twist), the ears turning with it around the mask. */
+export const rotatePlacement = (p, deg) => {
+  const ears = earsOf(p);
+  const a = (deg * Math.PI) / 180;
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return { ...p, r: (p.r || 0) + deg, ex: ears.ex * c - ears.ey * s, ey: ears.ex * s + ears.ey * c, es: ears.es };
+};
+
 /** Where the ears go for a placement: its own fit, or straight above the mask at art proportions. */
 export function earsOf(p) {
   if (typeof p.ex === 'number') return { ex: p.ex, ey: p.ey, es: p.es };

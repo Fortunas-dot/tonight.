@@ -56,7 +56,9 @@ export async function findFace(uri) {
     const oy = (VH - size.height * f) / 2;
     const toFrame = (p) => ({ x: ox + p.x * f, y: oy + p.y * f });
 
-    return fitMask(facePartsFromMlKit(face, toFrame));
+    const parts = facePartsFromMlKit(face, toFrame);
+    // The points are kept so the editor can show what was found ("Show face points").
+    return { ...fitMask(parts), parts: { eyeL: parts.eyeL, eyeR: parts.eyeR, oval: parts.oval, box: parts.box, bridge: parts.bridge } };
   } catch (e) {
     console.warn('[faces] detection failed', e?.message || e);
     return null;

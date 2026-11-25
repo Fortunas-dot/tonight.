@@ -10,7 +10,7 @@ import { C, F } from '../theme';
 import { Icon } from '../icons';
 import { Screen, T, Toggle, success, tap } from '../ui';
 import { MANUAL, VH, VW, findFace } from '../faces';
-import { ART_BAND_Y, ART_BRIDGE_X, ART_EYE_Y, earsOf, scalePlacement } from '../faceFit';
+import { ART_BAND_Y, ART_BRIDGE_X, ART_EYE_Y, earsOf, rotatePlacement, scalePlacement } from '../faceFit';
 
 // Everything is drawn in the design's 342 by 430 frame (see faces.js).
 const OUT_W = 1080;
@@ -222,6 +222,27 @@ function Thumb({ id }) {
 }
 
 const dist = (t) => Math.hypot(t[0].pageX - t[1].pageX, t[0].pageY - t[1].pageY);
+const angle = (t) => (Math.atan2(t[1].pageY - t[0].pageY, t[1].pageX - t[0].pageX) * 180) / Math.PI;
+
+// What the face finder saw: eyes (blue), face outline and box (pink), nose bridge (white).
+function FacePoints({ parts }) {
+  if (!parts) return null;
+  const { eyeL, eyeR, oval = [], box, bridge = [] } = parts;
+  return (
+    <G>
+      {box ? <Rect x={box.x} y={box.y} width={box.w} height={box.h} fill="none" stroke="#FF6FA8" strokeWidth={1} strokeDasharray="4 3" opacity={0.8} /> : null}
+      {oval.map((p, i) => (
+        <Circle key={`o${i}`} cx={p.x} cy={p.y} r={1.6} fill="#FF6FA8" />
+      ))}
+      {bridge.map((p, i) => (
+        <Circle key={`b${i}`} cx={p.x} cy={p.y} r={2} fill="#FFFFFF" />
+      ))}
+      {[eyeL, eyeR].filter(Boolean).map((p, i) => (
+        <Circle key={`e${i}`} cx={p.x} cy={p.y} r={4} fill="none" stroke="#6FA8FF" strokeWidth={2} />
+      ))}
+    </G>
+  );
+}
 // Each half of the mask gets its own width (sl, sr), so it follows a turned head. See faceFit.js.
 const halfTransform = (p, sx) => `translate(${p.x} ${p.y}) rotate(${p.r || 0}) scale(${sx} ${p.sy}) translate(${-ART_BRIDGE_X} ${-ART_EYE_Y})`;
 
@@ -302,6 +323,8 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
   const [idx, setIdx] = useState(start);
   const [mask, setMask] = useState('bunny');
   const [places, setPlaces] = useState({}); // index → { x, y, s, r, auto }
+  const [autoPlaces, setAutoPlaces] = useState({}); // index → what the face finder placed, for "Fit again"
+  const [showPoints, setShowPoints] = useState(false);
   const [found, setFound] = useState({}); // index → 'finding' | 'found' | 'none'
   const [applyAll, setApplyAll] = useState(photos.length > 1);
   const [burning, setBurning] = useState(null); // { queue: [index...], done: [{index, uri}] }
@@ -326,6 +349,7 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
         if (!alive) return;
         setFound((f) => ({ ...f, [i]: place ? 'found' : 'none' }));
         setPlaces((p) => (p[i] ? p : { ...p, [i]: place || MANUAL }));
+        if (place) setAutoPlaces((a) => ({ ...a, [i]: place }));
       }
     })();
     return () => {
@@ -350,15 +374,20 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
         const t = e.nativeEvent.touches;
         const k = VW / (Dimensions.get('window').width - 48);
         if (t.length >= 2) {
-          if (!from.pinch) from.pinch = { d: dist(t) };
+          // Two fingers: pinch to resize, twist to turn.
+          if (!from.pinch) from.pinch = { d: dist(t), a: angle(t) };
           const zoom = Math.max(0.3, Math.min(3, dist(t) / from.pinch.d));
-          set({ ...scalePlacement(from, zoom), pinch: undefined });
+          let turn = angle(t) - from.pinch.a;
+          if (turn > 180) turn -= 360;
+          if (turn < -180) turn += 360;
+          set({ ...rotatePlacement(scalePlacement(from, zoom), turn), pinch: undefined, moved: true });
         } else if (!from.pinch) {
           set({
             ...from,
             pinch: undefined,
             x: from.x + g.dx * k,
             y: from.y + g.dy * k,
+            moved: true,
           });
         }
       },
@@ -425,6 +454,7 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
           </Defs>
           <SvgImage href={{ uri: photos[idx] }} x={0} y={0} width={VW} height={VH} preserveAspectRatio="xMidYMid slice" />
           {M && status !== 'finding' && status ? <Fitted place={pos} Comp={M} /> : null}
+          {showPoints ? <FacePoints parts={(autoPlaces[idx] || {}).parts} /> : null}
         </Svg>
         <View style={[styles.pill, { left: 12, top: 12 }]} pointerEvents="none">
           {status === 'found' ? <View style={[styles.dot, { backgroundColor: '#6FA8FF' }]} /> : null}
@@ -435,10 +465,49 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
         </View>
         {status && status !== 'finding' ? (
           <View style={[styles.pill, { right: 12, bottom: 12 }]} pointerEvents="none">
-            <T v="small">{status === 'found' ? 'Drag or pinch to fine-tune' : 'Pinch to resize'}</T>
+            <T v="small">{status === 'found' ? 'Drag, pinch or twist to fine-tune' : 'Drag, pinch or twist'}</T>
           </View>
         ) : null}
       </View>
+
+      {status && status !== 'finding' ? (
+        <View style={styles.tools}>
+          {autoPlaces[idx] ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                tap();
+                setShowPoints((v) => !v);
+              }}
+              hitSlop={8}
+              style={styles.tool}
+            >
+              <Icon name={showPoints ? 'eyeOff' : 'eye'} size={15} color={C.muted} />
+              <T v="small" c={C.muted}>
+                {showPoints ? 'Hide face points' : 'Show face points'}
+              </T>
+            </Pressable>
+          ) : (
+            <View />
+          )}
+          {autoPlaces[idx] && pos.moved ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                tap();
+                setPlaces((p) => ({ ...p, [idx]: autoPlaces[idx] }));
+              }}
+              hitSlop={8}
+              style={styles.tool}
+            >
+              <Icon name="spark" size={15} color={C.pinkL} />
+              <T v="small" c={C.pinkL} style={{ fontFamily: F.semi }}>
+                Fit again
+              </T>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
       {photos.length > 1 ? (
         <View style={styles.thumbs}>
@@ -558,6 +627,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   dot: { width: 7, height: 7, borderRadius: 4 },
+  tools: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingHorizontal: 4 },
+  tool: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
   thumbs: {
     flexDirection: 'row',
     gap: 8,

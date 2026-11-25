@@ -44,10 +44,11 @@ export async function appleLinked() {
  * Ties the current (anonymous) account to an Apple ID, keeping everything in it.
  * Returns 'linked', 'taken' (that Apple ID already has a Tonight account) or 'failed'.
  */
-export async function linkApple(token) {
+export async function linkApple(token, code) {
   const { error } = await supabase.auth.linkIdentity({ provider: 'apple', token });
   if (!error) {
     await supabase.auth.refreshSession().catch(() => {});
+    storeAppleCode(code);
     return 'linked';
   }
   console.warn('[backend] link apple failed', error.code, error.message);
@@ -56,14 +57,21 @@ export async function linkApple(token) {
 }
 
 /** Switches to the account behind this Apple ID (made fresh if there is none). Returns the new user id or null. */
-export async function signInApple(token) {
+export async function signInApple(token, code) {
   const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token });
   if (error || !data?.user) {
     console.warn('[backend] apple sign-in failed', error?.message);
     return null;
   }
   uid = data.user.id;
+  storeAppleCode(code);
   return uid;
+}
+
+/** Hands Apple's one-time code to the server, which keeps a token only to revoke it on account deletion. */
+export function storeAppleCode(code) {
+  if (!code) return;
+  supabase.functions.invoke('apple-auth', { body: { action: 'store', code } }).catch(() => {});
 }
 
 /* ---------- Keeping the account (email and password) ---------- */
@@ -804,6 +812,8 @@ export async function deleteAccount() {
       // keep going; the account removal below is what matters
     }
   }
+  // Apple asks apps to revoke Sign in with Apple when the account goes (Guideline 5.1.1(v)).
+  await supabase.functions.invoke('apple-auth', { body: { action: 'revoke' } }).catch(() => {});
   const { error } = await supabase.rpc('delete_my_account');
   if (error) {
     console.warn('[backend] delete account failed', error.message);

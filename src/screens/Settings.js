@@ -8,7 +8,7 @@ import { Card, Header, Photo, Row, Screen, Segmented, T, Toggle, success, tap } 
 import { openPhoneSettings, pushStatus, registerForPush } from '../notifications';
 import { canUseFaceId } from './Lock';
 import { versionLabel } from '../version';
-import { AppleButton, appleToken, useAppleAvailable } from '../appleAuth';
+import { AppleButton, appleToken, lastAppleCode, useAppleAvailable } from '../appleAuth';
 import * as api from '../backend';
 
 const NOTIFY = [
@@ -157,7 +157,7 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
                       return;
                     }
                     if (!token) return;
-                    const r = await api.linkApple(token);
+                    const r = await api.linkApple(token, lastAppleCode());
                     if (r === 'linked') {
                       success();
                       setLinks((l) => ({ ...l, apple: true }));

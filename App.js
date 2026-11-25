@@ -28,7 +28,7 @@ import { Intro } from './src/screens/Intro';
 import { FakeCall } from './src/screens/FakeCall';
 import { DiscoverPage, ProfilePage } from './src/screens/DiscoverPage';
 import { onNotificationTap, registerForPush } from './src/notifications';
-import { appleToken } from './src/appleAuth';
+import { appleToken, lastAppleCode } from './src/appleAuth';
 
 // Off during testing so screenshots can be shared. Turn back on before the App Store release.
 const BLOCK_SCREENSHOTS = false;
@@ -347,7 +347,7 @@ export default function App() {
           return;
         }
         if (!token) return;
-        const id = await api.signInApple(token);
+        const id = await api.signInApple(token, lastAppleCode());
         if (!id) {
           Alert.alert('Couldn’t sign in', 'Check your connection and try again.');
           return;
