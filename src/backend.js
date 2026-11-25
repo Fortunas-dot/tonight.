@@ -491,10 +491,11 @@ export async function loadChats(me) {
   if (error || !matches.length) return [];
   const otherIds = matches.map((m) => (m.user_a === uid ? m.user_b : m.user_a));
   const ids = matches.map((m) => m.id);
-  const [{ data: profiles }, { data: msgs }, { data: plans }] = await Promise.all([
+  const [{ data: profiles }, { data: msgs }, { data: plans }, { data: states }] = await Promise.all([
     supabase.from('profiles').select('*').in('id', otherIds),
     supabase.from('messages').select('*').in('match_id', ids).order('created_at'),
     supabase.from('plans').select('*').in('match_id', ids),
+    supabase.from('match_state').select('*').in('match_id', ids).neq('user_id', uid),
   ]);
   const people = await withPhotos(profiles || [], me);
   return matches
@@ -510,7 +511,10 @@ export async function loadChats(me) {
         person,
         left: leftFor(m.created_at),
         plan: plan ? { place: plan.place, time: plan.at_time } : undefined,
-        messages: (msgs || []).filter((x) => x.match_id === m.id).map((x) => ({ id: x.id, me: x.sender === uid, text: x.body })),
+        messages: (msgs || []).filter((x) => x.match_id === m.id).map((x) => ({ id: x.id, me: x.sender === uid, text: x.body, at: x.created_at })),
+        // When the other person last read this chat / last typed in it.
+        theirRead: (states || []).find((s) => s.match_id === m.id)?.read_at || null,
+        theirTyping: (states || []).find((s) => s.match_id === m.id)?.typing_at || null,
       };
     })
     .filter(Boolean);
@@ -526,13 +530,31 @@ export async function sendMessage(matchId, text) {
   return data.id;
 }
 
-/** Calls onMessage(matchId, msg) for new messages and onMatch() for new matches. Returns an unsubscribe function. */
-export function subscribe({ onMessage, onMatch }) {
+/** I've read this chat up to now ("Seen" for the other person). */
+export async function markRead(matchId) {
+  if (!uid || !matchId) return;
+  await supabase.from('match_state').upsert({ match_id: matchId, user_id: uid, read_at: new Date().toISOString() });
+}
+
+/** I'm typing in this chat (sent at most every few seconds by the chat screen). */
+export async function setTyping(matchId) {
+  if (!uid || !matchId) return;
+  await supabase.from('match_state').upsert({ match_id: matchId, user_id: uid, typing_at: new Date().toISOString() });
+}
+
+/**
+ * Calls onMessage(matchId, msg) for new messages, onMatch() for new matches and onState(matchId, { readAt, typingAt })
+ * when the other person reads or types. Returns an unsubscribe function.
+ */
+export function subscribe({ onMessage, onMatch, onState }) {
   if (!uid) return () => {};
   const channel = supabase
     .channel(`user-${uid}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, ({ new: m }) => {
-      onMessage(m.match_id, { id: m.id, me: m.sender === uid, text: m.body });
+      onMessage(m.match_id, { id: m.id, me: m.sender === uid, text: m.body, at: m.created_at });
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'match_state' }, ({ new: s }) => {
+      if (s && s.user_id !== uid) onState?.(s.match_id, { readAt: s.read_at, typingAt: s.typing_at });
     })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'matches' }, ({ new: m }) => {
       if (m.user_a === uid || m.user_b === uid) onMatch();

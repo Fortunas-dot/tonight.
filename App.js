@@ -210,6 +210,7 @@ export default function App() {
     return api.subscribe({
       onMessage: (matchId, msg) => setChats((cs) => cs.map((c) => (c.matchId === matchId && !c.messages.some((m) => m.id === msg.id) ? { ...c, messages: [...c.messages, msg] } : c))),
       onMatch: () => refresh(),
+      onState: (matchId, st) => setChats((cs) => cs.map((c) => (c.matchId === matchId ? { ...c, theirRead: st.readAt || c.theirRead, theirTyping: st.typingAt || c.theirTyping } : c))),
     });
   }, [online, onboarded, refresh]);
 
@@ -271,7 +272,7 @@ export default function App() {
     const chat = chats.find((c) => c.id === id);
     if (chat?.real && msg.me) {
       const tempId = `local-${Date.now()}`;
-      setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: [...c.messages, { ...msg, id: tempId }] } : c)));
+      setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: [...c.messages, { ...msg, id: tempId, at: new Date().toISOString() }] } : c)));
       api.sendMessage(chat.matchId, msg.text).then((realId) => {
         if (realId) setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: c.messages.filter((m) => m.id !== realId).map((m) => (m.id === tempId ? { ...m, id: realId } : m)) } : c)));
       });

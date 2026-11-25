@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Easing, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,25 +7,9 @@ import { Icon, Verified } from '../icons';
 import { PEOPLE, VOWS, personById } from '../data';
 import { versionLabel } from '../version';
 import { completeness } from '../completeness';
+import * as api from '../backend';
 import Svg, { Circle as SvgCircle, Defs as SvgDefs, LinearGradient as SvgGrad, Stop as SvgStop } from 'react-native-svg';
-import {
-  Avatar,
-  Card,
-  GhostButton,
-  GradientButton,
-  Header,
-  IconButton,
-  LiquidBg,
-  LiveDot,
-  Photo,
-  Rise,
-  Row,
-  Screen,
-  Segmented,
-  T,
-  success,
-  tap,
-} from '../ui';
+import { Avatar, Card, GhostButton, GradientButton, Header, IconButton, LiquidBg, LiveDot, Photo, Rise, Row, Screen, Segmented, T, success, tap } from '../ui';
 
 /* ---------- Match ---------- */
 
@@ -64,8 +48,20 @@ export function Match({ person, me, onChat, onClose }) {
     Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 8, bounciness: 12 }).start();
   }, [pop]);
   return (
-    <LinearGradient colors={[C.pink, C.violet, C.blue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 20, paddingHorizontal: 24 }}>
-      {[[30, 14, 0], [90, 22, 1500], [170, 10, 3000], [250, 18, 900], [320, 12, 2400], [200, 26, 4200]].map(([l, s, d]) => (
+    <LinearGradient
+      colors={[C.pink, C.violet, C.blue]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{ flex: 1, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 20, paddingHorizontal: 24 }}
+    >
+      {[
+        [30, 14, 0],
+        [90, 22, 1500],
+        [170, 10, 3000],
+        [250, 18, 900],
+        [320, 12, 2400],
+        [200, 26, 4200],
+      ].map(([l, s, d]) => (
         <Bubble key={l} left={l} size={s} delay={d} />
       ))}
       <View style={{ alignItems: 'flex-end' }}>
@@ -129,7 +125,9 @@ export function Likes({ people: real = [], onOpen, blurAll, showExamples = false
           <View style={{ flex: 1 }}>
             <T style={{ fontFamily: F.semi }}>No likes yet</T>
             <T v="small" c={C.muted}>
-              {showExamples ? 'A complete profile gets noticed faster. Below are examples of how likes show up.' : 'A complete profile gets noticed faster. When someone likes you, they show up here, free.'}
+              {showExamples
+                ? 'A complete profile gets noticed faster. Below are examples of how likes show up.'
+                : 'A complete profile gets noticed faster. When someone likes you, they show up here, free.'}
             </T>
           </View>
         </Card>
@@ -320,7 +318,12 @@ function HiddenMessage({ text }) {
     );
   }
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Hidden message, may be explicit. Tap to show." onPress={() => setShow(true)} style={[styles.them, { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#22335C', backgroundColor: C.blueBg }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Hidden message, may be explicit. Tap to show."
+      onPress={() => setShow(true)}
+      style={[styles.them, { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#22335C', backgroundColor: C.blueBg }]}
+    >
       <Icon name="eyeOff" size={16} color={C.blueL} />
       <View>
         <T v="small" c={C.safeInk} style={{ fontFamily: F.semi }}>
@@ -343,6 +346,36 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
   const [text, setText] = useState('');
   const [typing, setTyping] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [now, setNow] = useState(() => new Date().toISOString());
+  const lastTypingSent = useRef(0);
+
+  // Real chats: mark them read while open, and tell the other side when I'm typing.
+  const msgCount = chat.messages.length;
+  useEffect(() => {
+    if (chat.real) api.markRead(chat.matchId);
+  }, [chat.real, chat.matchId, msgCount]);
+  // Re-check "typing…" every couple of seconds so it disappears when they stop.
+  useEffect(() => {
+    if (!chat.real) return undefined;
+    const t = setInterval(() => setNow(new Date().toISOString()), 2000);
+    return () => clearInterval(t);
+  }, [chat.real]);
+  const theyType = chat.real && chat.theirTyping && Date.parse(now) - Date.parse(chat.theirTyping) < 6000;
+  const onType = (t) => {
+    setText(t);
+    if (!chat.real || !t) return;
+    const ms = Date.parse(new Date().toISOString());
+    if (ms - lastTypingSent.current > 3000) {
+      lastTypingSent.current = ms;
+      api.setTyping(chat.matchId);
+    }
+  };
+  // "Seen" under my last message once they've read past it.
+  const lastMine = (() => {
+    for (let i = chat.messages.length - 1; i >= 0; i--) if (chat.messages[i].me) return i;
+    return -1;
+  })();
+  const lastMineSeen = lastMine >= 0 && chat.real && chat.theirRead && chat.messages[lastMine].at && chat.theirRead >= chat.messages[lastMine].at;
   const send = () => {
     const t = text.trim();
     if (!t) return;
@@ -367,7 +400,10 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
           <View style={{ flex: 1 }}>
             <T style={{ fontFamily: F.semi }}>{p.name}</T>
             <T v="small" c={C.green}>
-              {chat.plan ? `Plan at ${chat.plan.time}` : `Live until ${p.until}`} · <T v="small" c={C.muted}>view profile</T>
+              {theyType ? 'typing…' : chat.plan ? `Plan at ${chat.plan.time}` : `Live until ${p.until}`} ·{' '}
+              <T v="small" c={C.muted}>
+                view profile
+              </T>
             </T>
           </View>
         </Pressable>
@@ -398,17 +434,22 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
           ) : (
             <Rise key={i} style={m.me ? { alignSelf: 'flex-end', maxWidth: '78%' } : { alignSelf: 'flex-start', maxWidth: '78%' }}>
               {m.me ? (
-                <LinearGradient colors={['#D81B6A', '#9B2BA0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.me}>
-                  <T c="#FFFFFF">{m.text}</T>
-                </LinearGradient>
+                <>
+                  <LinearGradient colors={['#D81B6A', '#9B2BA0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.me}>
+                    <T c="#FFFFFF">{m.text}</T>
+                  </LinearGradient>
+                  {i === lastMine && chat.real ? (
+                    <T v="small" c={lastMineSeen ? C.blueL : C.faint} style={{ alignSelf: 'flex-end', marginTop: 3, fontSize: 11 }}>
+                      {lastMineSeen ? 'Seen' : String(m.id).startsWith('local-') ? 'Sending…' : 'Sent'}
+                    </T>
+                  ) : null}
+                </>
+              ) : hide(m, i) ? (
+                <HiddenMessage text={m.text} />
               ) : (
-                hide(m, i) ? (
-                  <HiddenMessage text={m.text} />
-                ) : (
-                  <View style={styles.them}>
-                    <T>{m.text}</T>
-                  </View>
-                )
+                <View style={styles.them}>
+                  <T>{m.text}</T>
+                </View>
               )}
             </Rise>
           ),
@@ -424,13 +465,13 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
             )}
           </Pressable>
         ) : null}
-        {typing ? <Typing /> : null}
+        {typing || theyType ? <Typing /> : null}
       </ScrollView>
       <View style={[styles.composer, { paddingBottom: insets.bottom + 10 }]}>
         <View style={styles.composerPill}>
           <TextInput
             value={text}
-            onChangeText={setText}
+            onChangeText={onType}
             placeholder={`Message ${p.name}`}
             placeholderTextColor={C.faint}
             style={styles.composerInput}
@@ -576,7 +617,13 @@ export function GuideView({ guide, onBack }) {
         </T>
       </Card>
       <View style={{ height: 20 }} />
-      <GradientButton title={saved ? 'Added to your wishlist' : 'Add to my wishlist'} onPress={() => { success(); setSaved(true); }} />
+      <GradientButton
+        title={saved ? 'Added to your wishlist' : 'Add to my wishlist'}
+        onPress={() => {
+          success();
+          setSaved(true);
+        }}
+      />
       <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 8 }}>
         Matches only see wishlist items you both added
       </T>
@@ -685,10 +732,21 @@ export function Me({ profile, go, onRestart }) {
           </View>
           <T v="meta" c={C.muted}>
             {profile.city ? `${profile.city}${profile.country ? `, ${profile.country}` : ''} · ` : ''}
-            {profile.verified ? <T v="meta" c={C.blueL}>Verified</T> : 'Not verified yet'}
+            {profile.verified ? (
+              <T v="meta" c={C.blueL}>
+                Verified
+              </T>
+            ) : (
+              'Not verified yet'
+            )}
           </T>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => go('settings')} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+          onPress={() => go('settings')}
+          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' }}
+        >
           <Icon name="gear" size={20} />
         </Pressable>
       </View>
@@ -801,7 +859,10 @@ export function Support({ onBack }) {
       <Pressable accessibilityRole="button" onPress={() => setText('I want to report someone: ')} style={styles.report}>
         <Icon name="shield" size={18} color="#FFC9CE" />
         <T v="small" c="#FFC9CE" style={{ flex: 1 }}>
-          Someone made you feel unsafe? <T v="small" c="#FFC9CE" style={{ fontFamily: F.bold }}>Tell Ward. It jumps the queue.</T>
+          Someone made you feel unsafe?{' '}
+          <T v="small" c="#FFC9CE" style={{ fontFamily: F.bold }}>
+            Tell Ward. It jumps the queue.
+          </T>
         </T>
       </Pressable>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 8 }}>
@@ -822,7 +883,16 @@ export function Support({ onBack }) {
       </ScrollView>
       <View style={[styles.composer, { paddingBottom: insets.bottom + 10 }]}>
         <View style={styles.composerPill}>
-          <TextInput value={text} onChangeText={setText} placeholder="Write a message…" placeholderTextColor={C.faint} style={styles.composerInput} onSubmitEditing={send} returnKeyType="send" accessibilityLabel="Message support" />
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Write a message…"
+            placeholderTextColor={C.faint}
+            style={styles.composerInput}
+            onSubmitEditing={send}
+            returnKeyType="send"
+            accessibilityLabel="Message support"
+          />
           <Pressable accessibilityRole="button" accessibilityLabel="Send" onPress={send}>
             <LinearGradient colors={[C.pink, C.blue]} style={styles.sendBtn}>
               <Icon name="send" size={18} color="#FFFFFF" stroke={2.2} />
@@ -868,7 +938,14 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
         Vote on what we build next. The most wanted ideas go on the roadmap.
       </T>
       <View style={styles.ideaInput}>
-        <TextInput value={draft} onChangeText={setDraft} placeholder="Suggest an idea…" placeholderTextColor={C.faint} style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }} accessibilityLabel="Suggest an idea" />
+        <TextInput
+          value={draft}
+          onChangeText={setDraft}
+          placeholder="Suggest an idea…"
+          placeholderTextColor={C.faint}
+          style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }}
+          accessibilityLabel="Suggest an idea"
+        />
         <Pressable accessibilityRole="button" accessibilityLabel="Post idea" onPress={post}>
           <LinearGradient colors={GRAD} style={styles.sendBtn}>
             <Icon name="plus" size={18} color="#FFFFFF" stroke={2.4} />
@@ -898,13 +975,25 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
       {list.map((i) => (
         <View key={i.id} style={styles.idea}>
           <View style={{ alignItems: 'center', width: 44 }}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Upvote" accessibilityState={{ selected: i.mine === 1 }} onPress={() => vote(i.id, 1)} style={[styles.vote, i.mine === 1 && { borderColor: C.pink, backgroundColor: C.pinkBg }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Upvote"
+              accessibilityState={{ selected: i.mine === 1 }}
+              onPress={() => vote(i.id, 1)}
+              style={[styles.vote, i.mine === 1 && { borderColor: C.pink, backgroundColor: C.pinkBg }]}
+            >
               <Icon name="up" size={18} color={i.mine === 1 ? C.pinkL : C.muted} stroke={2.4} />
             </Pressable>
             <T style={{ fontFamily: F.displayX, fontSize: 17, marginVertical: 4 }} c={i.score > 0 ? C.ink : C.muted}>
               {i.score > 0 ? `+${i.score}` : i.score}
             </T>
-            <Pressable accessibilityRole="button" accessibilityLabel="Downvote" accessibilityState={{ selected: i.mine === -1 }} onPress={() => vote(i.id, -1)} style={[styles.vote, i.mine === -1 && { borderColor: C.blue, backgroundColor: C.blueBg }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Downvote"
+              accessibilityState={{ selected: i.mine === -1 }}
+              onPress={() => vote(i.id, -1)}
+              style={[styles.vote, i.mine === -1 && { borderColor: C.blue, backgroundColor: C.blueBg }]}
+            >
               <Icon name="down" size={18} color={i.mine === -1 ? C.blueL : C.muted} stroke={2.4} />
             </Pressable>
           </View>
@@ -928,7 +1017,9 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
             {i.reply ? (
               <View style={{ backgroundColor: C.safeBg, borderRadius: 12, padding: 8, marginTop: 8 }}>
                 <T v="small" c={C.safeInk}>
-                  <T v="small" style={{ fontFamily: F.semi }}>Tonight team: </T>
+                  <T v="small" style={{ fontFamily: F.semi }}>
+                    Tonight team:{' '}
+                  </T>
                   {i.reply}
                 </T>
               </View>
@@ -940,15 +1031,40 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
   );
 }
 
-
 const styles = StyleSheet.create({
   exampleTag: { position: 'absolute', top: 22, right: 14, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)', justifyContent: 'center', zIndex: 2 },
   complete: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, padding: 14, borderRadius: 22, backgroundColor: '#151217', borderWidth: 1, borderColor: C.line },
   nextStep: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8, height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: C.pinkBg },
-  pctBadge: { position: 'absolute', bottom: -6, alignSelf: 'center', minWidth: 40, height: 20, borderRadius: 10, paddingHorizontal: 6, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.bg },
+  pctBadge: {
+    position: 'absolute',
+    bottom: -6,
+    alignSelf: 'center',
+    minWidth: 40,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    backgroundColor: C.pink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: C.bg,
+  },
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 48, paddingHorizontal: 8 },
   filterBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
-  filterBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
+  filterBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: C.pink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: C.bg,
+  },
   fChip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: '#2E2830', backgroundColor: 'rgba(255,255,255,0.03)' },
   fChipOn: { borderColor: C.pink, backgroundColor: C.pinkBg },
   emptyDeck: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 },
@@ -976,12 +1092,35 @@ const styles = StyleSheet.create({
   them: { paddingVertical: 11, paddingHorizontal: 15, borderRadius: 22, borderBottomLeftRadius: 6, backgroundColor: '#1F1A21', alignSelf: 'flex-start' },
   photoMsg: { width: 180, height: 140, borderRadius: 22, borderBottomLeftRadius: 6, overflow: 'hidden' },
   composer: { paddingHorizontal: 14, paddingTop: 10 },
-  composerPill: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 52, paddingLeft: 16, paddingRight: 6, borderRadius: 26, backgroundColor: C.surf3, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  composerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 52,
+    paddingLeft: 16,
+    paddingRight: 6,
+    borderRadius: 26,
+    backgroundColor: C.surf3,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   composerInput: { flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 },
   sendBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   quick: { flex: 1, height: 64, borderRadius: 16, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center', gap: 5 },
   report: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: '#2A1A1E', borderRadius: 14, padding: 12, margin: 16, marginBottom: 0 },
-  ideaInput: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 52, paddingLeft: 16, paddingRight: 6, borderRadius: 26, backgroundColor: C.surf3, borderWidth: 1.5, borderColor: C.line2, marginTop: 14 },
+  ideaInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 52,
+    paddingLeft: 16,
+    paddingRight: 6,
+    borderRadius: 26,
+    backgroundColor: C.surf3,
+    borderWidth: 1.5,
+    borderColor: C.line2,
+    marginTop: 14,
+  },
   idea: { flexDirection: 'row', gap: 12, padding: 14, backgroundColor: C.surf3, borderRadius: 18, borderWidth: 1, borderColor: C.line, marginTop: 10 },
   vote: { width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: C.line2, alignItems: 'center', justifyContent: 'center' },
 });
