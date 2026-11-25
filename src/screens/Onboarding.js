@@ -22,63 +22,61 @@ const STEPS = 6;
 
 export function Welcome({ next, onRestore, onEmail }) {
   const apple = useAppleAvailable();
+  const { width } = useWindowDimensions();
   return (
-    <Screen scroll strong bottom={30}>
-      {/* Top to bottom, nothing on top of anything: logo, the masked crew at the door, then the pitch. Scrolls on small phones. */}
-      <T style={{ fontFamily: F.displayX, fontSize: 26, letterSpacing: -0.5, marginTop: 6 }}>
+    <Screen strong bottom={14}>
+      {/* One screen, nothing on top of anything: logo, the crew (fills whatever height is left), the pitch, the buttons. */}
+      <T style={{ fontFamily: F.displayX, fontSize: 24, letterSpacing: -0.5, marginTop: 4 }}>
         tonight
-        <T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 26 }}>
+        <T c={C.pink} style={{ fontFamily: F.displayX, fontSize: 24 }}>
           .
         </T>
       </T>
-      <View style={styles.welcomeArt}>
+      {/* Exactly the screen's width, starting at its left edge, so the crew sits dead centre */}
+      <View style={[styles.welcomeArt, { width, marginLeft: -24 }]}>
         <Image source={ART.welcome.src} accessibilityLabel={ART.welcome.label} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-        <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0)', C.bg]} locations={[0, 0.7, 1]} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
+        <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0)', C.bg]} locations={[0, 0.72, 1]} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
       </View>
       <Rise>
-        <T v="display" style={{ fontSize: 40, lineHeight: 43 }}>
+        <T v="display" style={{ fontSize: 34, lineHeight: 37 }}>
           Adults.{'\n'}Clear intentions.{'\n'}No games.
         </T>
-        <View style={styles.memberPill}>
-          <Icon name="lock" size={13} color={C.pinkL} />
-          <T v="small" c={C.ink2} style={{ fontFamily: F.semi, letterSpacing: 0.4 }}>
+        <View style={[styles.memberPill, { marginTop: 10 }]}>
+          <Icon name="lock" size={12} color={C.pinkL} />
+          <T v="small" c={C.ink2} style={{ fontFamily: F.semi, letterSpacing: 0.4, fontSize: 11 }}>
             MEMBERS ONLY · BY APPLICATION
           </T>
         </View>
       </Rise>
-      <Rise delay={120} style={{ marginTop: 22, gap: 12 }}>
+      <Rise delay={120} style={{ marginTop: 14, gap: 8 }}>
         {[
-          ['spark', 'Every profile is reviewed by hand. Not everyone gets in.'],
+          ['spark', 'Reviewed by hand. Not everyone gets in.'],
           ['shieldCheck', 'Every face is live-verified. No bots.'],
-          ['filter', 'You set the boundaries. We match on them.'],
-          ['eyeOff', 'Nothing explicit reaches you without your yes.'],
-          ['lock', 'Screenshots are blocked. What happens here stays here.'],
+          ['filter', 'Your boundaries. We match on them.'],
+          ['eyeOff', 'Nothing explicit without your yes.'],
         ].map(([icon, text]) => (
-          <View key={text} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-            <Icon name={icon} size={22} color={C.blueL} />
-            <T c={C.ink2} style={{ flex: 1 }}>
+          <View key={text} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <Icon name={icon} size={18} color={C.blueL} />
+            <T c={C.ink2} style={{ flex: 1, fontSize: 14, lineHeight: 19 }} numberOfLines={1}>
               {text}
             </T>
           </View>
         ))}
       </Rise>
-      <Rise delay={240} style={{ marginTop: 28, gap: 10 }}>
-        <GradientButton title="Apply for membership" onPress={next} />
-        <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 6 }}>
+      <Rise delay={240} style={{ marginTop: 16, gap: 8 }}>
+        <GradientButton title="Apply for membership" onPress={next} height={52} />
+        <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 2 }}>
           Already a member?
         </T>
-        {apple ? <AppleButton kind="signIn" onPress={onRestore} /> : null}
-        <Pressable accessibilityRole="button" onPress={onEmail} style={styles.emailSignIn}>
-          <Icon name="send" size={17} color={C.ink} />
+        {apple ? <AppleButton kind="signIn" onPress={onRestore} style={{ height: 48 }} /> : null}
+        <Pressable accessibilityRole="button" onPress={onEmail} style={[styles.emailSignIn, { height: 48 }]}>
+          <Icon name="send" size={16} color={C.ink} />
           <T v="label" style={{ fontSize: 15 }}>
             Sign in with email
           </T>
         </Pressable>
-        <T v="small" c={C.faint} style={{ textAlign: 'center', marginTop: 8 }}>
-          18+ only. By continuing you agree to the Terms and Privacy Policy at fortunas.nl/tonight.
-        </T>
-        <T v="small" c={C.faint} style={{ textAlign: 'center', fontSize: 10, opacity: 0.6 }}>
-          {versionLabel()}
+        <T v="small" c={C.faint} style={{ textAlign: 'center', fontSize: 11, lineHeight: 14 }}>
+          18+ only. Terms and Privacy at fortunas.nl/tonight · {versionLabel()}
         </T>
       </Rise>
     </Screen>
@@ -163,7 +161,7 @@ function Vow({ vow, lit, isNext, onToggle }) {
         onToggle();
       }}
       onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
-      style={{ alignItems: 'center', paddingVertical: 6, paddingHorizontal: 8, opacity: lit ? 1 : 0.45 }}
+      style={{ alignItems: 'center', paddingVertical: 5, paddingHorizontal: 8, opacity: lit ? 1 : 0.45 }}
     >
       {lit ? (
         <LinearGradient
@@ -175,19 +173,21 @@ function Vow({ vow, lit, isNext, onToggle }) {
         />
       ) : null}
       {lit && burst ? <FireBurst key={burst} width={box.w} height={box.h} /> : null}
+      {/* One line per vow (flame or numeral beside the text), so the whole Code fits on one screen */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       {lit ? (
-        <Animated.View style={{ transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] }}>
+        <Animated.View style={{ width: 24, alignItems: 'flex-end', transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] }}>
           <FlameGlyph />
         </Animated.View>
       ) : (
-        <T v="small" c={C.muted} style={{ fontFamily: F.bold, letterSpacing: 3, height: 16 }}>
+        <T v="small" c={C.muted} style={{ fontFamily: F.bold, letterSpacing: 1, width: 24, textAlign: 'right' }}>
           {vow.n}
         </T>
       )}
       <Animated.Text
         style={{
           fontFamily: F.display,
-          fontSize: 17,
+          fontSize: 16,
           color: lit ? '#FFF3EA' : C.ink,
           textShadowColor: lit ? 'rgba(255,138,61,0.9)' : 'transparent',
           textShadowRadius: lit ? 14 : 0,
@@ -196,6 +196,8 @@ function Vow({ vow, lit, isNext, onToggle }) {
       >
         {vow.text}
       </Animated.Text>
+      <View style={{ width: 24 }} />
+      </View>
       {isNext ? <NextHint /> : null}
     </Pressable>
   );
@@ -276,45 +278,36 @@ export function Code({ next }) {
         <LinearGradient colors={[C.pink, C.orange, C.violet]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.emblemRing}>
           <View style={styles.emblemInner}>
             <Animated.View style={{ position: 'absolute', opacity: fire.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
-              <Icon name="flame" size={38} color={C.violetL} stroke={1.6} />
+              <Icon name="flame" size={30} color={C.violetL} stroke={1.6} />
             </Animated.View>
             <Animated.View style={{ opacity: fire }}>
-              <FlameGlyph size={40} />
+              <FlameGlyph size={32} />
             </Animated.View>
           </View>
         </LinearGradient>
       </Animated.View>
-      <T v="small" c={C.muted} style={{ marginTop: 14, letterSpacing: 4, fontFamily: F.semi }}>
+      <T v="small" c={C.muted} style={{ marginTop: 10, letterSpacing: 4, fontFamily: F.semi }}>
         BEFORE YOU ENTER
       </T>
-      <T v="title" style={{ fontSize: 32, textAlign: 'center', marginTop: 4, fontFamily: F.displayX }}>
+      <T v="title" style={{ fontSize: 28, textAlign: 'center', marginTop: 2, fontFamily: F.displayX }}>
         The Tonight Code
       </T>
       <T v="meta" c={C.muted} style={{ textAlign: 'center', marginTop: 4 }}>
         {sealed ? 'Sealed. Welcome in.' : all ? 'All seven vows taken. Now seal it.' : `${count} of 7 vows taken. Tap each to take it.`}
       </T>
       <VowProgress count={count} />
-      <View style={{ width: '100%', marginTop: 10 }}>
+      <View style={{ width: '100%', marginTop: 8 }}>
         {VOWS.map((v, i) => (
-          <View key={v.n}>
-            {i > 0 ? (
-              <View style={styles.orn}>
-                <View style={[styles.ornLine, lit[i] && lit[i - 1] && { backgroundColor: C.orange }]} />
-                <View style={[styles.ornDot, lit[i] && lit[i - 1] && { backgroundColor: C.orange }]} />
-                <View style={[styles.ornLine, lit[i] && lit[i - 1] && { backgroundColor: C.orange }]} />
-              </View>
-            ) : null}
-            <Vow vow={v} lit={lit[i]} isNext={i === nextIdx} onToggle={() => toggle(i)} />
-          </View>
+          <Vow key={v.n} vow={v} lit={lit[i]} isNext={i === nextIdx} onToggle={() => toggle(i)} />
         ))}
       </View>
-      <View style={{ height: 18 }} />
+      <View style={{ height: 12 }} />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Press and hold to seal the Tonight Code"
         onPressIn={startHold}
         onPressOut={stopHold}
-        style={{ width: 96, height: 96, alignItems: 'center', justifyContent: 'center', opacity: all ? 1 : 0.35 }}
+        style={{ width: 80, height: 80, alignItems: 'center', justifyContent: 'center', opacity: all ? 1 : 0.35 }}
       >
         <Animated.View
           pointerEvents="none"
@@ -326,7 +319,7 @@ export function Code({ next }) {
             },
           ]}
         />
-        <Svg width={96} height={96} viewBox="0 0 104 104" style={{ position: 'absolute' }}>
+        <Svg width={80} height={80} viewBox="0 0 104 104" style={{ position: 'absolute' }}>
           <Defs>
             <SvgGrad id="seal" x1="0" y1="0" x2="1" y2="1">
               <Stop offset="0" stopColor={FIRE[0]} />
@@ -350,15 +343,15 @@ export function Code({ next }) {
           />
         </Svg>
         <View style={[styles.sealInner, sealed && { backgroundColor: '#5A2412' }]}>
-          {sealed ? <Icon name="check" size={34} color="#FFD27A" stroke={2.6} /> : <Icon name="fingerprint" size={32} color={C.ink} stroke={1.5} />}
+          {sealed ? <Icon name="check" size={30} color="#FFD27A" stroke={2.6} /> : <Icon name="fingerprint" size={28} color={C.ink} stroke={1.5} />}
         </View>
       </Pressable>
-      <T v="label" c={C.ink2} style={{ marginTop: 8, letterSpacing: 1 }}>
+      <T v="label" c={C.ink2} style={{ marginTop: 6, letterSpacing: 1 }}>
         {sealed ? 'Sealed' : holding ? 'Keep holding…' : all ? 'Press and hold to seal' : 'Take all 7 vows first'}
       </T>
-      <Card tone="safe" style={{ marginTop: 14, alignItems: 'center', padding: 12, alignSelf: 'stretch' }}>
-        <StepArt name="code" height={150} style={{ marginTop: 0, borderRadius: 14 }} />
-        <T v="small" c={C.safeInk} style={{ textAlign: 'center', marginTop: 10, lineHeight: 18 }}>
+      <Card tone="safe" style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, alignSelf: 'stretch' }}>
+        <StepArt name="code" height={66} style={{ marginTop: 0, borderRadius: 12 }} />
+        <T v="small" c={C.safeInk} style={{ flex: 1, lineHeight: 17 }}>
           Ward, our watchdog, guards this Code to protect our members. Break a vow and you’re out. Anything unsafe is one strike.
         </T>
       </Card>
@@ -1008,8 +1001,8 @@ const styles = StyleSheet.create({
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.line, marginTop: 4 },
   tipPlus: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.pinkBg, alignItems: 'center', justifyContent: 'center' },
   emailSignIn: { height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: '#3A3439', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  // Edge to edge (the screen has 24 side padding); 2:1 keeps the headline and "Apply" on screen on a normal iPhone.
-  welcomeArt: { marginHorizontal: -24, marginTop: 10, marginBottom: 6, aspectRatio: 2, overflow: 'hidden' },
+  // The crew takes whatever height is left on the screen (more on tall phones, less on small ones).
+  welcomeArt: { flex: 1, minHeight: 0, maxHeight: 300, marginTop: 6, marginBottom: 4, overflow: 'hidden' },
   memberPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1024,11 +1017,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   emblem: { shadowColor: C.orange, shadowOffset: { width: 0, height: 0 }, borderRadius: 40 },
-  emblemRing: { width: 78, height: 78, borderRadius: 39, padding: 2 },
-  emblemInner: { flex: 1, borderRadius: 37, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
-  orn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginVertical: 1 },
-  ornLine: { width: 28, height: 1, backgroundColor: C.line2 },
-  ornDot: { width: 5, height: 5, transform: [{ rotate: '45deg' }], backgroundColor: '#4A4148' },
+  emblemRing: { width: 60, height: 60, borderRadius: 30, padding: 2 },
+  emblemInner: { flex: 1, borderRadius: 28, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   hint: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1043,8 +1033,8 @@ const styles = StyleSheet.create({
   },
   progress: { flexDirection: 'row', gap: 5, marginTop: 12, width: '70%' },
   progSeg: { flex: 1, height: 5, borderRadius: 3 },
-  sealGlow: { position: 'absolute', width: 96, height: 96, borderRadius: 48, backgroundColor: 'rgba(255,138,61,0.35)' },
-  sealInner: { width: 76, height: 76, borderRadius: 38, backgroundColor: '#2A1530', alignItems: 'center', justifyContent: 'center' },
+  sealGlow: { position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,138,61,0.35)' },
+  sealInner: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#2A1530', alignItems: 'center', justifyContent: 'center' },
   lbl: { marginTop: 20, marginBottom: 8 },
   input: {
     height: 52,
