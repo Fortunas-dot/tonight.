@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { GradientButton, LiquidBg, Photo, T, success, tap, thud } from '../ui';
-import { FilterSheet, activeCount, applyFilters, filterChips } from './DiscoverFilters';
+import { FilterSheet, activeCount, applyFilters, filterChips, isLive } from './DiscoverFilters';
 import { DETAILS } from '../data';
 
 function Label({ children, color = C.pinkL, icon }) {
@@ -401,6 +401,14 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
       {person ? (
         <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
           <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+            {filters.liveOnly && !isLive(person) ? (
+              <View style={styles.liveOut}>
+                <View style={[styles.liveDot, { width: 7, height: 7 }]} />
+                <T v="small" c={C.ink2} style={{ flex: 1 }}>
+                  {deck.some(isLive) ? 'You’ve seen everyone who’s live. Here’s who else is around.' : 'No one is live right now. Here’s who else is around.'}
+                </T>
+              </View>
+            ) : null}
             <PersonPage
               key={person.id}
               person={person}
@@ -484,6 +492,7 @@ const styles = StyleSheet.create({
   liveBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: '#3A2A2E', marginRight: 8 },
   liveBtnOn: { borderColor: '#2BC48A', backgroundColor: 'rgba(43,196,138,0.12)' },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.muted },
+  liveOut: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line2 },
   filterBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
   badge: {
     position: 'absolute',
