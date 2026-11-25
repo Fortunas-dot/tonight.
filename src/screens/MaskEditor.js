@@ -19,9 +19,9 @@ const OUT_H = Math.round((OUT_W * VH) / VW);
 // The masks, drawn around the wearer's eyes: the eye holes sit 72 units apart, centred on (171, 225).
 // A real face is about 2.4 eye-gaps wide and the top of the head about 1.7 eye-gaps above the eyes.
 
-// Eye mask with almond eye holes (even-odd fill keeps the holes see-through).
+// Eye mask with soft almond eye openings, filled light grey so the eyes stay hidden.
 const BODY = 'M72 194C98 196 136 188 171 205C206 188 244 196 270 194C266 234 246 264 212 265C193 266 182 255 171 248C160 255 149 266 130 265C96 264 76 234 72 194Z';
-const HOLES = 'M112 227Q135 208 158 227Q135 241 112 227Z M184 227Q207 208 230 227Q207 241 184 227Z';
+const HOLES = 'M108 228C111 215 153 211 161 225C157 239 113 242 108 228Z M234 228C231 215 189 211 181 225C185 239 229 242 234 228Z';
 const EYES = `${BODY} ${HOLES}`;
 // The band a headpiece sits on, following the top of the head.
 const BAND = 'M86 132Q171 58 256 132';
@@ -57,6 +57,14 @@ function MaskDefs() {
         <Stop offset="0" stopColor="#7B3CFF" />
         <Stop offset="1" stopColor="#E3C8FF" />
       </SvgLinear>
+      <SvgLinear id="lens" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#A9A3A8" />
+        <Stop offset="0.45" stopColor="#C9C4C8" />
+        <Stop offset="1" stopColor="#BDB8BC" />
+      </SvgLinear>
+      <ClipPath id="eyeOpenings">
+        <Path d={HOLES} />
+      </ClipPath>
       <ClipPath id="maskLeftHalf">
         <Rect x={-800} y={-800} width={971.6} height={2000} />
       </ClipPath>
@@ -81,9 +89,15 @@ function EyeMask({ fill, trim, shine = 0.22 }) {
   return (
     <G>
       <Shadow d={EYES} />
-      <Path d={EYES} fillRule="evenodd" fill={fill} stroke={trim} strokeWidth={3} strokeLinejoin="round" />
-      {/* inner rim around the eyes */}
-      <Path d={HOLES} fill="none" stroke={trim} strokeWidth={1.6} opacity={0.9} />
+      <Path d={EYES} fillRule="evenodd" fill={fill} />
+      {/* trim around the outside only: a trim around the eyes looked like goggles */}
+      <Path d={BODY} fill="none" stroke={trim} strokeWidth={3} strokeLinejoin="round" />
+      {/* the eyes hidden behind light grey, with the mask's edge shading its top so it has depth */}
+      <Path d={HOLES} fill="url(#lens)" />
+      <G clipPath="url(#eyeOpenings)">
+        <Path d={HOLES} fill="none" stroke="#000000" strokeWidth={6} opacity={0.22} transform="translate(0 2)" />
+      </G>
+      <Path d={HOLES} fill="none" stroke={trim} strokeWidth={1.1} opacity={0.55} />
       {/* satin shine along the top edge */}
       <Path d="M84 202C106 200 142 196 166 208M176 208C200 196 236 200 258 202" fill="none" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" opacity={shine} />
     </G>

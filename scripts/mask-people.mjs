@@ -9,7 +9,7 @@
 import { Buffer } from 'node:buffer';
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Resvg } from '@resvg/resvg-js';
@@ -17,7 +17,7 @@ import { loadPeople } from './generate-people.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const fitSrc = await readFile(join(root, 'src', 'faceFit.js'), 'utf8');
-const { fitMask, ART_BRIDGE_X, ART_EYE_Y, ART_BAND_Y } = await import(`data:text/javascript;base64,${Buffer.from(fitSrc).toString('base64')}`);
+const { fitMask, earsOf, ART_BRIDGE_X, ART_EYE_Y, ART_BAND_Y } = await import(`data:text/javascript;base64,${Buffer.from(fitSrc).toString('base64')}`);
 
 const VW = 342;
 const VH = 430;
@@ -26,7 +26,7 @@ const OUT_H = Math.round((OUT_W * VH) / VW);
 
 // ─────────── Mask art (same paths as MaskEditor.js) ───────────
 const BODY = 'M72 194C98 196 136 188 171 205C206 188 244 196 270 194C266 234 246 264 212 265C193 266 182 255 171 248C160 255 149 266 130 265C96 264 76 234 72 194Z';
-const HOLES = 'M112 227Q135 208 158 227Q135 241 112 227Z M184 227Q207 208 230 227Q207 241 184 227Z';
+const HOLES = 'M108 228C111 215 153 211 161 225C157 239 113 242 108 228Z M234 228C231 215 189 211 181 225C185 239 229 242 234 228Z';
 const EYES = `${BODY} ${HOLES}`;
 const BAND = 'M86 132Q171 58 256 132';
 
@@ -37,14 +37,19 @@ const DEFS = `
 <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE6A3"/><stop offset="0.5" stop-color="#E8B64C"/><stop offset="1" stop-color="#A8761E"/></linearGradient>
 <linearGradient id="earInner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9CC6"/><stop offset="1" stop-color="#E0246F"/></linearGradient>
 <linearGradient id="feather" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7B3CFF"/><stop offset="1" stop-color="#E3C8FF"/></linearGradient>
+<linearGradient id="lens" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9A3A8"/><stop offset="0.45" stop-color="#C9C4C8"/><stop offset="1" stop-color="#BDB8BC"/></linearGradient>
+<clipPath id="eyeOpenings"><path d="${HOLES}"/></clipPath>
 <clipPath id="maskLeftHalf"><rect x="-800" y="-800" width="971.6" height="2000"/></clipPath>
 <clipPath id="maskRightHalf"><rect x="170.4" y="-800" width="1000" height="2000"/></clipPath>
 <radialGradient id="frost" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2A2430" stop-opacity="0.98"/><stop offset="0.8" stop-color="#2A2430" stop-opacity="0.95"/><stop offset="1" stop-color="#2A2430" stop-opacity="0.75"/></radialGradient>`;
 
 const shadow = (d) => `<path d="${d}" fill="#000000" opacity="0.32" transform="translate(0 5)" fill-rule="evenodd"/>`;
 const eyeMask = (fill, trim, shine = 0.22) => `<g>${shadow(EYES)}
-<path d="${EYES}" fill-rule="evenodd" fill="${fill}" stroke="${trim}" stroke-width="3" stroke-linejoin="round"/>
-<path d="${HOLES}" fill="none" stroke="${trim}" stroke-width="1.6" opacity="0.9"/>
+<path d="${EYES}" fill-rule="evenodd" fill="${fill}"/>
+<path d="${BODY}" fill="none" stroke="${trim}" stroke-width="3" stroke-linejoin="round"/>
+<path d="${HOLES}" fill="url(#lens)"/>
+<g clip-path="url(#eyeOpenings)"><path d="${HOLES}" fill="none" stroke="#000" stroke-width="6" opacity="0.22" transform="translate(0 2)"/></g>
+<path d="${HOLES}" fill="none" stroke="${trim}" stroke-width="1.1" opacity="0.55"/>
 <path d="M84 202C106 200 142 196 166 208M176 208C200 196 236 200 258 202" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="${shine}"/></g>`;
 const lace = (c) => `<g fill="none" stroke="${c}" stroke-width="1.3" opacity="0.75"><path d="M98 246q14 12 30 12M244 246q-14 12-30 12"/>
 <circle cx="104" cy="252" r="2.4"/><circle cx="116" cy="258" r="2.4"/><circle cx="238" cy="252" r="2.4"/><circle cx="226" cy="258" r="2.4"/><circle cx="171" cy="238" r="2"/></g>`;
@@ -89,10 +94,10 @@ ${eyeMask('url(#velvetViolet)', 'url(#gold)', 0.28)}
 };
 
 const half = (p, sx) => `translate(${p.x} ${p.y}) rotate(${p.r || 0}) scale(${sx} ${p.sy}) translate(${-ART_BRIDGE_X} ${-ART_EYE_Y})`;
+// Same as MaskEditor's earsTransform: the ears' own offset and scale from fitMask.
 const earsAt = (p) => {
-  const s = (p.sl + p.sr) / 2;
-  const top = p.top ?? -(ART_EYE_Y - ART_BAND_Y) * p.sy;
-  return `translate(${p.x} ${p.y}) rotate(${p.r || 0}) translate(0 ${top}) scale(${s}) translate(${-ART_BRIDGE_X} ${-ART_BAND_Y})`;
+  const e = earsOf(p);
+  return `translate(${p.x + e.ex} ${p.y + e.ey}) rotate(${p.r || 0}) scale(${e.es}) translate(${-ART_BRIDGE_X} ${-ART_BAND_Y})`;
 };
 
 function fitted(place, mask) {
@@ -117,7 +122,26 @@ function placeFor(face) {
     eyeL = { x: box.x + box.w * 0.31, y: box.y + box.h * 0.4 };
     eyeR = { x: box.x + box.w * 0.69, y: box.y + box.h * 0.4 };
   }
-  return fitMask({ eyeL, eyeR, box, oval: [], bridge: [] });
+  return fitMask({ eyeL, eyeR, box, oval: face.edges ? outline(eyeL, eyeR, face.edges) : [], bridge: [] });
+}
+
+// A face outline like ML Kit's, from hand-measured edges: where the face's edge crosses the eye line, in eye gaps
+// from the middle between the eyes ([left, right], e.g. [-0.9, 1.2] on a head turned to the right). The outline is
+// an ellipse from forehead (1.5 gaps above the eyes) to chin (1.9 below), so fitMask gets each side's width right.
+function outline(eyeL, eyeR, [tl, tr]) {
+  const gap = Math.hypot(eyeR.x - eyeL.x, eyeR.y - eyeL.y);
+  const roll = Math.atan2(eyeR.y - eyeL.y, eyeR.x - eyeL.x);
+  const mid = { x: (eyeL.x + eyeR.x) / 2, y: (eyeL.y + eyeR.y) / 2 };
+  const cy = 0.2 * gap;
+  const ry = 1.7 * gap;
+  const rx = (((tr - tl) / 2) * gap) / Math.sqrt(1 - (cy / ry) ** 2);
+  const cx = ((tl + tr) / 2) * gap;
+  return Array.from({ length: 36 }, (_, i) => {
+    const a = (i / 36) * 2 * Math.PI;
+    const u = cx + rx * Math.cos(a);
+    const v = cy + ry * Math.sin(a);
+    return { x: mid.x + u * Math.cos(roll) - v * Math.sin(roll), y: mid.y + u * Math.sin(roll) + v * Math.cos(roll) };
+  });
 }
 
 const { people, show } = await loadPeople();
@@ -129,7 +153,9 @@ const jobs = todo.flatMap((p) =>
     .map((n) => ({ p, n, src: join(root, 'assets', 'demo-raw', p.slug, `${n}.jpg`), file: join(root, 'assets', 'demo-raw', p.slug, `rough-${n}.jpg`) }))
     .filter((j) => existsSync(j.src)),
 );
-execFileSync('python', ['-I', join(root, 'scripts', 'roughen.py'), ...jobs.flatMap((j) => [j.src, j.file])]);
+// Only when the photo is new or changed: the finish is the same every run, and the hand-measured faces depend on it.
+const stale = jobs.filter((j) => !existsSync(j.file) || statSync(j.file).mtimeMs < statSync(j.src).mtimeMs);
+if (stale.length) execFileSync('python', ['-I', join(root, 'scripts', 'roughen.py'), ...stale.flatMap((j) => [j.src, j.file])]);
 const faces = JSON.parse(execFileSync('python', ['-I', join(root, 'scripts', 'find-faces.py'), ...jobs.map((j) => j.file)], { encoding: 'utf8', maxBuffer: 1 << 24 }));
 // Hand-measured faces win over detection (scripts/mask-overrides.json, keyed "<slug>/rough-<n>.jpg", rough-photo pixels).
 const overrides = JSON.parse(await readFile(join(root, 'scripts', 'mask-overrides.json'), 'utf8'));
