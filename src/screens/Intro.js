@@ -3,7 +3,7 @@
 // the ears perk up, a shine slides over the satin, "tonight." writes in with the pink dot dropping into place,
 // and everything fades into the app.
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Image, StyleSheet } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Image, Platform, StyleSheet } from 'react-native';
 import Svg, { Defs, Ellipse, G, LinearGradient as SvgGrad, Path, RadialGradient, Stop, Circle } from 'react-native-svg';
 import { C, F } from '../theme';
 import { T, tap } from '../ui';
@@ -52,6 +52,8 @@ function Ears() {
   );
 }
 
+const SHINE = 'M96 290C140 262 196 262 230 280M282 280C316 262 372 262 416 290';
+
 function Face({ shine }) {
   return (
     <Svg width={MASK} height={MASK} viewBox="0 0 512 512">
@@ -66,7 +68,12 @@ function Face({ shine }) {
         <Circle cx={370} cy={364} r={6} />
       </G>
       {/* the shine that slides over the satin */}
-      <AnimatedPath d="M96 290C140 262 196 262 230 280M282 280C316 262 372 262 416 290" fill="none" stroke="#FFFFFF" strokeWidth={7} strokeLinecap="round" opacity={shine} />
+      {/* react-native-svg can't animate a path on web, so the web preview gets a still shine */}
+      {Platform.OS === 'web' ? (
+        <Path d={SHINE} fill="none" stroke="#FFFFFF" strokeWidth={7} strokeLinecap="round" opacity={0.35} />
+      ) : (
+        <AnimatedPath d={SHINE} fill="none" stroke="#FFFFFF" strokeWidth={7} strokeLinecap="round" opacity={shine} />
+      )}
     </Svg>
   );
 }
@@ -100,7 +107,14 @@ export function Intro({ onDone }) {
 
   useEffect(() => {
     let cancelled = false;
-    const finish = () => !cancelled && onDone();
+    let done = false;
+    const finish = () => {
+      if (cancelled || done) return;
+      done = true;
+      onDone();
+    };
+    // Safety net: if an animation never reports back (a stalled frame loop, a background tab), still open the app.
+    const safety = setTimeout(finish, 6000);
     AccessibilityInfo.isReduceMotionEnabled()
       .catch(() => false)
       .then((reduce) => {
@@ -140,6 +154,7 @@ export function Intro({ onDone }) {
       });
     return () => {
       cancelled = true;
+      clearTimeout(safety);
     };
   }, [v, onDone]);
 
