@@ -2,3 +2,14 @@ node_modules/
 .expo/
 design-src/
 *.md
+
+# Secrets and local-only files: never upload them to EAS build servers.
+.env
+.env.*
+*.p8
+*.p12
+*.key
+*.mobileprovision
+scripts/.demo-sessions.json
+assets/demo-raw/
+dist/

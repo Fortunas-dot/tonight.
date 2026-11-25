@@ -1,4 +1,5 @@
 // Everything that talks to Supabase. Screens get plain objects in the same shape as the sample data.
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File } from 'expo-file-system';
 import { supabase } from './lib/supabase';
 
@@ -78,9 +79,46 @@ export function onAuthLink(cb) {
   return () => authLinkListeners.delete(cb);
 }
 
+// Only a link this phone asked for may sign it in. Without this, any tonight://auth link (from a web page or a
+// message) could swap the phone onto someone else's account, and an anonymous account would be lost for good.
+// Kept on disk because the app may be closed while the person is in their mail app.
+const LINK_KEY = 'tonight.expectedAuthLink';
+const LINK_TTL = 60 * 60 * 1000; // email links are valid for an hour
+
+async function expectAuthLink(kind) {
+  try {
+    await AsyncStorage.setItem(LINK_KEY, JSON.stringify({ kind, uid, at: Date.now() }));
+  } catch {}
+}
+
+async function takeExpectedAuthLink() {
+  try {
+    const raw = await AsyncStorage.getItem(LINK_KEY);
+    const exp = raw ? JSON.parse(raw) : null;
+    return exp && Date.now() - exp.at < LINK_TTL ? exp : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The account id inside an access token (not trusted for anything but this comparison; the server checks it). */
+function tokenUserId(jwt) {
+  try {
+    const b64 = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(globalThis.atob(b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '='))).sub || null;
+  } catch {
+    return null;
+  }
+}
+
 /** Handles tonight://auth#access_token=…&refresh_token=…&type=… (or ?code=…). Returns { type } or { error } or null. */
 export async function handleAuthLink(url) {
   if (!url || !url.startsWith('tonight://auth')) return null;
+  const expected = await takeExpectedAuthLink();
+  if (!expected) {
+    console.warn('[backend] ignored an email link this phone did not ask for');
+    return null;
+  }
   const params = {};
   const part = url.split(/[?#]/).slice(1).join('&');
   for (const kv of part.split('&')) {
@@ -90,6 +128,11 @@ export async function handleAuthLink(url) {
   let out;
   if (params.error || params.error_description) out = { error: params.error_code || params.error || 'failed', message: params.error_description };
   else if (params.access_token && params.refresh_token) {
+    // Confirming the email of this account must stay on this account.
+    if (expected.kind === 'keep' && expected.uid && tokenUserId(params.access_token) !== expected.uid) {
+      console.warn('[backend] ignored an email link for another account');
+      return null;
+    }
     const { data, error } = await supabase.auth.setSession({ access_token: params.access_token, refresh_token: params.refresh_token });
     out = error ? { error: 'failed' } : { type: params.type || 'link' };
     if (data?.user) uid = data.user.id;
@@ -98,6 +141,7 @@ export async function handleAuthLink(url) {
     out = error ? { error: 'failed' } : { type: params.type || 'link' };
     if (data?.user) uid = data.user.id;
   } else return null;
+  if (!out.error) await AsyncStorage.removeItem(LINK_KEY).catch(() => {});
   authLinkListeners.forEach((cb) => cb(out));
   return out;
 }
@@ -124,6 +168,7 @@ export async function accountLinks() {
 
 /** Step 1 of keeping the account with email: sends a 6-digit code to that address. Returns 'sent' or an error kind. */
 export async function startEmailLink(email) {
+  await expectAuthLink('keep');
   const { error } = await supabase.auth.updateUser({ email: email.trim().toLowerCase() }, { emailRedirectTo: AUTH_REDIRECT });
   if (error) {
     console.warn('[backend] email link failed', error.code, error.message);
@@ -162,6 +207,7 @@ export async function signInEmail(email, password) {
 
 /** Forgot password: a 6-digit login code, only for existing accounts. */
 export async function sendLoginCode(email) {
+  await expectAuthLink('login');
   const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: false, emailRedirectTo: AUTH_REDIRECT } });
   if (error) {
     console.warn('[backend] login code failed', error.code, error.message);
@@ -811,9 +857,8 @@ export async function unmatch(matchId) {
   return !error;
 }
 
-/** Reports a Lounge post (and its author, when it has one). */
+/** Reports a Lounge post. The server adds its author for the moderators (members can't see who wrote a post). */
 export async function reportPost(postId, reason = 'Reported from the Lounge') {
   if (!uid) return;
-  const { data: post } = await supabase.from('posts').select('author').eq('id', postId).maybeSingle();
-  await supabase.from('reports').insert({ reporter: uid, target: post?.author || null, post_id: postId, reason });
+  await supabase.from('reports').insert({ reporter: uid, post_id: postId, reason });
 }
