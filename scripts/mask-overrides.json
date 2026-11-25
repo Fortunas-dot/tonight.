@@ -1,0 +1,5 @@
+{
+  "_": "Hand-measured faces (photo pixels) for photos where scripts/find-faces.py picks the wrong spot.",
+  "lotte/1.jpg": { "box": { "x": 335, "y": 305, "w": 110, "h": 135 }, "eyes": [{ "x": 368, "y": 368 }, { "x": 412, "y": 365 }] },
+  "maya/2.jpg": { "box": { "x": 445, "y": 290, "w": 125, "h": 170 }, "eyes": [{ "x": 506, "y": 352 }, { "x": 549, "y": 350 }] }
+}

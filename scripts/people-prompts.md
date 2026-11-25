@@ -22,6 +22,7 @@ node scripts/seed-demo.mjs                         # create / update the demo pr
 - A few metres away, the person a third to half of the frame, background in focus. Centred close-ups look AI.
 - Hands out of the frame, in pockets or in the lap. Held objects grow extra fingers.
 - Plain smooth fabrics; no knitwear, lace or small prints. Plain walls; no rows of identical things or crowds.
+- Masks: "- **Mask:**" picks the app mask (bunny, masq, kitten, frost) that scripts/mask-people.mjs burns into every photo.
 - Theme: Tonight is about going out. Dressed up for the evening, bars, rooftops, flash photos — flirty, never explicit.
 
 ## Settings
@@ -32,6 +33,7 @@ node scripts/seed-demo.mjs                         # create / update the demo pr
 
 ## Lotte (lotte)
 
+- **Mask:** bunny
 - **Gender:** Woman
 - **Age:** 28
 - **Who:** a pretty 28-year-old Dutch woman with straight blonde shoulder-length hair and light freckles
@@ -51,6 +53,7 @@ node scripts/seed-demo.mjs                         # create / update the demo pr
 
 ## Ines (ines)
 
+- **Mask:** masq
 - **Gender:** Woman
 - **Age:** 26
 - **Who:** a pretty 26-year-old Spanish woman with long dark brown wavy hair and dark eyes
@@ -70,6 +73,7 @@ node scripts/seed-demo.mjs                         # create / update the demo pr
 
 ## Maya (maya)
 
+- **Mask:** kitten
 - **Gender:** Woman
 - **Age:** 31
 - **Who:** a pretty 31-year-old Surinamese-Dutch woman with dark brown skin and long black box braids
@@ -89,6 +93,7 @@ node scripts/seed-demo.mjs                         # create / update the demo pr
 
 ## Sofie (sofie)
 
+- **Mask:** masq
 - **Gender:** Woman
 - **Age:** 33
 - **Who:** a pretty 33-year-old Belgian woman with wavy auburn shoulder-length hair and green eyes
@@ -108,6 +113,7 @@ node scripts/seed-demo.mjs                         # create / update the demo pr
 
 ## Daan (daan)
 
+- **Mask:** masq
 - **Gender:** Man
 - **Age:** 30
 - **Who:** a handsome 30-year-old Dutch man with short dark blond hair and a short trimmed beard

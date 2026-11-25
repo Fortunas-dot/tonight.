@@ -80,16 +80,24 @@ async function seed() {
   const ids = [];
   for (const p of people) {
     const dir = join(root, 'assets', 'demo-raw', p.slug);
-    const files = ['1.jpg', ...SHOTS.map((_, i) => `${i + 2}.jpg`)].filter((f) => existsSync(join(dir, f)));
+    // The masked version (scripts/mask-people.mjs) when there is one, like a member who masked their photos.
+    const files = ['1', ...SHOTS.map((_, i) => `${i + 2}`)]
+      .map((n) => (existsSync(join(dir, `masked-${n}.png`)) ? `masked-${n}.png` : `${n}.jpg`))
+      .filter((f) => existsSync(join(dir, f)));
     if (!files.length) { console.log(`${p.name}: no photos yet — run generate-people.mjs first`); continue; }
     const { client, id } = await signIn(p.slug);
     const paths = [];
     for (const f of files) {
       const path = `${id}/demo-${f}`;
-      const { error } = await client.storage.from('photos').upload(path, await readFile(join(dir, f)), { contentType: 'image/jpeg', upsert: true });
+      const contentType = f.endsWith('.png') ? 'image/png' : 'image/jpeg';
+      const { error } = await client.storage.from('photos').upload(path, await readFile(join(dir, f)), { contentType, upsert: true });
       if (error) throw new Error(`${p.name} ${f}: ${error.message}`);
       paths.push(path);
     }
+    // Remove photos no longer on the profile (the bare face once a mask is added).
+    const { data: stored } = await client.storage.from('photos').list(id, { limit: 100 });
+    const stale = (stored || []).map((s) => `${id}/${s.name}`).filter((s) => !paths.includes(s));
+    if (stale.length) await client.storage.from('photos').remove(stale);
     const { error } = await client.from('profiles').upsert(rowFor(p, id, paths));
     if (error) throw new Error(`${p.name}: ${error.message}`);
     await client.from('profile_private').upsert({ user_id: id, settings: {}, updated_at: new Date().toISOString() });
