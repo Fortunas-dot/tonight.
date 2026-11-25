@@ -517,6 +517,7 @@ export default function App() {
             onLike={like}
             onReport={(person) => person.real && api.report(person.id, 'Reported from Discover')}
             onBlock={(person) => person.real && api.block(person.id).then(refresh)}
+            onGoLive={(until) => setProfile((p) => ({ ...p, liveUntil: until }))}
           />
         ),
         likes: <Likes people={likesYou} showExamples blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,

@@ -303,7 +303,8 @@ async function saveProfileNow(profile, onboarded) {
     verified: !!profile.verified,
     discretion: profile.discretion ?? {},
     onboarded: !!onboarded,
-    live_until: onboarded ? new Date(Date.now() + 6 * 3600 * 1000).toISOString() : null,
+    // "Go live tonight" is your choice (Discover top bar); it ends by itself.
+    live_until: onboarded && profile.liveUntil && Date.parse(profile.liveUntil) > Date.now() ? profile.liveUntil : null,
   };
   const { error } = await supabase.from('profiles').upsert(row);
   if (!error) {
@@ -350,6 +351,7 @@ export async function loadMyProfile() {
       country: data.country,
       city: data.city || priv?.hidden_city || null,
       settings: priv?.settings || {},
+      liveUntil: data.live_until || null,
       details: data.details || {},
       prompts: data.prompts || [],
       prompt: data.prompt,

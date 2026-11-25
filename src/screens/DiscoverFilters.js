@@ -12,7 +12,7 @@ import { Grabber, useSwipeDown } from '../sheet';
 const LANGUAGES = DETAILS.find((d) => d.key === 'languages').options;
 const HOSTS = ['I can host', 'Sometimes'];
 
-export const DEFAULT_FILTERS = { ageMin: 18, ageMax: 60, where: 'anywhere', verifiedOnly: false, intents: [], canHost: false, languages: [] };
+export const DEFAULT_FILTERS = { ageMin: 18, ageMax: 60, where: 'anywhere', verifiedOnly: false, intents: [], canHost: false, languages: [], sort: 'fit', liveOnly: false };
 const SHOW = ['Women', 'Men', 'Non-binary', 'Couples'];
 const WHERE = [
   { id: 'anywhere', label: 'Anywhere' },
@@ -36,7 +36,8 @@ const same = (a, b) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLower
 
 /** Applies the filters. Example people (real: false) skip the location filter, since they have no real place. */
 export function applyFilters(deck, f, me) {
-  return deck.filter((p) => {
+  const list = deck.filter((p) => {
+    if (f.liveOnly && p.real && !p.hereTonight) return false;
     const age = Number(p.age);
     if (age && (age < f.ageMin || age > f.ageMax)) return false;
     if (f.verifiedOnly && p.real && !p.verified) return false;
@@ -47,6 +48,15 @@ export function applyFilters(deck, f, me) {
     if (f.languages?.length && !(p.details?.languages || []).some((l) => f.languages.includes(l))) return false;
     return true;
   });
+  // Best fit: here tonight first, then most boundaries in common. Newest keeps the server's order.
+  if ((f.sort || 'fit') === 'fit') {
+    const score = (p) => (p.hereTonight ? 100 : 0) + (p.both || []).length * 10 + (p.verified ? 1 : 0);
+    return list
+      .map((p, i) => [p, i])
+      .sort((a, b) => score(b[0]) - score(a[0]) || a[1] - b[1])
+      .map(([p]) => p);
+  }
+  return list;
 }
 
 /** Short labels for the chips under the top bar. */

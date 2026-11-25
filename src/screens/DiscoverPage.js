@@ -283,7 +283,9 @@ function PersonPage({ person, me, blurAll, onReport, onBlock, onJump }) {
   );
 }
 
-export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, onReport, onBlock }) {
+const clock = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, onReport, onBlock, onGoLive }) {
   const insets = useSafeAreaInsets();
   const [i, setI] = useState(0);
   const [sheet, setSheet] = useState(false);
@@ -295,6 +297,25 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
   const seenAll = deck.length > 0 && i >= deck.length;
   const person = deck.length && !seenAll ? deck[i] : null;
   const count = activeCount(filters);
+  const [nowMs] = useState(() => Date.now());
+  const live = !!profile?.liveUntil && Date.parse(profile.liveUntil) > nowMs;
+  const goLive = () => {
+    if (live) {
+      Alert.alert('Stop being live?', 'You stay in Discover, just without the “Here tonight” badge.', [
+        { text: 'Keep it on', style: 'cancel' },
+        { text: 'Stop', style: 'destructive', onPress: () => onGoLive?.(null) },
+      ]);
+      return;
+    }
+    success();
+    // Six hours, the length of a night out.
+    onGoLive?.(new Date(Date.now() + 6 * 3600 * 1000).toISOString());
+  };
+  const setFilter = (patch) => {
+    tap();
+    onFilters({ ...filters, ...patch });
+    setI(0);
+  };
 
   const next = (liked) => {
     if (!person) return;
@@ -321,6 +342,17 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
               .
             </T>
           </T>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={live ? `Live until ${clock(profile.liveUntil)}, tap to stop` : 'Go live tonight'}
+            onPress={goLive}
+            style={[styles.liveBtn, live && styles.liveBtnOn]}
+          >
+            <View style={[styles.liveDot, live && { backgroundColor: '#2BC48A' }]} />
+            <T v="small" c={live ? C.ink : C.ink2} style={{ fontFamily: F.semi }}>
+              {live ? `Live · ${clock(profile.liveUntil)}` : 'Go live tonight'}
+            </T>
+          </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={count ? `Filters, ${count} on` : 'Filters'} onPress={() => setSheet(true)} style={styles.filterBtn}>
             <Icon name="filter" size={20} />
             {count ? (
@@ -333,6 +365,28 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
           </Pressable>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingHorizontal: 16, paddingBottom: 10 }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Sorted by ${(filters.sort || 'fit') === 'fit' ? 'best fit' : 'newest'}, tap to change`}
+            onPress={() => setFilter({ sort: (filters.sort || 'fit') === 'fit' ? 'new' : 'fit' })}
+            style={[styles.chip, styles.chipOn]}
+          >
+            <Icon name={(filters.sort || 'fit') === 'fit' ? 'spark' : 'clock'} size={13} color={C.ink} />
+            <T v="small" c={C.ink} style={{ fontFamily: F.semi }}>
+              {(filters.sort || 'fit') === 'fit' ? 'Best fit' : 'Newest'}
+            </T>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: !!filters.liveOnly }}
+            onPress={() => setFilter({ liveOnly: !filters.liveOnly })}
+            style={[styles.chip, filters.liveOnly && styles.chipOn]}
+          >
+            <View style={[styles.liveDot, { width: 7, height: 7 }, filters.liveOnly && { backgroundColor: '#2BC48A' }]} />
+            <T v="small" c={filters.liveOnly ? C.ink : C.muted} style={{ fontFamily: filters.liveOnly ? F.semi : F.medium }}>
+              Here tonight
+            </T>
+          </Pressable>
           {filterChips(filters, profile?.show).map((c) => (
             <Pressable key={c.id} accessibilityRole="button" onPress={() => setSheet(true)} style={[styles.chip, c.on && styles.chipOn]}>
               <T v="small" c={c.on ? C.ink : C.muted} style={{ fontFamily: c.on ? F.semi : F.medium }} numberOfLines={1}>
@@ -427,6 +481,9 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
 
 const styles = StyleSheet.create({
   top: { backgroundColor: 'rgba(14,12,16,0.92)', borderBottomWidth: 1, borderBottomColor: C.line, zIndex: 5 },
+  liveBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: '#3A2A2E', marginRight: 8 },
+  liveBtnOn: { borderColor: '#2BC48A', backgroundColor: 'rgba(43,196,138,0.12)' },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.muted },
   filterBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
   badge: {
     position: 'absolute',
