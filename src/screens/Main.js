@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
-import { PEOPLE, VOWS, personById } from '../data';
+import { GUIDES, PEOPLE, VOWS, personById } from '../data';
 import { versionLabel } from '../version';
 import { completeness } from '../completeness';
 import * as api from '../backend';
@@ -354,6 +354,17 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
   useEffect(() => {
     if (chat.real) api.markRead(chat.matchId);
   }, [chat.real, chat.matchId, msgCount]);
+  // Guides you both saved to your wishlist (the server only ever returns the overlap).
+  const [bothIds, setBothIds] = useState([]);
+  useEffect(() => {
+    if (!chat.real || !chat.matchId) return undefined;
+    let alive = true;
+    api.sharedWishlist(chat.matchId).then((ids) => alive && setBothIds(ids));
+    return () => {
+      alive = false;
+    };
+  }, [chat.real, chat.matchId]);
+  const both = GUIDES.filter((g) => bothIds.includes(g.id));
   // Re-check "typing…" every couple of seconds so it disappears when they stop.
   useEffect(() => {
     if (!chat.real) return undefined;
@@ -413,6 +424,24 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
         <T v="small" c={C.faint} style={{ alignSelf: 'center' }}>
           Matched today · open for 48 hours
         </T>
+        {both.length ? (
+          <View style={styles.bothSaved}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="bookmark" size={14} color={C.pinkL} />
+              <T v="small" c={C.pinkL} style={{ fontFamily: F.semi, letterSpacing: 0.4 }}>
+                YOU BOTH SAVED
+              </T>
+            </View>
+            {both.map((g) => (
+              <T key={g.id} c={C.ink} style={{ fontSize: 14, lineHeight: 20, marginTop: 4 }}>
+                {g.title}
+              </T>
+            ))}
+            <T v="small" c={C.muted} style={{ marginTop: 6 }}>
+              Only what you both added shows here. An easy way to start talking.
+            </T>
+          </View>
+        ) : null}
         {chat.messages.map((m, i) =>
           m.plan ? (
             <Pressable key={i} accessibilityRole="button" onPress={() => onPlan(chat.id)}>
@@ -644,8 +673,17 @@ function GuideBlock({ b }) {
   return null;
 }
 
-export function GuideView({ guide, onBack }) {
-  const [saved, setSaved] = useState(false);
+export function GuideView({ guide, onBack, profile, setProfile }) {
+  // Saved on your (private) profile; a match only sees the guides you both saved.
+  const saved = (profile?.wishlist || []).includes(guide.id);
+  const toggleSaved = () => {
+    if (saved) tap();
+    else success();
+    setProfile?.((p) => {
+      const list = p.wishlist || [];
+      return { ...p, wishlist: list.includes(guide.id) ? list.filter((id) => id !== guide.id) : [...list, guide.id] };
+    });
+  };
   return (
     <Screen scroll>
       <Header title="" onBack={onBack} />
@@ -701,11 +739,8 @@ export function GuideView({ guide, onBack }) {
       </Card>
       <View style={{ height: 20 }} />
       <GradientButton
-        title={saved ? 'Added to your wishlist' : 'Add to my wishlist'}
-        onPress={() => {
-          success();
-          setSaved(true);
-        }}
+        title={saved ? 'On your wishlist · tap to remove' : 'Add to my wishlist'}
+        onPress={toggleSaved}
       />
       <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 8 }}>
         Matches only see wishlist items you both added
@@ -1170,6 +1205,7 @@ const styles = StyleSheet.create({
   planCard: { marginTop: 18, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24, borderWidth: 1, borderColor: '#4A1A33' },
   turnDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.pink },
   chatRow: { flexDirection: 'row', alignItems: 'center', gap: 14, height: 76, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  bothSaved: { alignSelf: 'stretch', marginTop: 6, marginBottom: 4, padding: 14, borderRadius: 18, backgroundColor: 'rgba(240,40,122,0.08)', borderWidth: 1, borderColor: 'rgba(240,40,122,0.25)' },
   chatHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.line },
   me: { paddingVertical: 11, paddingHorizontal: 15, borderRadius: 22, borderBottomRightRadius: 6 },
   them: { paddingVertical: 11, paddingHorizontal: 15, borderRadius: 22, borderBottomLeftRadius: 6, backgroundColor: '#1F1A21', alignSelf: 'flex-start' },

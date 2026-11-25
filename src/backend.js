@@ -310,7 +310,14 @@ async function saveProfileNow(profile, onboarded) {
   if (!error) {
     await supabase
       .from('profile_private')
-      .upsert({ user_id: uid, settings: profile.settings ?? {}, hidden_city: profile.settings?.hideCity ? profile.city || null : null, updated_at: new Date().toISOString() });
+      .upsert({
+        user_id: uid,
+        settings: profile.settings ?? {},
+        hidden_city: profile.settings?.hideCity ? profile.city || null : null,
+        // Private: a match only ever sees the guides you both saved (shared_wishlist).
+        wishlist: profile.wishlist ?? [],
+        updated_at: new Date().toISOString(),
+      });
   }
   if (error) {
     console.warn('[backend] save profile failed', error.message);
@@ -351,6 +358,7 @@ export async function loadMyProfile() {
       country: data.country,
       city: data.city || priv?.hidden_city || null,
       settings: priv?.settings || {},
+      wishlist: priv?.wishlist || [],
       liveUntil: data.live_until || null,
       details: data.details || {},
       prompts: data.prompts || [],
@@ -532,6 +540,17 @@ export async function sendMessage(matchId, text) {
     return null;
   }
   return data.id;
+}
+
+/** Guide ids both people in this match added to their wishlist (never the rest of either list). */
+export async function sharedWishlist(matchId) {
+  if (!uid || !matchId) return [];
+  const { data, error } = await supabase.rpc('shared_wishlist', { m: matchId });
+  if (error) {
+    console.warn('[backend] shared wishlist failed', error.message);
+    return [];
+  }
+  return data || [];
 }
 
 /** I've read this chat up to now ("Seen" for the other person). */

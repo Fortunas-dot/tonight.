@@ -489,7 +489,7 @@ export default function App() {
           );
           break;
         case 'guide':
-          screen = <GuideView guide={p.guide} onBack={pop} />;
+          screen = <GuideView guide={p.guide} onBack={pop} profile={profile} setProfile={setProfile} />;
           break;
         case 'settings':
           screen = (
