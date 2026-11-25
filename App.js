@@ -459,6 +459,12 @@ export default function App() {
               setProfile={setProfile}
               go={(name) => push(name)}
               onBack={pop}
+              onRestart={() => {
+                setOnboarded(false);
+                setStep(0);
+                setStack([]);
+                setTab('discover');
+              }}
               onDeleted={() => {
                 AsyncStorage.removeItem(STORE).catch(() => {});
                 setProfile({});

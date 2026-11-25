@@ -26,7 +26,7 @@ function Label({ children }) {
   );
 }
 
-export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
+export function Settings({ profile, setProfile, go, onBack, onDeleted, onRestart }) {
   const [moderator, setModerator] = useState(false);
   const apple = useAppleAvailable();
   const [links, setLinks] = useState(null); // { apple, email }
@@ -289,6 +289,19 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
                   : 'All clear'
               }
               onPress={() => go('moderation')}
+            />
+            <Row
+              icon="spark"
+              iconColor={C.pinkL}
+              iconBg={C.surf2}
+              title="Test onboarding again"
+              sub="Runs every onboarding screen from Welcome. Your account and approval stay."
+              onPress={() =>
+                Alert.alert('Test onboarding again?', 'You’ll go through every onboarding screen from the start. What you fill in updates your profile; your approval stays, so you land back in the app at the end.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Start', onPress: onRestart },
+                ])
+              }
               last
             />
           </Card>
