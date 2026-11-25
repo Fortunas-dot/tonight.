@@ -622,12 +622,24 @@ async function postPhotoUrls(rows) {
 /** Newest posts first; topic 'For you' means all. Returns null when offline. */
 export async function loadFeed(topic) {
   if (!uid) return null;
+  // Saved posts (only mine) mark the feed and power the "Saved" tab.
+  const { data: saves } = await supabase.from('post_saves').select('post_id').eq('user_id', uid);
+  const saved = new Set((saves || []).map((s) => s.post_id));
   let q = supabase.from('posts_feed').select('*').order('created_at', { ascending: false }).limit(50);
-  if (topic && topic !== 'For you') q = q.eq('topic', topic);
+  if (topic === 'Saved') {
+    if (!saved.size) return [];
+    q = q.in('id', [...saved]);
+  } else if (topic && topic !== 'For you') q = q.eq('topic', topic);
   const { data, error } = await q;
   if (error) return null;
   const urls = await postPhotoUrls(data);
-  return data.map((r) => toPost(r, urls));
+  return data.map((r) => ({ ...toPost(r, urls), saved: saved.has(r.id) }));
+}
+
+export async function savePost(id, on) {
+  if (!uid) return;
+  if (on) await supabase.from('post_saves').upsert({ post_id: id, user_id: uid });
+  else await supabase.from('post_saves').delete().eq('post_id', id).eq('user_id', uid);
 }
 
 export async function loadPost(id) {

@@ -1,6 +1,6 @@
 // The Lounge: a social feed (posts, photos, likes, comments) plus the Guides. Design: canvas artboards 15b–15d.
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, Animated, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Easing, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,8 @@ export const TOPICS = [
   { id: 'Health', icon: 'shieldCheck' },
   { id: 'Date night', icon: 'eye' },
 ];
+// The feed's topic row also has your saved posts at the end.
+const FEED_TABS = [...TOPICS, { id: 'Saved', icon: 'bookmark' }];
 const POST_TOPICS = TOPICS.slice(1)
   .map((t) => t.id)
   .concat('Stories');
@@ -167,26 +169,120 @@ function Poll({ post }) {
   );
 }
 
-function Photos({ post }) {
+/** Full screen: swipe through a post's photos. */
+function PhotoViewer({ photos, start, onClose }) {
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const [page, setPage] = useState(start);
+  return (
+    <Modal visible animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      <View style={{ flex: 1, backgroundColor: '#000000' }}>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          contentOffset={{ x: start * width, y: 0 }}
+          onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
+        >
+          {photos.map((u) => (
+            <Image key={u} source={{ uri: u }} style={{ width, height }} resizeMode="contain" accessibilityLabel="Photo" />
+          ))}
+        </ScrollView>
+        <Pressable accessibilityRole="button" accessibilityLabel="Close photos" onPress={onClose} hitSlop={12} style={[styles.viewerClose, { top: insets.top + 8 }]}>
+          <Icon name="close" size={22} color="#FFFFFF" />
+        </Pressable>
+        {photos.length > 1 ? (
+          <View style={[styles.viewerDots, { bottom: insets.bottom + 20 }]}>
+            {photos.map((u, i) => (
+              <View key={u} style={[styles.viewerDot, i === page && { backgroundColor: '#FFFFFF', width: 18 }]} />
+            ))}
+          </View>
+        ) : null}
+      </View>
+    </Modal>
+  );
+}
+
+/** A heart that pops up where you double-tapped a photo. */
+function HeartBurst({ at }) {
+  const [v] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    v.setValue(0);
+    Animated.timing(v, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [at, v]);
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: v.interpolate({ inputRange: [0, 0.15, 0.7, 1], outputRange: [0, 1, 1, 0] }),
+          transform: [{ scale: v.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0.4, 1.15, 1] }) }],
+        },
+      ]}
+    >
+      <Icon name="heart" size={84} color="#FFFFFF" fill={C.pink} stroke={1.2} />
+    </Animated.View>
+  );
+}
+
+function Photos({ post, onLike }) {
   const [revealed, setRevealed] = useState(false);
+  const [viewer, setViewer] = useState(null);
+  const [burst, setBurst] = useState(0);
+  const lastTap = useRef(0);
+  const single = useRef(null);
   if (!post.photos?.length) return null;
   const two = post.photos.length > 1;
+  const more = post.photos.length - 2;
+  // One tap opens the photo, two quick taps like the post (like Instagram).
+  const onPhoto = (i) => {
+    // Runs on tap, not during render.
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    if (now - lastTap.current < 280) {
+      clearTimeout(single.current);
+      lastTap.current = 0;
+      setBurst((b) => b + 1);
+      if (!post.liked) onLike?.();
+      return;
+    }
+    lastTap.current = now;
+    single.current = setTimeout(() => setViewer(i), 280);
+  };
   return (
     <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
-      {post.photos
-        .slice(0, 2)
-        .map((u) =>
-          post.spicy ? (
-            <SpicyPhoto key={u} uri={u} revealed={revealed} onReveal={() => setRevealed(true)} style={{ flex: 1, height: two ? 168 : 260 }} />
-          ) : (
-            <Image key={u} source={{ uri: u }} style={{ flex: 1, height: two ? 168 : 260, borderRadius: 14, backgroundColor: C.surf2 }} />
-          ),
-        )}
+      {post.photos.slice(0, 2).map((u, i) =>
+        post.spicy && !revealed ? (
+          <SpicyPhoto key={u} uri={u} revealed={false} onReveal={() => setRevealed(true)} style={{ flex: 1, height: two ? 168 : 260 }} />
+        ) : (
+          <Pressable
+            key={u}
+            accessibilityRole="imagebutton"
+            accessibilityLabel="Photo, double-tap to like"
+            onPress={() => onPhoto(i)}
+            style={{ flex: 1, height: two ? 168 : 260, borderRadius: 14, overflow: 'hidden', backgroundColor: C.surf2 }}
+          >
+            <Image source={{ uri: u }} style={StyleSheet.absoluteFill} />
+            {i === 1 && more > 0 ? (
+              <View style={styles.moreBadge}>
+                <T style={{ fontFamily: F.display, fontSize: 22 }} c="#FFFFFF">
+                  +{more}
+                </T>
+              </View>
+            ) : null}
+            {burst ? <HeartBurst at={burst} /> : null}
+          </Pressable>
+        ),
+      )}
+      {viewer !== null ? <PhotoViewer photos={post.photos} start={viewer} onClose={() => setViewer(null)} /> : null}
     </View>
   );
 }
 
-function Actions({ post, onLike, onComments }) {
+function Actions({ post, onLike, onComments, onSave }) {
   return (
     <View style={styles.actions}>
       <Pressable accessibilityRole="button" accessibilityLabel={`Like, ${post.likes} likes`} accessibilityState={{ selected: post.liked }} onPress={onLike} style={styles.act}>
@@ -202,27 +298,44 @@ function Actions({ post, onLike, onComments }) {
         </T>
       </Pressable>
       <View style={{ flex: 1 }} />
-      <Pressable accessibilityRole="button" accessibilityLabel="Save" onPress={() => tap()} style={styles.act}>
-        <Icon name="bookmark" size={19} color={C.muted} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={post.saved ? 'Saved, tap to remove' : 'Save for later'}
+        accessibilityState={{ selected: !!post.saved }}
+        onPress={onSave}
+        style={styles.act}
+      >
+        <Icon name="bookmark" size={19} color={post.saved ? C.blueL : C.muted} fill={post.saved ? C.blueL : 'none'} />
       </Pressable>
     </View>
   );
 }
 
-function moreMenu(post, { onDelete }) {
-  const buttons = post.mine ? [{ text: 'Delete post', style: 'destructive', onPress: onDelete }] : [
-        {
-          text: 'Report',
-          onPress: () => {
-            success();
-            if (post.real) api.reportPost(post.id);
-          },
-        },
-      ];
-  Alert.alert(post.mine ? 'Your post' : 'Post', post.mine ? '' : 'Ward will review it.', [...buttons, { text: 'Cancel', style: 'cancel' }]);
+const REPORT_REASONS = ['Harassment or hate', 'Selling or asking for money', 'Explicit without the spicy tag', 'Someone may be under 18', 'Fake or spam'];
+
+function reportMenu(post) {
+  Alert.alert('Report this post', 'What’s wrong with it? Our team reviews every report within 24 hours. The poster won’t know it was you.', [
+    ...REPORT_REASONS.map((r) => ({
+      text: r,
+      onPress: () => {
+        success();
+        if (post.real) api.reportPost(post.id, r);
+        Alert.alert('Thanks for reporting', 'We’ll take a look.');
+      },
+    })),
+    { text: 'Cancel', style: 'cancel' },
+  ]);
 }
 
-export function PostCard({ post, onOpen, onLike, onDelete }) {
+function moreMenu(post, { onDelete }) {
+  if (!post.mine) return reportMenu(post);
+  Alert.alert('Your post', '', [
+    { text: 'Delete post', style: 'destructive', onPress: onDelete },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
+}
+
+export function PostCard({ post, onOpen, onLike, onDelete, onSave }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`Open post by ${post.alias}`} onPress={onOpen} style={styles.card}>
       <PostHead post={post} onMore={() => moreMenu(post, { onDelete })} />
@@ -232,7 +345,7 @@ export function PostCard({ post, onOpen, onLike, onDelete }) {
           {post.body}
         </T>
       ) : null}
-      <Photos post={post} />
+      <Photos post={post} onLike={onLike} />
       <Poll post={post} />
       {post.expert ? (
         <View style={styles.expert}>
@@ -245,7 +358,7 @@ export function PostCard({ post, onOpen, onLike, onDelete }) {
           </T>
         </View>
       ) : null}
-      <Actions post={post} onLike={onLike} onComments={onOpen} />
+      <Actions post={post} onLike={onLike} onComments={onOpen} onSave={onSave} />
     </Pressable>
   );
 }
@@ -386,6 +499,12 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
     setPosts((list) => list.map((x) => (x.id === p.id ? { ...x, liked: on, likes: x.likes + (on ? 1 : -1) } : x)));
     if (p.real) api.likePost(p.id, on);
   };
+  const save = (p) => {
+    tap();
+    const on = !p.saved;
+    setPosts((list) => (topic === 'Saved' && !on ? list.filter((x) => x.id !== p.id) : list.map((x) => (x.id === p.id ? { ...x, saved: on } : x))));
+    if (p.real) api.savePost(p.id, on);
+  };
   const remove = async (p) => {
     setPosts((list) => list.filter((x) => x.id !== p.id));
     await api.deletePost(p.id);
@@ -467,7 +586,7 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
           <>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 2 }} style={{ marginTop: 14, marginHorizontal: -16 }}>
               <View style={{ width: 10 }} />
-              {TOPICS.map((t) => {
+              {FEED_TABS.map((t) => {
                 const on = topic === t.id;
                 return (
                   <Pressable
@@ -568,10 +687,10 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
               </T>
             ) : posts.length === 0 ? (
               <Card style={{ marginTop: 14, alignItems: 'center', gap: 6, paddingVertical: 26 }}>
-                <Icon name="chat" size={26} color={C.muted} />
-                <T style={{ fontFamily: F.semi }}>Nothing in {topic} yet</T>
-                <T v="small" c={C.muted}>
-                  Be the first to start the conversation.
+                <Icon name={topic === 'Saved' ? 'bookmark' : 'chat'} size={26} color={C.muted} />
+                <T style={{ fontFamily: F.semi }}>{topic === 'Saved' ? 'Nothing saved yet' : `Nothing in ${topic} yet`}</T>
+                <T v="small" c={C.muted} style={{ textAlign: 'center' }}>
+                  {topic === 'Saved' ? 'Tap the bookmark on a post to keep it here. Only you can see what you save.' : 'Be the first to start the conversation.'}
                 </T>
               </Card>
             ) : (
@@ -586,6 +705,7 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
                       post={p}
                       onOpen={() => (p.real ? onOpenPost(p) : Alert.alert('Example post', 'Example posts are shown while you are offline.'))}
                       onLike={() => like(p)}
+                      onSave={() => save(p)}
                       onDelete={() => remove(p)}
                     />
                   </Rise>
@@ -1161,6 +1281,10 @@ export function PostView({ post: initial, onBack }) {
 }
 
 const styles = StyleSheet.create({
+  moreBadge: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(14,12,16,0.55)', alignItems: 'center', justifyContent: 'center' },
+  viewerClose: { position: 'absolute', right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  viewerDots: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  viewerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)' },
   search: {
     flexDirection: 'row',
     alignItems: 'center',
