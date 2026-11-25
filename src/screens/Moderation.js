@@ -444,7 +444,7 @@ export function Suspended() {
         After reports from other members, our team found that this account broke the Tonight Code. It no longer shows up for anyone.
       </T>
       <T v="small" c={C.faint} style={{ textAlign: 'center', marginTop: 16 }}>
-        Think this is a mistake? Email support@fortunas.nl.
+        Think this is a mistake? Email info@fortunas.nl.
       </T>
     </View>
   );

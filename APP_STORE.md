@@ -128,7 +128,7 @@ Display name: Tonight Plus · Description: Unlimited live windows, travel mode a
 ## App Review notes (draft)
 Tonight is an 18+ dating app. All users pass live selfie verification. Photos in chat are blurred by default;
 private-photo sharing requires both users to opt in. Users can report, block and mute from every profile, chat and
-Lounge post; reports are reviewed by our team within 24 hours. Membership is by application and reviewed by hand; the demo account below is already accepted. To sign in: on the welcome screen tap “Sign in with email” (under “Already a member?”) and use the demo account (email apple.review@fortunas.nl, password in App Store Connect › App Review Information).
+Lounge post; reports are reviewed by our team within 24 hours. Membership is by application and reviewed by hand; the demo account below is already accepted. To sign in: on the welcome screen tap “Sign in with email” (under “Already a member?”) and use the demo account (email apple.review@fortunas.nl, password in App Store Connect › App Review Information). Discover, Likes you, Chats and the Ideas board also show clearly labelled example profiles and chats, so new members see how the app works before they have matches; they are not real people and cannot be messaged for real.
 
 ## ⚠ App Review risk
 Apple Guideline 1.1.4 rejects "overtly sexual or pornographic material". Feeld and Pure are on the App Store, so casual
@@ -152,6 +152,6 @@ Things that are deliberately "test mode" now and must change before submitting f
 - [ ] Privacy label: add "Sensitive info" for the new details (orientation, relationship) and "Other user content" for prompts; remove "sexual health test date" (removed from the app).
 - [x] Demo account for App Review: apple.review@fortunas.nl (profile “Sam”, accepted, verified, marked demo). Password only in App Store Connect › App Review Information, not in this repo. Change it after review.
 - [ ] Membership review: new profiles wait for a moderator (Settings › Team › Moderation › Applications). The App Review demo account is already accepted; any other test account must be accepted first, or it gets stuck on "Your application is in". Say in the review notes that membership is reviewed by hand. The acceptance rate shown to applicants is the real one (from 30 decisions on); never show a made-up figure.
-- [ ] Terms and privacy policy pages at fortunas.nl/tonight/terms and /privacy describe: anonymous accounts, photo storage, face masks done on the phone, AWS face comparison (selfie deleted after the check), push notifications, account deletion.
+- [ ] Terms and privacy policy: drafts ready in docs/terms.html and docs/privacy.html. Fill in the [BRACKETS] (legal form, address, KvK, date), have them checked, upload as fortunas.nl/tonight/terms and /privacy. Pages at fortunas.nl/tonight/terms and /privacy describe: anonymous accounts, photo storage, face masks done on the phone, AWS face comparison (selfie deleted after the check), push notifications, account deletion.
 
 Done and live: account deletion (Settings), report and block from profiles, chats and Lounge posts, unmatch, blurred photos released only after a match, explicit first-message filter, Face ID lock, push notifications with discreet previews, private settings table.
