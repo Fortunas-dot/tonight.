@@ -13,4 +13,5 @@ android/
 
 # Demo people: raw AI photos and the demo accounts' sessions (scripts/seed-demo.mjs)
 assets/demo-raw/
+assets/cartoons-raw/
 scripts/.demo-sessions.json
