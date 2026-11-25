@@ -185,11 +185,7 @@ export function Chip({ label, on, onPress, tone = 'pink', small }) {
         tap();
         onPress?.();
       }}
-      style={[
-        styles.chip,
-        small && { height: 34, paddingHorizontal: 12 },
-        on ? { backgroundColor: bg, borderColor: bg } : null,
-      ]}
+      style={[styles.chip, small && { height: 34, paddingHorizontal: 12 }, on ? { backgroundColor: bg, borderColor: bg } : null]}
     >
       <T v="label" c={on ? '#FFFFFF' : C.ink} style={{ fontFamily: on ? F.semi : F.medium, fontSize: small ? 13 : 14 }}>
         {label}
@@ -213,12 +209,7 @@ export function Toggle({ value, onChange, label, color = C.pink }) {
         onChange?.(!value);
       }}
     >
-      <Animated.View
-        style={[
-          styles.toggle,
-          { backgroundColor: x.interpolate({ inputRange: [0, 1], outputRange: [C.line2, color] }) },
-        ]}
-      >
+      <Animated.View style={[styles.toggle, { backgroundColor: x.interpolate({ inputRange: [0, 1], outputRange: [C.line2, color] }) }]}>
         <Animated.View style={[styles.knob, { transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) }] }]} />
       </Animated.View>
     </Pressable>
@@ -397,11 +388,7 @@ export function Rise({ children, delay = 0, style }) {
   useEffect(() => {
     Animated.timing(a, { toValue: 1, duration: 650, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [a, delay]);
-  return (
-    <Animated.View style={[style, { opacity: a, transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }]}>
-      {children}
-    </Animated.View>
-  );
+  return <Animated.View style={[style, { opacity: a, transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }]}>{children}</Animated.View>;
 }
 
 /* ---------- Tab bar ---------- */
@@ -418,7 +405,12 @@ export function TabBar({ tab, onTab, badges = {} }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.tabbar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      <LinearGradient colors={['rgba(240,40,122,0)', C.pink, C.violet, C.blue, 'rgba(59,123,255,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: 'absolute', top: -1, left: 0, right: 0, height: 1.5, opacity: 0.8 }} />
+      <LinearGradient
+        colors={['rgba(240,40,122,0)', C.pink, C.violet, C.blue, 'rgba(59,123,255,0)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{ position: 'absolute', top: -1, left: 0, right: 0, height: 1.5, opacity: 0.8 }}
+      />
       {TABS.map((t) => {
         const on = t.id === tab;
         return (
@@ -438,9 +430,9 @@ export function TabBar({ tab, onTab, badges = {} }) {
               {t.label}
             </T>
             {badges[t.id] ? (
-              <View style={styles.badge}>
-                <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 10 }}>
-                  {badges[t.id]}
+              <View style={styles.badge} accessibilityLabel={`${badges[t.id]} new`}>
+                <T v="small" c="#FFFFFF" style={{ fontFamily: F.bold, fontSize: 10, lineHeight: 13 }}>
+                  {badges[t.id] > 9 ? '9+' : badges[t.id]}
                 </T>
               </View>
             ) : null}
@@ -489,13 +481,26 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 12,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: 4,
-    borderRadius: 9,
-    backgroundColor: C.pink,
+    minWidth: 19,
+    height: 19,
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    backgroundColor: '#FF3B30',
+    borderWidth: 2,
+    borderColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  blurTag: { position: 'absolute', top: 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 5, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)' },
+  blurTag: {
+    position: 'absolute',
+    top: 10,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    height: 24,
+    paddingHorizontal: 9,
+    borderRadius: 12,
+    backgroundColor: 'rgba(14,12,16,0.7)',
+  },
 });

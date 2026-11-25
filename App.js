@@ -130,8 +130,46 @@ export default function App() {
   }, [online, profile, onboarded]);
 
   // Real people, matches and ideas once signed in and onboarded.
+  // Red badges on the tab bar: chats with something unread, and new Lounge replies since you last looked.
+  const unreadChats = chats.filter((c) => {
+    if (!c.real) return false;
+    const last = c.messages[c.messages.length - 1];
+    if (!last) return !c.myRead; // a new match you haven't opened yet
+    return !last.me && (!c.myRead || (last.at && Date.parse(last.at) > Date.parse(c.myRead)));
+  }).length;
+  const [loungeActivity, setLoungeActivity] = useState([]);
+  const [loungeSeen, setLoungeSeen] = useState(null);
+  const loungeNew = loungeSeen === null ? 0 : loungeActivity.filter((a) => Date.parse(a.createdAt) > Date.parse(loungeSeen)).length;
+  useEffect(() => {
+    AsyncStorage.getItem('tonight.loungeSeen')
+      .then((v) => setLoungeSeen(v || '1970-01-01T00:00:00Z'))
+      .catch(() => setLoungeSeen('1970-01-01T00:00:00Z'));
+  }, []);
+  // Opening the Lounge counts as seeing its new replies.
+  useEffect(() => {
+    if (tab !== 'lounge' || !loungeActivity.length) return;
+    const newest = loungeActivity.reduce((m, a) => (!m || Date.parse(a.createdAt) > Date.parse(m) ? a.createdAt : m), '');
+    if (newest && (!loungeSeen || Date.parse(newest) > Date.parse(loungeSeen))) {
+      AsyncStorage.setItem('tonight.loungeSeen', newest).catch(() => {});
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLoungeSeen(newest);
+    }
+  }, [tab, loungeActivity, loungeSeen]);
+  // An open chat is read: keep the badge in step while you're in it.
+  const openChatId = stack.length && stack[stack.length - 1].name === 'chat' ? stack[stack.length - 1].params?.id : null;
+  const openChatObj = openChatId ? chats.find((c) => c.id === openChatId) : null;
+  const openChatCount = openChatObj ? openChatObj.messages.length : 0;
+  useEffect(() => {
+    if (!openChatObj?.real) return;
+    const nowIso = new Date().toISOString();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setChats((cs) => cs.map((c) => (c.id === openChatId ? { ...c, myRead: nowIso } : c)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openChatId, openChatCount]);
+
   const refresh = useCallback(async () => {
-    const [d, l, c, i] = await Promise.all([api.loadDeck(profile), api.loadLikesYou(profile), api.loadChats(profile), api.loadIdeas()]);
+    const [d, l, c, i, a] = await Promise.all([api.loadDeck(profile), api.loadLikesYou(profile), api.loadChats(profile), api.loadIdeas(), api.loungeActivity()]);
+    setLoungeActivity(a || []);
     setDeck(d);
     setLikesYou(l);
     setChats(c.length ? c : CHATS); // examples until the first real match
@@ -210,6 +248,7 @@ export default function App() {
     return api.subscribe({
       onMessage: (matchId, msg) => setChats((cs) => cs.map((c) => (c.matchId === matchId && !c.messages.some((m) => m.id === msg.id) ? { ...c, messages: [...c.messages, msg] } : c))),
       onMatch: () => refresh(),
+      onComment: () => api.loungeActivity().then((a) => setLoungeActivity(a || [])),
       onState: (matchId, st) => setChats((cs) => cs.map((c) => (c.matchId === matchId ? { ...c, theirRead: st.readAt || c.theirRead, theirTyping: st.typingAt || c.theirTyping } : c))),
     });
   }, [online, onboarded, refresh]);
@@ -551,7 +590,7 @@ export default function App() {
       screen = (
         <View style={{ flex: 1 }}>
           <View style={{ flex: 1 }}>{tabs[tab]}</View>
-          <TabBar tab={tab} onTab={setTab} badges={{ likes: likesYou.length }} />
+          <TabBar tab={tab} onTab={setTab} badges={{ likes: likesYou.length, chats: unreadChats, lounge: tab === 'lounge' ? 0 : loungeNew }} />
         </View>
       );
     }

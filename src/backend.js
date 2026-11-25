@@ -497,7 +497,7 @@ export async function loadChats(me) {
     supabase.from('profiles').select('*').in('id', otherIds),
     supabase.from('messages').select('*').in('match_id', ids).order('created_at'),
     supabase.from('plans').select('*').in('match_id', ids),
-    supabase.from('match_state').select('*').in('match_id', ids).neq('user_id', uid),
+    supabase.from('match_state').select('*').in('match_id', ids),
   ]);
   const people = await withPhotos(profiles || [], me);
   return matches
@@ -515,8 +515,10 @@ export async function loadChats(me) {
         plan: plan ? { place: plan.place, time: plan.at_time } : undefined,
         messages: (msgs || []).filter((x) => x.match_id === m.id).map((x) => ({ id: x.id, me: x.sender === uid, text: x.body, at: x.created_at })),
         // When the other person last read this chat / last typed in it.
-        theirRead: (states || []).find((s) => s.match_id === m.id)?.read_at || null,
-        theirTyping: (states || []).find((s) => s.match_id === m.id)?.typing_at || null,
+        theirRead: (states || []).find((s) => s.match_id === m.id && s.user_id !== uid)?.read_at || null,
+        theirTyping: (states || []).find((s) => s.match_id === m.id && s.user_id !== uid)?.typing_at || null,
+        // When I last opened this chat: anything from them after that is unread.
+        myRead: (states || []).find((s) => s.match_id === m.id && s.user_id === uid)?.read_at || null,
       };
     })
     .filter(Boolean);
@@ -548,12 +550,16 @@ export async function setTyping(matchId) {
  * Calls onMessage(matchId, msg) for new messages, onMatch() for new matches and onState(matchId, { readAt, typingAt })
  * when the other person reads or types. Returns an unsubscribe function.
  */
-export function subscribe({ onMessage, onMatch, onState }) {
+export function subscribe({ onMessage, onMatch, onState, onComment }) {
   if (!uid) return () => {};
   const channel = supabase
     .channel(`user-${uid}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, ({ new: m }) => {
       onMessage(m.match_id, { id: m.id, me: m.sender === uid, text: m.body, at: m.created_at });
+    })
+    // Someone commented somewhere in the Lounge: the app re-checks whether it was on my post or a reply to me.
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, ({ new: c }) => {
+      if (c && c.author !== uid) onComment?.();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'match_state' }, ({ new: s }) => {
       if (s && s.user_id !== uid) onState?.(s.match_id, { readAt: s.read_at, typingAt: s.typing_at });
