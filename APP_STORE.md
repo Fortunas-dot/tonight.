@@ -6,7 +6,7 @@ Done in App Store Connect (app ID 6838305613, bundle ID com.fortunas.tonight, SK
 - Subtitle "Take the vow. Meet tonight." · Lifestyle / Social Networking · content rights: third-party content, rights held
 - Age rating questionnaire saved → **18+** (dating: yes; graphic sexual content: none — see decision below)
 - Version 1.0: promotional text, description, keywords, support URL https://fortunas.nl/tonight/support, copyright "2026 Fortunas"
-- App Privacy: privacy policy https://fortunas.nl/tonight/privacy; 15 data types, all for app functionality (usage + diagnostics also analytics), none used for tracking. **Not yet published** — you confirm accuracy and press Publish.
+- App Privacy: privacy policy https://fortunas.nl/tonight/privacy; the answers in App Store Connect are out of date: update them from the “App Privacy” list below, then press Publish.
 - Pages live: fortunas.nl/tonight/privacy · /terms · /rules (the Tonight Code) · /support
 
 Still to do (you):
@@ -105,16 +105,15 @@ casual,singles,meet,local,flirt,fwb,couples,verified,consent,adult,chat,date,nea
 - User-generated content: Yes · Messaging/chat: Yes · Unrestricted web access: No
 - Result: 18+
 
-### App Privacy ("nutrition label") — all data linked to the user, NOT used for tracking
-- Contact info: phone number (account)
-- Location: coarse location (matching; snapped to a 1 km grid)
-- Sensitive info: sexual orientation, gender, sexual health test date (only if provided)
-- User content: photos, messages, Lounge posts, support messages
-- Identifiers: user ID, device ID (push)
-- Usage data: product interaction (app functionality, analytics)
-- Diagnostics: crash data
-- Purchases: purchase history (subscriptions)
-- Face data for verification: processed for liveness, deleted after check — declare per vendor's terms
+### App Privacy ("nutrition label") — checked against the app on 25 Nov 2026
+All data is **linked to the user**, used for **App Functionality** only, and **not used for tracking**. No ads, no analytics SDK, no crash reporter, no in-app purchases yet.
+- Contact info › **Name** (profile first name) · **Email address** (optional: only if you keep your account with email)
+- Location › **Coarse location** (the city you type; no GPS)
+- Sensitive info › **Sexual orientation / sex life** (optional profile details, boundaries, turn-ons) · **Biometric data** (face check selfie: compared once via AWS Rekognition, then deleted; face masks run on the phone)
+- User content › **Photos or videos** (profile photos, Lounge photos) · **Other user content** (bio, prompts, chat messages, Lounge posts and comments, reports) · **Customer support** (support chat)
+- Identifiers › **User ID** (account ID; Sign in with Apple ID) · **Device ID** (push notification token)
+- Not collected: phone number, precise location, contacts, browsing/search history, purchases, usage data, diagnostics, financial info, health.
+When Tonight Plus (in-app purchases) goes live, add Purchases › Purchase history. If you add analytics or crash reporting, add Usage data / Diagnostics.
 
 ## In-app purchases (auto-renewable subscriptions)
 
@@ -149,7 +148,7 @@ Things that are deliberately "test mode" now and must change before submitting f
 - [ ] Own email service (SMTP) before launch: Supabase's built-in sender only delivers to team members and a few emails per hour. Set up e.g. Resend/Postmark under Auth › Emails › SMTP Settings; then the templates can be branded.
 - [ ] Apple token revocation on account deletion (Guideline 5.1.1(v)): needs a Sign in with Apple key (.p8) to call Apple's revoke endpoint from an edge function.
 - [x] Moderation: Settings › Team › Moderation (moderators only, `app.moderators`) lists every report with a 24-hour countdown; No violation / Remove post / Ban. Moderators get a push per new report. Banned accounts see "Account suspended" and vanish from Discover. Still to do: keep answering within 24 h (Guideline 1.2).
-- [ ] Privacy label: add "Sensitive info" for the new details (orientation, relationship) and "Other user content" for prompts; remove "sexual health test date" (removed from the app).
+- [ ] Privacy label: the list under “App Privacy” above now matches the app (25 Nov 2026). Enter it in App Store Connect and press Publish.
 - [x] Demo account for App Review: apple.review@fortunas.nl (profile “Sam”, accepted, verified, marked demo). Password only in App Store Connect › App Review Information, not in this repo. Change it after review.
 - [ ] Membership review: new profiles wait for a moderator (Settings › Team › Moderation › Applications). The App Review demo account is already accepted; any other test account must be accepted first, or it gets stuck on "Your application is in". Say in the review notes that membership is reviewed by hand. The acceptance rate shown to applicants is the real one (from 30 decisions on); never show a made-up figure.
 - [ ] Terms and privacy policy: drafts ready in docs/terms.html and docs/privacy.html. Fill in the [BRACKETS] (legal form, address, KvK, date), have them checked, upload as fortunas.nl/tonight/terms and /privacy. Pages at fortunas.nl/tonight/terms and /privacy describe: anonymous accounts, photo storage, face masks done on the phone, AWS face comparison (selfie deleted after the check), push notifications, account deletion.
