@@ -141,7 +141,7 @@ explicit media off on iOS if Review objects.
 Things that are deliberately "test mode" now and must change before submitting for review:
 
 - [ ] `BLOCK_SCREENSHOTS` in App.js back to `true` (the store listing promises screenshots are blocked).
-- [ ] Remove the example people, chats, posts and ideas (`PEOPLE`, `CHATS`, `POSTS`, `IDEAS` in src/data.js) or show them only when the app is offline.
+- [x] Example people, chats, posts and ideas (src/data.js) only show when the app is offline. Online: real data only, with empty states (Likes, Chats, Ideas, Discover end screen). The demo profiles in the database (is_demo) stay until there are enough real members.
 - [ ] Remove "Restart onboarding (test build)" on Me and "Skip for this test build" on the Photos step.
 - [x] Verification: only the real AWS Rekognition check counts; no simulated pass (offline or unavailable shows a retry message).
 - [x] Sign-in: Sign in with Apple (from build 12). Settings › Your account ties the anonymous account to an Apple ID; Welcome › Sign in with Apple restores it on a new phone. Supabase: Apple provider on (client ID com.fortunas.tonight, users without email allowed), manual linking on.

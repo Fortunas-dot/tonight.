@@ -111,9 +111,9 @@ export function Match({ person, me, onChat, onClose }) {
 
 /* ---------- Likes you ---------- */
 
-export function Likes({ people: real = [], onOpen, blurAll }) {
-  // Real likes first; the examples only show while nobody has liked you yet.
-  const examples = real.length ? [] : PEOPLE;
+export function Likes({ people: real = [], onOpen, blurAll, showExamples = false }) {
+  // Real likes only once the app is online; the examples are for offline previews.
+  const examples = real.length || !showExamples ? [] : PEOPLE;
   const people = real.length ? real : examples;
   return (
     <Screen scroll>
@@ -129,7 +129,7 @@ export function Likes({ people: real = [], onOpen, blurAll }) {
           <View style={{ flex: 1 }}>
             <T style={{ fontFamily: F.semi }}>No likes yet</T>
             <T v="small" c={C.muted}>
-              A complete profile gets noticed faster. Below are examples of how likes show up.
+              {showExamples ? 'A complete profile gets noticed faster. Below are examples of how likes show up.' : 'A complete profile gets noticed faster. When someone likes you, they show up here, free.'}
             </T>
           </View>
         </Card>
@@ -886,6 +886,15 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
           ]}
         />
       </View>
+      {!list.length ? (
+        <Card style={{ marginTop: 14, alignItems: 'center', gap: 6, paddingVertical: 26 }}>
+          <Icon name="bulb" size={26} color={C.pinkL} />
+          <T style={{ fontFamily: F.semi }}>{sort === 'mine' ? 'You haven’t suggested anything yet' : 'No ideas yet'}</T>
+          <T v="small" c={C.muted} style={{ textAlign: 'center' }}>
+            Be the first: type an idea above. Members vote, and the most wanted ones get built.
+          </T>
+        </Card>
+      ) : null}
       {list.map((i) => (
         <View key={i.id} style={styles.idea}>
           <View style={{ alignItems: 'center', width: 44 }}>

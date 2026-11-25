@@ -134,8 +134,9 @@ export default function App() {
     const [d, l, c, i] = await Promise.all([api.loadDeck(profile), api.loadLikesYou(profile), api.loadChats(profile), api.loadIdeas()]);
     setDeck(d);
     setLikesYou(l);
-    setChats(c.length ? c : CHATS); // examples only until the first real match
-    if (i) setIdeas([...i, ...IDEAS]);
+    // Online: only real people, chats and ideas. The examples are for offline previews only.
+    setChats(c);
+    if (i) setIdeas(i);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.boundaries]);
 
@@ -506,7 +507,7 @@ export default function App() {
       const tabs = {
         discover: (
           <DiscoverPage
-            deck={[...deck, ...PEOPLE]}
+            deck={online ? deck : [...deck, ...PEOPLE]}
             profile={profile}
             filters={filters}
             onFilters={(f, show) => {
@@ -518,7 +519,7 @@ export default function App() {
             onBlock={(person) => person.real && api.block(person.id).then(refresh)}
           />
         ),
-        likes: <Likes people={likesYou} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
+        likes: <Likes people={likesYou} showExamples={!online} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
         chats: <Chats chats={chats} filterExplicit={profile.settings?.filterExplicit !== false} onOpen={(id) => push('chat', { id })} />,
         lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onOpenPost={(post) => push('post', { post })} />,
         me: (
