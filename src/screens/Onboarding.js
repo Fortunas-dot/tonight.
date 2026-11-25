@@ -68,7 +68,7 @@ export function Welcome({ next, onRestore, onEmail }) {
         ))}
       </Rise>
       <Rise delay={240} style={{ marginTop: 34, gap: 10 }}>
-        <GradientButton title="Get started" onPress={next} />
+        <GradientButton title="Apply for membership" onPress={next} />
         <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 6 }}>
           Already a member?
         </T>

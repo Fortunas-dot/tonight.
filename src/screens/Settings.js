@@ -32,7 +32,7 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
   const [links, setLinks] = useState(null); // { apple, email }
   useEffect(() => {
     let alive = true;
-    api.isModerator().then((m) => alive && setModerator(m));
+    api.modCounts().then((m) => alive && setModerator(m));
     api.accountLinks().then((l) => alive && setLinks(l));
     return () => {
       alive = false;
@@ -276,7 +276,21 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
         <>
           <Label>Team</Label>
           <Card style={{ paddingVertical: 0 }}>
-            <Row icon="shieldCheck" iconColor={C.blueL} iconBg={C.blueBg} title="Moderation" sub="Review reports within 24 hours" onPress={() => go('moderation')} last />
+            <Row
+              icon="shieldCheck"
+              iconColor={C.blueL}
+              iconBg={C.blueBg}
+              title="Moderation"
+              sub={
+                moderator.applications || moderator.reports
+                  ? [moderator.applications ? `${moderator.applications} waiting to join` : null, moderator.reports ? `${moderator.reports} open report${moderator.reports > 1 ? 's' : ''}` : null]
+                      .filter(Boolean)
+                      .join(' · ')
+                  : 'All clear'
+              }
+              onPress={() => go('moderation')}
+              last
+            />
           </Card>
         </>
       ) : null}

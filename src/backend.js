@@ -699,6 +699,13 @@ export async function isModerator() {
   return data === true;
 }
 
+/** For moderators: { applications, reports } waiting; null for everyone else. */
+export async function modCounts() {
+  if (!uid) return null;
+  const { data } = await supabase.rpc('mod_counts');
+  return data || null;
+}
+
 export async function amIBanned() {
   if (!uid) return false;
   const { data } = await supabase.rpc('am_i_banned');
