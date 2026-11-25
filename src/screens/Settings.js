@@ -29,11 +29,11 @@ function Label({ children }) {
 export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
   const [moderator, setModerator] = useState(false);
   const apple = useAppleAvailable();
-  const [linked, setLinked] = useState(null);
+  const [links, setLinks] = useState(null); // { apple, email }
   useEffect(() => {
     let alive = true;
     api.isModerator().then((m) => alive && setModerator(m));
-    api.appleLinked().then((l) => alive && setLinked(l));
+    api.accountLinks().then((l) => alive && setLinks(l));
     return () => {
       alive = false;
     };
@@ -100,46 +100,79 @@ export function Settings({ profile, setProfile, go, onBack, onDeleted }) {
         </LinearGradient>
       </Pressable>
 
-      {apple && linked !== null ? (
+      {links ? (
         <>
           <Label>Your account</Label>
-          {linked ? (
-            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={styles.keptIcon}>
-                <Icon name="check" size={18} color="#FFFFFF" stroke={2.6} />
+          {links.apple || links.email ? (
+            <Card>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={styles.keptIcon}>
+                  <Icon name="check" size={18} color="#FFFFFF" stroke={2.6} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <T style={{ fontFamily: F.semi }}>Your account is kept</T>
+                  <T v="small" c={C.muted}>
+                    On a new phone, sign in on the welcome screen to get everything back.
+                  </T>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                <T style={{ fontFamily: F.semi }}>Kept with your Apple ID</T>
-                <T v="small" c={C.muted}>
-                  On a new phone, tap “Sign in with Apple” on the welcome screen to get everything back.
-                </T>
-              </View>
+              {links.apple ? (
+                <View style={styles.methodRow}>
+                  <Icon name="check" size={14} color={C.blueL} />
+                  <T v="small" c={C.ink2}>
+                    Sign in with Apple
+                  </T>
+                </View>
+              ) : null}
+              {links.email ? (
+                <View style={styles.methodRow}>
+                  <Icon name="check" size={14} color={C.blueL} />
+                  <T v="small" c={C.ink2}>
+                    Email and password · {links.email}
+                  </T>
+                </View>
+              ) : (
+                <Pressable accessibilityRole="button" onPress={() => go('keepEmail')} style={[styles.methodRow, { paddingVertical: 6 }]}>
+                  <Icon name="plus" size={14} color={C.pinkL} />
+                  <T v="small" c={C.pinkL} style={{ fontFamily: F.semi }}>
+                    Also add email and password
+                  </T>
+                </Pressable>
+              )}
             </Card>
           ) : (
             <Card>
               <T style={{ fontFamily: F.semi }}>Keep your account</T>
               <T v="small" c={C.muted} style={{ marginTop: 2, marginBottom: 12 }}>
-                Right now your account lives on this phone only. Tie it to your Apple ID to keep your profile, matches and chats on a new phone. Apple doesn’t share your name or email with us.
+                Right now your account lives on this phone only. Tie it to your Apple ID or an email to keep your profile, matches and chats on a new phone.
               </T>
-              <AppleButton
-                onPress={async () => {
-                  let token;
-                  try {
-                    token = await appleToken();
-                  } catch {
-                    Alert.alert('Apple sign-in didn’t work', 'Please try again.');
-                    return;
-                  }
-                  if (!token) return;
-                  const r = await api.linkApple(token);
-                  if (r === 'linked') {
-                    success();
-                    setLinked(true);
-                  } else if (r === 'taken') {
-                    Alert.alert('This Apple ID already has an account', 'To use that account instead, delete this one (Settings, bottom) and sign in with Apple on the welcome screen.');
-                  } else Alert.alert('Couldn’t link', 'Check your connection and try again.');
-                }}
-              />
+              {apple ? (
+                <AppleButton
+                  onPress={async () => {
+                    let token;
+                    try {
+                      token = await appleToken();
+                    } catch {
+                      Alert.alert('Apple sign-in didn’t work', 'Please try again.');
+                      return;
+                    }
+                    if (!token) return;
+                    const r = await api.linkApple(token);
+                    if (r === 'linked') {
+                      success();
+                      setLinks((l) => ({ ...l, apple: true }));
+                    } else if (r === 'taken') {
+                      Alert.alert('This Apple ID already has an account', 'To use that account instead, delete this one (Settings, bottom) and sign in with Apple on the welcome screen.');
+                    } else Alert.alert('Couldn’t link', 'Check your connection and try again.');
+                  }}
+                />
+              ) : null}
+              <Pressable accessibilityRole="button" onPress={() => go('keepEmail')} style={styles.emailBtn}>
+                <Icon name="send" size={17} color={C.ink} />
+                <T v="label" style={{ fontSize: 15 }}>
+                  Use email and password
+                </T>
+              </Pressable>
             </Card>
           )}
         </>
@@ -374,6 +407,8 @@ export function Privacy({ profile, setProfile, onBack }) {
 }
 
 const styles = StyleSheet.create({
+  methodRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  emailBtn: { height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: '#3A3439', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 },
   keptIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#2BB673', alignItems: 'center', justifyContent: 'center' },
   pushOff: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, backgroundColor: C.pinkBg, borderWidth: 1, borderColor: '#4A1A33', marginBottom: 10 },
   account: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: 22, borderWidth: 1, borderColor: C.line, marginTop: 4 },

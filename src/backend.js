@@ -65,6 +65,118 @@ export async function signInApple(token) {
   return uid;
 }
 
+/* ---------- Keeping the account (email and password) ---------- */
+// The confirmation and login emails carry a link. It opens the app (tonight://auth, allowed under Supabase ›
+// Auth › URL Configuration) with the session in it; handleAuthLink() picks that up. (With your own SMTP the
+// templates can also show a 6-digit {{ .Token }}; confirmEmailLink / verifyLoginCode accept that too.)
+export const AUTH_REDIRECT = 'tonight://auth';
+const authLinkListeners = new Set();
+
+/** Calls cb({ type }) whenever an email link signed this phone in. Returns an unsubscribe function. */
+export function onAuthLink(cb) {
+  authLinkListeners.add(cb);
+  return () => authLinkListeners.delete(cb);
+}
+
+/** Handles tonight://auth#access_token=…&refresh_token=…&type=… (or ?code=…). Returns { type } or { error } or null. */
+export async function handleAuthLink(url) {
+  if (!url || !url.startsWith('tonight://auth')) return null;
+  const params = {};
+  const part = url.split(/[?#]/).slice(1).join('&');
+  for (const kv of part.split('&')) {
+    const [k, v] = kv.split('=');
+    if (k) params[decodeURIComponent(k)] = decodeURIComponent((v || '').replace(/\+/g, ' '));
+  }
+  let out;
+  if (params.error || params.error_description) out = { error: params.error_code || params.error || 'failed', message: params.error_description };
+  else if (params.access_token && params.refresh_token) {
+    const { data, error } = await supabase.auth.setSession({ access_token: params.access_token, refresh_token: params.refresh_token });
+    out = error ? { error: 'failed' } : { type: params.type || 'link' };
+    if (data?.user) uid = data.user.id;
+  } else if (params.code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(params.code);
+    out = error ? { error: 'failed' } : { type: params.type || 'link' };
+    if (data?.user) uid = data.user.id;
+  } else return null;
+  authLinkListeners.forEach((cb) => cb(out));
+  return out;
+}
+
+const authError = (error) => {
+  const code = error?.code || '';
+  const msg = (error?.message || '').toLowerCase();
+  if (code === 'email_exists' || msg.includes('already') || msg.includes('registered')) return 'taken';
+  if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit' || msg.includes('rate limit')) return 'rate';
+  if (code === 'otp_expired' || msg.includes('expired') || msg.includes('invalid')) return 'code';
+  if (code === 'invalid_credentials' || msg.includes('invalid login')) return 'credentials';
+  if (code === 'weak_password' || msg.includes('password')) return 'weak';
+  if (code === 'email_address_invalid' || msg.includes('email address')) return 'email';
+  return 'failed';
+};
+
+/** How this account can be restored: { apple, email } (email only once confirmed). */
+export async function accountLinks() {
+  await supabase.auth.refreshSession().catch(() => {});
+  const { data } = await supabase.auth.getUser();
+  const u = data?.user;
+  return { apple: !!u?.identities?.some((i) => i.provider === 'apple'), email: u?.email || null, pending: u?.new_email || null };
+}
+
+/** Step 1 of keeping the account with email: sends a 6-digit code to that address. Returns 'sent' or an error kind. */
+export async function startEmailLink(email) {
+  const { error } = await supabase.auth.updateUser({ email: email.trim().toLowerCase() }, { emailRedirectTo: AUTH_REDIRECT });
+  if (error) {
+    console.warn('[backend] email link failed', error.code, error.message);
+    return authError(error);
+  }
+  return 'sent';
+}
+
+/** Step 2: the code from the email. Returns 'ok' or an error kind. */
+export async function confirmEmailLink(email, code) {
+  const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email_change' });
+  if (error) {
+    console.warn('[backend] email code failed', error.code, error.message);
+    return authError(error);
+  }
+  return 'ok';
+}
+
+/** Step 3 (and after "forgot password"): sets the password. Returns 'ok' or an error kind. */
+export async function setPassword(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    console.warn('[backend] set password failed', error.code, error.message);
+    return authError(error);
+  }
+  return 'ok';
+}
+
+/** New phone: email + password. Returns the user id, or an error kind as { error }. */
+export async function signInEmail(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+  if (error || !data?.user) return { error: authError(error) };
+  uid = data.user.id;
+  return { id: uid };
+}
+
+/** Forgot password: a 6-digit login code, only for existing accounts. */
+export async function sendLoginCode(email) {
+  const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: false, emailRedirectTo: AUTH_REDIRECT } });
+  if (error) {
+    console.warn('[backend] login code failed', error.code, error.message);
+    return authError(error);
+  }
+  return 'sent';
+}
+
+export async function verifyLoginCode(email, code) {
+  const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email' });
+  if (error || !data?.user) return { error: authError(error) };
+  uid = data.user.id;
+  return { id: uid };
+}
+
 /* ---------- Photos ---------- */
 
 async function signedUrls(paths) {

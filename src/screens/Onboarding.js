@@ -18,7 +18,7 @@ const STEPS = 6;
 
 /* ---------- Welcome ---------- */
 
-export function Welcome({ next, onRestore }) {
+export function Welcome({ next, onRestore, onEmail }) {
   const apple = useAppleAvailable();
   return (
     <Screen strong style={{ justifyContent: 'flex-end' }} bottom={30}>
@@ -69,14 +69,16 @@ export function Welcome({ next, onRestore }) {
       </Rise>
       <Rise delay={240} style={{ marginTop: 34, gap: 10 }}>
         <GradientButton title="Get started" onPress={next} />
-        {apple ? (
-          <>
-            <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 6 }}>
-              Already have an account?
-            </T>
-            <AppleButton kind="signIn" onPress={onRestore} />
-          </>
-        ) : null}
+        <T v="small" c={C.muted} style={{ textAlign: 'center', marginTop: 6 }}>
+          Already a member?
+        </T>
+        {apple ? <AppleButton kind="signIn" onPress={onRestore} /> : null}
+        <Pressable accessibilityRole="button" onPress={onEmail} style={styles.emailSignIn}>
+          <Icon name="send" size={17} color={C.ink} />
+          <T v="label" style={{ fontSize: 15 }}>
+            Sign in with email
+          </T>
+        </Pressable>
         <T v="small" c={C.faint} style={{ textAlign: 'center', marginTop: 8 }}>
           18+ only. By continuing you agree to the Terms and Privacy Policy at fortunas.nl/tonight.
         </T>
@@ -955,6 +957,7 @@ export function Preview({ profile, next, back }) {
 }
 
 const styles = StyleSheet.create({
+  emailSignIn: { height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: '#3A3439', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   memberPill: {
     flexDirection: 'row',
     alignItems: 'center',

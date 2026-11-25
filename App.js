@@ -22,6 +22,7 @@ import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
 import { Privacy, Settings } from './src/screens/Settings';
 import { Moderation, Suspended } from './src/screens/Moderation';
 import { UnderReview } from './src/screens/Review';
+import { EmailSignIn, KeepWithEmail } from './src/screens/EmailAuth';
 import { LockGate } from './src/screens/Lock';
 import { Intro } from './src/screens/Intro';
 import { FakeCall } from './src/screens/FakeCall';
@@ -60,6 +61,7 @@ export default function App() {
   // Membership: null until known; the app opens up once a moderator accepts the application.
   const [review, setReview] = useState(null);
   const [reviewEdit, setReviewEdit] = useState(false);
+  const [emailLogin, setEmailLogin] = useState(false);
   const [deck, setDeck] = useState([]);
   const [likesYou, setLikesYou] = useState([]);
   const [feedKey, setFeedKey] = useState(0); // bump to reload the Lounge feed
@@ -272,8 +274,27 @@ export default function App() {
     setStack([{ name: 'chat', params: { id: person.id } }]);
   };
 
+  // Signed in on this phone with Apple or email: bring the profile back, or start onboarding on that login.
+  const afterSignIn = async (what) => {
+    const remote = await api.loadMyProfile();
+    setEmailLogin(false);
+    if (remote?.onboarded) {
+      setProfile(remote.profile);
+      setReview(null);
+      setOnboarded(true);
+      setStep(0);
+      setStack([]);
+      setTab('discover');
+    } else {
+      Alert.alert('Welcome', `There’s no profile on this ${what} yet. Set one up now; it stays tied to it.`);
+      setStep(1);
+    }
+  };
+
   let screen;
-  if (!onboarded) {
+  if (!onboarded && emailLogin) {
+    screen = <EmailSignIn onBack={() => setEmailLogin(false)} onSignedIn={() => afterSignIn('email')} />;
+  } else if (!onboarded) {
     const name = FLOW[step];
     const props = {
       profile,
@@ -302,18 +323,9 @@ export default function App() {
           Alert.alert('Couldn’t sign in', 'Check your connection and try again.');
           return;
         }
-        const remote = await api.loadMyProfile();
-        if (remote?.onboarded) {
-          setProfile(remote.profile);
-          setOnboarded(true);
-          setStep(0);
-          setStack([]);
-          setTab('discover');
-        } else {
-          Alert.alert('Welcome', 'There’s no profile on this Apple ID yet. Set one up now; it stays tied to your Apple ID.');
-          setStep(1);
-        }
+        await afterSignIn('Apple ID');
       },
+      onEmail: () => setEmailLogin(true),
     };
     const map = { welcome: Welcome, code: Code, basics: Basics, photos: Photos, boundaries: Boundaries, verify: Verify, discretion: Discretion, preview: Preview };
     const Step = map[name];
@@ -431,6 +443,17 @@ export default function App() {
           break;
         case 'editProfile':
           screen = <EditProfile profile={profile} setProfile={setProfile} onBack={pop} />;
+          break;
+        case 'keepEmail':
+          screen = (
+            <KeepWithEmail
+              onBack={pop}
+              onDone={(email) => {
+                pop();
+                Alert.alert('Your account is kept', `You can now sign in with ${email} and your password on any phone.`);
+              }}
+            />
+          );
           break;
         case 'moderation':
           screen = <Moderation onBack={pop} />;
