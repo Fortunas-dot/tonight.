@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -401,16 +401,70 @@ const TABS = [
   { id: 'me', icon: 'user', label: 'Me' },
 ];
 
+// The coloured line on top of the tab bar breathes softly, and now and then a light glides along it.
+// Kept very subtle; it stands still when the phone asks for reduced motion.
+function TabBarLine() {
+  const [breath] = useState(() => new Animated.Value(0));
+  const [glide] = useState(() => new Animated.Value(0));
+  const [barW, setBarW] = useState(0);
+  useEffect(() => {
+    let loops = [];
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .catch(() => false)
+      .then((reduce) => {
+        if (!alive || reduce) return;
+        loops = [
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(breath, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+              Animated.timing(breath, { toValue: 0, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            ]),
+          ),
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(glide, { toValue: 1, duration: 3200, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+              Animated.delay(4200),
+              Animated.timing(glide, { toValue: 0, duration: 0, useNativeDriver: true }),
+            ]),
+          ),
+        ];
+        loops.forEach((l) => l.start());
+      });
+    return () => {
+      alive = false;
+      loops.forEach((l) => l.stop());
+    };
+  }, [breath, glide]);
+  return (
+    <View pointerEvents="none" onLayout={(e) => setBarW(e.nativeEvent.layout.width)} style={{ position: 'absolute', top: -1, left: 0, right: 0, height: 6, overflow: 'visible' }}>
+      <Animated.View style={{ height: 1.5, opacity: breath.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0.95] }) }}>
+        <LinearGradient colors={['rgba(240,40,122,0)', C.pink, C.violet, C.blue, 'rgba(59,123,255,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />
+      </Animated.View>
+      {barW ? (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: -1,
+            width: 90,
+            height: 3.5,
+            borderRadius: 2,
+            opacity: glide.interpolate({ inputRange: [0, 0.15, 0.85, 1], outputRange: [0, 0.55, 0.55, 0] }),
+            transform: [{ translateX: glide.interpolate({ inputRange: [0, 1], outputRange: [-90, barW] }) }],
+          }}
+        >
+          <LinearGradient colors={['rgba(255,255,255,0)', 'rgba(255,214,236,0.9)', 'rgba(255,255,255,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1, borderRadius: 2 }} />
+        </Animated.View>
+      ) : null}
+    </View>
+  );
+}
+
 export function TabBar({ tab, onTab, badges = {} }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.tabbar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      <LinearGradient
-        colors={['rgba(240,40,122,0)', C.pink, C.violet, C.blue, 'rgba(59,123,255,0)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{ position: 'absolute', top: -1, left: 0, right: 0, height: 1.5, opacity: 0.8 }}
-      />
+      <TabBarLine />
       {TABS.map((t) => {
         const on = t.id === tab;
         return (

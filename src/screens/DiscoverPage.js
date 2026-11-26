@@ -1,7 +1,7 @@
 // Discover as a profile page you scroll: big photos with the person's own words in between
 // (about, ideal night, shared boundaries, turn-ons), a sticky top bar with filters, and Pass / Like always in reach.
-import { useRef, useState } from 'react';
-import { Alert, Animated, Easing, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
@@ -310,18 +310,54 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
     setI(0);
   };
 
-  const next = (liked) => {
+  const next = (liked, swiped = false) => {
     if (!person) return;
     if (liked) thud();
     else tap();
-    Animated.timing(fade, { toValue: 0, duration: 180, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
+    const advance = () => {
       if (liked) onLike(person);
       // A liked real person leaves the deck, so the next one slides into this spot.
       if (!(liked && person.real)) setI((x) => x + 1);
       scroll.current?.scrollTo({ y: 0, animated: false });
+      swipe.setValue(0);
       Animated.timing(fade, { toValue: 1, duration: 260, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-    });
+    };
+    if (swiped) {
+      // The card already flew off screen: bring in the next one.
+      fade.setValue(0);
+      advance();
+    } else Animated.timing(fade, { toValue: 0, duration: 180, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(advance);
   };
+
+  // Swipe like Tinder: right = like, left = pass. Only clearly sideways drags count, so scrolling the profile still works.
+  const { width: screenW } = useWindowDimensions();
+  const [swipe] = useState(() => new Animated.Value(0));
+  const nextRef = useRef(next);
+  useEffect(() => {
+    nextRef.current = next; // the swipe always calls the latest "next card"
+  });
+  // The handlers only read nextRef when a swipe ends, never while rendering.
+  // eslint-disable-next-line react-hooks/refs
+  const [pan] = useState(() =>
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
+      onPanResponderMove: (_, g) => swipe.setValue(g.dx),
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, g) => {
+        const out = Math.abs(g.dx) > 110 || Math.abs(g.vx) > 0.8;
+        if (!out) {
+          Animated.spring(swipe, { toValue: 0, useNativeDriver: true, speed: 20, bounciness: 8 }).start();
+          return;
+        }
+        const liked = g.dx > 0;
+        Animated.timing(swipe, { toValue: (liked ? 1 : -1) * 600, duration: 200, easing: Easing.out(Easing.quad), useNativeDriver: true }).start(() => nextRef.current(liked, true));
+      },
+      onPanResponderTerminate: () => Animated.spring(swipe, { toValue: 0, useNativeDriver: true }).start(),
+    }),
+  );
+  const tilt = swipe.interpolate({ inputRange: [-screenW, 0, screenW], outputRange: ['-12deg', '0deg', '12deg'] });
+  const likeOpacity = swipe.interpolate({ inputRange: [20, 110], outputRange: [0, 1], extrapolate: 'clamp' });
+  const passOpacity = swipe.interpolate({ inputRange: [-110, -20], outputRange: [1, 0], extrapolate: 'clamp' });
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -392,7 +428,16 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
       </View>
 
       {person ? (
-        <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
+        <Animated.View
+          {...pan.panHandlers}
+          style={{ flex: 1, opacity: fade, transform: [{ translateX: swipe }, { rotate: tilt }, { translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}
+        >
+          <Animated.View pointerEvents="none" style={[styles.stamp, styles.stampLike, { opacity: likeOpacity }]}>
+            <T style={{ fontFamily: F.displayX, fontSize: 30, color: C.green, letterSpacing: 2 }}>LIKE</T>
+          </Animated.View>
+          <Animated.View pointerEvents="none" style={[styles.stamp, styles.stampPass, { opacity: passOpacity }]}>
+            <T style={{ fontFamily: F.displayX, fontSize: 30, color: C.red, letterSpacing: 2 }}>PASS</T>
+          </Animated.View>
           <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
             {filters.liveOnly && !isLive(person) ? (
               <View style={styles.liveOut}>
@@ -485,6 +530,9 @@ const styles = StyleSheet.create({
   liveBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: '#3A2A2E', marginRight: 8 },
   liveBtnOn: { borderColor: '#2BC48A', backgroundColor: 'rgba(43,196,138,0.12)' },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.muted },
+  stamp: { position: 'absolute', top: 40, zIndex: 5, paddingHorizontal: 14, paddingVertical: 4, borderWidth: 4, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.55)' },
+  stampLike: { left: 32, borderColor: C.green, transform: [{ rotate: '-14deg' }] },
+  stampPass: { right: 32, borderColor: C.red, transform: [{ rotate: '14deg' }] },
   liveOut: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line2 },
   filterBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
   badge: {
