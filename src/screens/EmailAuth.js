@@ -119,7 +119,7 @@ function Wrap({ children }) {
 }
 
 /** Settings › Keep your account › Use email: email → code → password. */
-export function KeepWithEmail({ onBack, onDone }) {
+export function KeepWithEmail({ onBack, onDone, title = 'Keep your account' }) {
   const [step, setStep] = useState('email'); // email | code | password
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -184,7 +184,7 @@ export function KeepWithEmail({ onBack, onDone }) {
   return (
     <Wrap>
       <Screen scroll>
-        <Header title="Keep your account" onBack={step === 'code' ? () => setStep('email') : onBack} />
+        <Header title={title} onBack={step === 'code' ? () => setStep('email') : onBack} />
         {step === 'email' ? (
           <>
             <T v="title" style={{ marginTop: 8 }}>

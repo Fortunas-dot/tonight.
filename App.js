@@ -14,7 +14,7 @@ import { TabBar } from './src/ui';
 import * as api from './src/backend';
 import { applyNewestUpdate } from './src/version';
 
-import { Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
+import { Account, Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
 import { Badges, Chat, Chats, CodeView, GuideView, Ideas, Match, Me, Plan, Support, Likes } from './src/screens/Main';
 import { Compose, GroupView, Lounge, PostView } from './src/screens/Lounge';
 import { EditProfile } from './src/screens/ProfileFields';
@@ -36,7 +36,8 @@ const BLOCK_SCREENSHOTS = false;
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const STORE = 'tonight.v1';
-const FLOW = ['welcome', 'code', 'basics', 'photos', 'boundaries', 'verify', 'discretion', 'preview'];
+// 'account' (save it with Apple or email) comes right after the Code, so nobody ends up with an account they can't sign back into.
+const FLOW = ['welcome', 'code', 'account', 'basics', 'photos', 'boundaries', 'verify', 'discretion', 'preview'];
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -422,7 +423,9 @@ export default function App() {
       },
       onEmail: () => setEmailLogin(true),
     };
-    const map = { welcome: Welcome, code: Code, basics: Basics, photos: Photos, boundaries: Boundaries, verify: Verify, discretion: Discretion, preview: Preview };
+    // Save your account › that Apple ID already has one: sign in with it instead.
+    props.onSignIn = props.onRestore;
+    const map = { welcome: Welcome, code: Code, account: Account, basics: Basics, photos: Photos, boundaries: Boundaries, verify: Verify, discretion: Discretion, preview: Preview };
     const Step = map[name];
     screen = <Step key={name} {...props} />;
   } else {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Image, Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Easing, Image, Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Circle, Defs, LinearGradient as SvgGrad, Path, Stop } from 'react-native-svg';
@@ -12,11 +12,12 @@ import { Field, ProfileFields, Section } from './ProfileFields';
 import * as api from '../backend';
 import { versionLabel } from '../version';
 import { completeness, missingSteps } from '../completeness';
-import { AppleButton, useAppleAvailable } from '../appleAuth';
+import { AppleButton, appleToken, lastAppleCode, useAppleAvailable } from '../appleAuth';
+import { KeepWithEmail } from './EmailAuth';
 import { ART, StepArt } from '../art';
 import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
 
-const STEPS = 6;
+const STEPS = 7; // Save your account, then the six profile steps
 
 /* ---------- Welcome ---------- */
 
@@ -359,6 +360,124 @@ export function Code({ next }) {
   );
 }
 
+/* ---------- Save your account ---------- */
+
+// Right after the Code: tie this new account to Apple or to an email and password, so the application, profile and
+// chats survive signing out or a new phone. Without it the account only lives on this phone. Required to go on.
+export function Account({ next, back, onSignIn }) {
+  const apple = useAppleAvailable();
+  const [links, setLinks] = useState(null); // { apple, email } once known
+  const [email, setEmail] = useState(false); // showing the email and password screens
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    api.accountLinks().then((l) => alive && setLinks(l)).catch(() => alive && setLinks({ apple: false, email: null }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const saved = links && (links.apple || links.email);
+
+  const withApple = async () => {
+    if (busy) return;
+    let token;
+    try {
+      token = await appleToken();
+    } catch {
+      Alert.alert('Apple sign-in didn’t work', 'Please try again.');
+      return;
+    }
+    if (!token) return;
+    setBusy(true);
+    const r = await api.linkApple(token, lastAppleCode());
+    setBusy(false);
+    if (r === 'linked') {
+      success();
+      setLinks((l) => ({ ...l, apple: true }));
+      next();
+    } else if (r === 'taken') {
+      Alert.alert('This Apple ID already has an account', 'Sign in with Apple on the welcome screen to use it, or use an email and password for a new account.', [
+        { text: 'Use email instead', style: 'cancel' },
+        { text: 'Sign in', onPress: onSignIn },
+      ]);
+    } else Alert.alert('Couldn’t save your account', 'Check your connection and try again.');
+  };
+
+  if (email) {
+    return (
+      <KeepWithEmail
+        title="Save your account"
+        onBack={() => setEmail(false)}
+        onDone={(address) => {
+          setLinks((l) => ({ ...l, email: address }));
+          setEmail(false);
+          next();
+        }}
+      />
+    );
+  }
+
+  return (
+    <Screen scroll>
+      <Header onBack={back} step={1} total={STEPS} />
+      <View style={styles.accountIcon}>
+        <Icon name="lock" size={28} color={C.pinkL} />
+      </View>
+      <T v="title" style={{ marginTop: 16 }}>
+        Save your account
+      </T>
+      <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
+        So you can sign back in after signing out or on a new phone, with your application, profile and chats intact. Never shown to anyone, never used for marketing.
+      </T>
+
+      {links === null ? (
+        <ActivityIndicator color={C.muted} style={{ marginTop: 32 }} />
+      ) : saved ? (
+        <Card style={{ marginTop: 24, gap: 8 }}>
+          <T style={{ fontFamily: F.semi }}>Your account is saved</T>
+          {links.apple ? (
+            <View style={styles.savedRow}>
+              <Icon name="check" size={14} color={C.blueL} />
+              <T v="small" c={C.ink2}>
+                Sign in with Apple
+              </T>
+            </View>
+          ) : null}
+          {links.email ? (
+            <View style={styles.savedRow}>
+              <Icon name="check" size={14} color={C.blueL} />
+              <T v="small" c={C.ink2}>
+                Email and password · {links.email}
+              </T>
+            </View>
+          ) : null}
+        </Card>
+      ) : (
+        <View style={{ marginTop: 24, gap: 12 }}>
+          {apple ? <AppleButton kind="continue" onPress={withApple} /> : null}
+          <Pressable accessibilityRole="button" onPress={() => setEmail(true)} style={styles.emailChoice}>
+            <Icon name="send" size={17} color={C.ink} />
+            <T v="label" style={{ fontSize: 15 }}>
+              Use email and password
+            </T>
+          </Pressable>
+          {busy ? <ActivityIndicator color={C.muted} /> : null}
+        </View>
+      )}
+
+      <View style={{ flex: 1, minHeight: 24 }} />
+      {saved ? <Next onPress={next} /> : null}
+      <View style={styles.accountNote}>
+        <Icon name="shield" size={15} color={C.blueL} />
+        <T v="small" c={C.safeInk} style={{ flex: 1 }}>
+          Already applied or a member? Go back and sign in on the welcome screen instead.
+        </T>
+      </View>
+    </Screen>
+  );
+}
+
 /* ---------- Profile steps ---------- */
 
 function Next({ disabled, onPress, title = 'Continue' }) {
@@ -379,7 +498,7 @@ export function Basics({ profile, setProfile, next, back }) {
   const toggleShow = (s) => setShow(show.includes(s) ? show.filter((x) => x !== s) : [...show, s]);
   return (
     <Screen scroll>
-      <Header onBack={back} step={1} total={STEPS} />
+      <Header onBack={back} step={2} total={STEPS} />
       <T v="title" style={{ marginTop: 12 }}>
         Let’s start with you
       </T>
@@ -525,7 +644,7 @@ export function Photos({ profile, setProfile, next, back }) {
 
   return (
     <Screen scroll>
-      <Header onBack={back} step={2} total={STEPS} />
+      <Header onBack={back} step={3} total={STEPS} />
       <T v="title" style={{ marginTop: 12 }}>
         Show your best side
       </T>
@@ -652,7 +771,7 @@ export function Boundaries({ profile, setProfile, next, back }) {
   const tog = (arr, set, v, max) => set(arr.includes(v) ? arr.filter((x) => x !== v) : max && arr.length >= max ? arr : [...arr, v]);
   return (
     <Screen scroll>
-      <Header onBack={back} step={3} total={STEPS} />
+      <Header onBack={back} step={4} total={STEPS} />
       <T v="title" style={{ marginTop: 12 }}>
         What are you after?
       </T>
@@ -792,7 +911,7 @@ export function Verify({ profile, setProfile, next, back }) {
 
   return (
     <Screen>
-      <Header onBack={back} step={4} total={STEPS} />
+      <Header onBack={back} step={5} total={STEPS} />
       <T v="title" style={{ marginTop: 12 }}>
         Prove you’re real.{'\n'}Takes 20 seconds.
       </T>
@@ -853,7 +972,7 @@ export function Discretion({ profile, setProfile, next, back }) {
   const set = (k) => (v) => setS({ ...s, [k]: v });
   return (
     <Screen scroll>
-      <Header onBack={back} step={5} total={STEPS} />
+      <Header onBack={back} step={6} total={STEPS} />
       <T v="title" style={{ marginTop: 12 }}>
         Keep it between us.
       </T>
@@ -997,6 +1116,10 @@ export function Preview({ profile, next, back, goTo }) {
 }
 
 const styles = StyleSheet.create({
+  accountIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.pinkBg, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
+  savedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  emailChoice: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: 52, borderRadius: 26, borderWidth: 1.5, borderColor: C.line2 },
+  accountNote: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   strengthTrack: { height: 6, borderRadius: 3, backgroundColor: '#241F26', marginTop: 10, overflow: 'hidden' },
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.line, marginTop: 4 },
   tipPlus: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.pinkBg, alignItems: 'center', justifyContent: 'center' },
