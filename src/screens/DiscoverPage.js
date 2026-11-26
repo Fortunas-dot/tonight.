@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
-import { GradientButton, LiquidBg, Photo, T, success, tap, thud } from '../ui';
+import { GradientButton, LiquidBg, Photo, T, prefetchPhotos, success, tap, thud } from '../ui';
 import { FilterSheet, activeCount, applyFilters, filterChips, isLive } from './DiscoverFilters';
 import { DETAILS } from '../data';
 
@@ -290,6 +290,14 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
   const seenAll = deck.length > 0 && i >= deck.length;
   const person = deck.length && !seenAll ? deck[i] : null;
   const count = activeCount(filters);
+  // Load the photos of this person and the next three ahead of time, so the next card shows instantly.
+  const upcoming = deck
+    .slice(i, i + 4)
+    .flatMap((p) => (p.photos?.length ? p.photos : p.photo ? [p.photo] : []))
+    .join('|');
+  useEffect(() => {
+    if (upcoming) prefetchPhotos(upcoming.split('|'));
+  }, [upcoming]);
   const [nowMs] = useState(() => Date.now());
   const live = !!profile?.liveUntil && Date.parse(profile.liveUntil) > nowMs;
   const goLive = () => {

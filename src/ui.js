@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image as ExpoImage } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from './theme';
@@ -306,6 +307,15 @@ export function Row({ title, sub, right, onPress, icon, iconColor = C.pinkL, ico
 
 /** Placeholder for a member photo until real photos exist (warm gradient, no fake faces). */
 // blur: show the photo blurred (people who chose "Blur my face until we match"), with a small lock tag.
+// Signed photo links get a new token every time they're made; cache on the file path so a photo loads once.
+export const photoCacheKey = (uri) => (typeof uri === 'string' && /^https?:/.test(uri) ? uri.split('?')[0] : undefined);
+
+/** Loads photos ahead of time (memory and disk), e.g. the next people in Discover. */
+export function prefetchPhotos(uris) {
+  const list = (uris || []).filter((u) => typeof u === 'string' && /^https?:/.test(u));
+  if (list.length) ExpoImage.prefetch(list, 'memory-disk').catch(() => {});
+}
+
 export function Photo({ style, seed = 0, children, label, uri, blur }) {
   const sets = [
     ['#3A2B33', '#1C171E'],
@@ -316,7 +326,16 @@ export function Photo({ style, seed = 0, children, label, uri, blur }) {
   const [a, b] = sets[seed % sets.length];
   return (
     <LinearGradient colors={[a, b]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[{ overflow: 'hidden' }, style]}>
-      {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" blurRadius={blur ? 45 : 0} /> : null}
+      {uri ? (
+        <ExpoImage
+          source={{ uri, cacheKey: photoCacheKey(uri) }}
+          cachePolicy="memory-disk"
+          transition={120}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          blurRadius={blur ? 45 : 0}
+        />
+      ) : null}
       {uri && blur ? <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(14,12,16,0.25)' }]} /> : null}
       {uri && blur ? (
         <View style={styles.blurTag}>
