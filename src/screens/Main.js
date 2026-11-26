@@ -540,12 +540,12 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
 const QUICK = [
   { icon: 'clock', label: 'Running late', text: 'Running about 10 minutes late, sorry! See you soon.' },
   { icon: 'chat', label: 'Fake a call', fake: true },
-  { icon: 'close', label: 'Cancel kindly', text: 'Hey, I can’t make it tonight after all. Sorry for the short notice, hope you have a good night.' },
+  { icon: 'close', label: 'Cancel kindly', cancel: true, text: 'Hey, I can’t make it tonight after all. Sorry for the short notice, hope you have a good night.' },
 ];
 
 const PLAN_TIMES = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'];
 
-export function Plan({ chat, onBack, onSend, onSavePlan, onFakeCall, onUnmatch, startEditing = false }) {
+export function Plan({ chat, onBack, onSend, onSavePlan, onCancelPlan, onFakeCall, onUnmatch, startEditing = false }) {
   const p = chatPerson(chat);
   // Making or changing the plan: a public place and a time. Saved for both of you and posted in the chat.
   const [editing, setEditing] = useState(startEditing || !chat.plan);
@@ -651,13 +651,21 @@ export function Plan({ chat, onBack, onSend, onSavePlan, onFakeCall, onUnmatch, 
                 ]);
                 return;
               }
-              Alert.alert(q.label, `Send this to ${p.name}?\n\n“${q.text}”`, [
-                { text: 'Cancel', style: 'cancel' },
+              Alert.alert(q.label, `Send this to ${p.name}?${q.cancel && chat.plan ? ' Your plan is cancelled for both of you.' : ''}\n\n“${q.text}”`, [
+                { text: 'Keep it', style: 'cancel' },
                 {
-                  text: 'Send',
-                  onPress: () => {
+                  text: q.cancel && chat.plan ? 'Send and cancel plan' : 'Send',
+                  style: q.cancel && chat.plan ? 'destructive' : 'default',
+                  onPress: async () => {
+                    // Cancel kindly also calls off the plan, for both of you.
+                    if (q.cancel) {
+                      const ok = await onCancelPlan?.(chat.id, q.text);
+                      if (!ok) {
+                        Alert.alert('Couldn’t cancel', 'Check your connection and try again.');
+                        return;
+                      }
+                    } else onSend(chat.id, { me: true, text: q.text });
                     success();
-                    onSend(chat.id, { me: true, text: q.text });
                     onBack();
                   },
                 },

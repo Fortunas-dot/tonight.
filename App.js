@@ -319,6 +319,16 @@ export default function App() {
     return true;
   };
 
+  // "Cancel kindly": the message goes out and the plan is called off for both of you.
+  const cancelPlan = async (id, text) => {
+    const chat = chats.find((c) => c.id === id);
+    if (!chat) return false;
+    if (chat.real && chat.plan && !(await api.cancelPlan(chat.matchId))) return false;
+    setChats((cs) => cs.map((c) => (c.id === id ? { ...c, plan: undefined } : c)));
+    sendMessage(id, { me: true, text });
+    return true;
+  };
+
   const sendMessage = (id, msg) => {
     const chat = chats.find((c) => c.id === id);
     if (chat?.real && msg.me) {
@@ -465,6 +475,7 @@ export default function App() {
               onBack={pop}
               onSend={sendMessage}
               onSavePlan={savePlan}
+              onCancelPlan={cancelPlan}
               onFakeCall={() => setTimeout(() => setRinging(true), 20000)}
               onUnmatch={async (c, reported) => {
                 if (c.real) {

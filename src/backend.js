@@ -555,6 +555,17 @@ export async function savePlan(matchId, place, time) {
   return true;
 }
 
+/** Calls off the plan for a match (either person can). */
+export async function cancelPlan(matchId) {
+  if (!uid || !matchId) return false;
+  const { error } = await supabase.from('plans').delete().eq('match_id', matchId);
+  if (error) {
+    console.warn('[backend] cancel plan failed', error.message);
+    return false;
+  }
+  return true;
+}
+
 /** Guide ids both people in this match added to their wishlist (never the rest of either list). */
 export async function sharedWishlist(matchId) {
   if (!uid || !matchId) return [];
@@ -597,8 +608,10 @@ export function subscribe({ onMessage, onMatch, onState, onComment, onPlan }) {
       if (s && s.user_id !== uid) onState?.(s.match_id, { readAt: s.read_at, typingAt: s.typing_at });
     })
     // A plan made or changed in one of my chats (by either of us).
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'plans' }, ({ new: p }) => {
-      if (p && p.match_id) onPlan?.(p.match_id, { place: p.place, time: p.at_time });
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'plans' }, ({ eventType, new: p, old: o }) => {
+      if (eventType === 'DELETE') {
+        if (o && o.match_id) onPlan?.(o.match_id, undefined); // called off (the old row carries its key, match_id)
+      } else if (p && p.match_id) onPlan?.(p.match_id, { place: p.place, time: p.at_time });
     })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'matches' }, ({ new: m }) => {
       if (m.user_a === uid || m.user_b === uid) onMatch();
