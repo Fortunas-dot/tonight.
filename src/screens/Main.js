@@ -977,9 +977,11 @@ function RingPreview({ colors, uri, size = 56, dim }) {
   );
 }
 
-function StatusPill({ kind }) {
+function StatusPill({ kind, text }) {
   const look = {
     have: { text: 'You have this', fg: C.green, bg: 'rgba(43,196,138,0.14)' },
+    live: { text: text || 'Live now', fg: C.green, bg: 'rgba(43,196,138,0.14)' },
+    off: { text: 'Off right now · go live on Discover', fg: C.muted, bg: C.surf2 },
     notYet: { text: 'Not yet', fg: C.muted, bg: C.surf2 },
     soon: { text: 'Check-ins coming soon', fg: '#FFB36B', bg: 'rgba(255,138,61,0.12)' },
     team: { text: 'Given by our team', fg: C.blueL, bg: C.blueBg },
@@ -1047,7 +1049,11 @@ export function Badges({ profile, onBack }) {
             <T v="small" c={C.ink2} style={{ marginTop: 2, lineHeight: 17 }}>
               Tap “Go live tonight” on Discover. For 6 hours you show first, with a green badge, to people looking for tonight.
             </T>
-            <StatusPill kind={live ? 'have' : 'notYet'} />
+            {/* A status you switch on yourself, not something to earn */}
+            <StatusPill
+              kind={live ? 'live' : 'off'}
+              text={live ? `Live until ${new Date(profile.liveUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : undefined}
+            />
           </View>
         </Card>
         <Card style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
