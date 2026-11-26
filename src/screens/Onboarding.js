@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Easing, Image, Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Easing, Image, Linking, Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Circle, Defs, LinearGradient as SvgGrad, Path, Stop } from 'react-native-svg';
@@ -8,7 +8,8 @@ import { Icon, Verified } from '../icons';
 import { BOUNDARIES, INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS } from '../data';
 import { MaskEditor } from './MaskEditor';
 import { FireBurst } from './FireBurst';
-import { Field, ProfileFields, Section } from './ProfileFields';
+import { BIO_MAX, SearchSelect } from './ProfileFields';
+import { countryCode, searchCities, searchCountries } from '../countries';
 import * as api from '../backend';
 import { versionLabel } from '../version';
 import { completeness, missingSteps } from '../completeness';
@@ -480,6 +481,58 @@ export function Account({ next, back, onSignIn }) {
 
 /* ---------- Profile steps ---------- */
 
+// "My ideal night" has its own field below, so it isn't a starter here.
+const BIO_STARTERS = ['Looking for ', 'Green flags: ', 'You should know: '];
+const NIGHT_MAX = 150;
+
+// A quiet field: small label inside the box, the value large (Basics' name and age).
+function SoftField({ label, style, bad, ...input }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <View style={[styles.softField, focus && styles.softFieldFocus, bad && { borderColor: '#FF9AA3' }, style]}>
+      <T v="small" c={focus ? C.pinkL : C.faint}>
+        {label}
+      </T>
+      <TextInput
+        {...input}
+        accessibilityLabel={label}
+        placeholderTextColor={C.faint}
+        onFocus={() => setFocus(true)}
+        onBlur={() => setFocus(false)}
+        style={styles.softInput}
+      />
+    </View>
+  );
+}
+
+// "I am": a tile with an icon; the chosen one gets the gradient edge and a check.
+function IdentityTile({ label, icon, on, onPress }) {
+  const inner = (
+    <View style={[styles.tile, on && styles.tileOn]}>
+      <Icon name={icon} size={24} color={on ? C.pinkL : C.muted} />
+      <T c={on ? C.ink : C.ink2} style={{ fontFamily: F.semi, fontSize: 15 }}>
+        {label}
+      </T>
+      {on ? (
+        <View style={styles.tileTick}>
+          <Icon name="check" size={11} color="#FFFFFF" stroke={3.4} />
+        </View>
+      ) : null}
+    </View>
+  );
+  return (
+    <Pressable accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={label} onPress={onPress} style={styles.tileCell}>
+      {on ? (
+        <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tileRing}>
+          {inner}
+        </LinearGradient>
+      ) : (
+        <View style={styles.tileRing}>{inner}</View>
+      )}
+    </Pressable>
+  );
+}
+
 function Next({ disabled, onPress, title = 'Continue' }) {
   return <GradientButton title={title} disabled={disabled} onPress={onPress} />;
 }
@@ -496,46 +549,198 @@ export function Basics({ profile, setProfile, next, back }) {
   const ageNum = parseInt(age, 10);
   const valid = name.trim().length > 0 && ageNum >= 18 && ageNum < 100;
   const toggleShow = (s) => setShow(show.includes(s) ? show.filter((x) => x !== s) : [...show, s]);
+  const findCountries = useCallback(async (q) => searchCountries(q), []);
+  const code = countryCode(country);
+  const findCities = useCallback(async (q) => searchCities(q, code), [code]);
+  const [nightOpen, setNightOpen] = useState(!!profile.prompt);
+  const tooYoung = age.length === 2 && ageNum < 18;
+  // Design: canvas artboard "1b·1 · Basics (new)" (BasicsNew).
   return (
     <Screen scroll>
       <Header onBack={back} step={2} total={STEPS} />
-      <T v="title" style={{ marginTop: 12 }}>
-        Let’s start with you
-      </T>
-      <T v="meta" c={C.muted} style={{ marginTop: 4 }}>
+      <T style={styles.basicsTitle}>Let’s start{'\n'}with you</T>
+      <T v="meta" c={C.muted} style={{ marginTop: 6, marginBottom: 24 }}>
         Only your first name, age and city are shown.
       </T>
-      <Section icon="user" title="The basics">
-        <Field label="First name or nickname" icon="user" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" />
-        <Field
-          label="Age"
-          icon="cake"
-          value={age}
-          onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))}
-          placeholder="18+"
-          keyboardType="number-pad"
-          maxLength={2}
-          hint={age.length === 2 && ageNum < 18 ? 'Tonight is 18+ only' : null}
+
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <SoftField label="First name" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" style={{ flex: 1 }} />
+        <SoftField label="Age" value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} placeholder="18+" keyboardType="number-pad" maxLength={2} style={{ width: 92 }} bad={tooYoung} />
+      </View>
+      {tooYoung ? (
+        <T v="small" c="#FF9AA3" style={{ marginTop: 6, marginLeft: 4 }}>
+          Tonight is 18+ only
+        </T>
+      ) : null}
+
+      <T v="small" c={C.faint} style={styles.capsLabel}>
+        I AM
+      </T>
+      <View style={styles.tileGrid}>
+        {[
+          ['Woman', 'woman'],
+          ['Man', 'man'],
+          ['Non-binary', 'nonbinary'],
+          ['A couple', 'couple'],
+        ].map(([g, icon]) => (
+          <IdentityTile
+            key={g}
+            label={g}
+            icon={icon}
+            on={gender === g}
+            onPress={() => {
+              tap();
+              setGender(g);
+            }}
+          />
+        ))}
+      </View>
+
+      <View style={styles.capsRow}>
+        <T v="small" c={C.faint} style={[styles.capsLabel, { marginTop: 0 }]}>
+          SHOW ME
+        </T>
+        <T v="small" c={C.faint}>
+          Pick one or more
+        </T>
+      </View>
+      <View style={styles.segGrid}>
+        {['Women', 'Men', 'Non-binary', 'Couples'].map((g) => {
+          const on = show.includes(g);
+          return (
+            <Pressable
+              key={g}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }}
+              accessibilityLabel={`Show me ${g}`}
+              onPress={() => {
+                tap();
+                toggleShow(g);
+              }}
+              style={[styles.seg, on && styles.segOn]}
+            >
+              {on ? <Icon name="check" size={13} color={C.blueL} stroke={3.2} /> : null}
+              <T numberOfLines={1} c={on ? C.ink : C.ink2} style={{ fontFamily: on ? F.semi : F.medium, fontSize: 14 }}>
+                {g}
+              </T>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <T v="small" c={C.faint} style={styles.capsLabel}>
+        WHERE YOU ARE
+      </T>
+      <View style={{ gap: 2 }}>
+        <SearchSelect
+          label="Country"
+          icon="globe"
+          value={country}
+          onChange={(c) => {
+            if (c !== country) setCity('');
+            setCountry(c);
+          }}
+          placeholder="Search your country"
+          search={findCountries}
+          emptyHint="No country with that name."
         />
-      </Section>
-      <T v="label" c={C.muted} style={styles.lbl}>
-        I am
-      </T>
-      <View style={styles.wrap}>
-        {['Woman', 'Man', 'Non-binary', 'A couple'].map((g) => (
-          <Chip key={g} label={g} on={gender === g} onPress={() => setGender(g)} />
-        ))}
+        <SearchSelect
+          label="City"
+          icon="pin"
+          value={city}
+          onChange={setCity}
+          placeholder="Search your city"
+          search={findCities}
+          emptyHint="Type at least 2 letters of your city."
+          disabled={!country}
+          disabledHint="Pick your country first"
+        />
       </View>
-      <T v="label" c={C.muted} style={styles.lbl}>
-        Show me
+      <T v="small" c={C.faint} style={{ marginTop: 6, marginLeft: 4 }}>
+        Only your city is shown, never your exact location.
       </T>
-      <View style={styles.wrap}>
-        {['Women', 'Men', 'Non-binary', 'Couples'].map((g) => (
-          <Chip key={g} label={g} tone="blue" on={show.includes(g)} onPress={() => toggleShow(g)} />
-        ))}
+
+      <View style={styles.aboutCard}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <T style={{ fontFamily: F.display, fontSize: 18 }}>About you</T>
+          <T v="small" c={C.faint}>
+            Optional · {bio.length}/{BIO_MAX}
+          </T>
+        </View>
+        <TextInput
+          value={bio}
+          onChangeText={(t) => setBio(t.slice(0, BIO_MAX))}
+          placeholder="A few lines about you and what you’re looking for"
+          placeholderTextColor={C.faint}
+          multiline
+          accessibilityLabel="About you"
+          style={styles.aboutInput}
+        />
+        {bio.trim().length <= 40 ? (
+          <>
+            <T v="small" c={C.faint}>
+              Need a start?
+            </T>
+            <View style={styles.wrap}>
+              {BIO_STARTERS.map((s) => (
+                <Pressable
+                  key={s}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start with: ${s.trim()}`}
+                  onPress={() => {
+                    tap();
+                    setBio((bio.trim() ? `${bio.trim()} ` : '') + s);
+                  }}
+                  style={styles.dashChip}
+                >
+                  <Icon name="plus" size={12} color={C.pinkL} stroke={2.6} />
+                  <T v="small" c={C.ink2}>
+                    {s.replace(/[: ]+$/, '')}
+                  </T>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : null}
+        {nightOpen ? (
+          <View style={{ gap: 8, marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <T v="label" c={C.ink2}>
+                My ideal night
+              </T>
+              <T v="small" c={C.faint}>
+                {prompt.length}/{NIGHT_MAX}
+              </T>
+            </View>
+            <TextInput
+              value={prompt}
+              onChangeText={(t) => setPrompt(t.slice(0, NIGHT_MAX))}
+              placeholder="Describe your perfect night out (or in)"
+              placeholderTextColor={C.faint}
+              multiline
+              autoFocus={!prompt}
+              accessibilityLabel="My ideal night"
+              style={[styles.aboutInput, { minHeight: 72 }]}
+            />
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              tap();
+              setNightOpen(true);
+            }}
+            style={styles.nightBtn}
+          >
+            <Icon name="flame" size={16} color={C.pinkL} />
+            <T v="label" c={C.ink} style={{ flex: 1 }}>
+              Add “My ideal night”
+            </T>
+            <Icon name="plus" size={16} color={C.muted} />
+          </Pressable>
+        )}
       </View>
-      <ProfileFields bio={bio} setBio={setBio} prompt={prompt} setPrompt={setPrompt} country={country} setCountry={setCountry} city={city} setCity={setCity} />
-      <View style={{ height: 30 }} />
+      <View style={{ height: 28 }} />
       <Next
         disabled={!valid}
         onPress={() => {
@@ -1116,6 +1321,25 @@ export function Preview({ profile, next, back, goTo }) {
 }
 
 const styles = StyleSheet.create({
+  basicsTitle: { fontFamily: F.displayX, fontSize: 32, lineHeight: 34, letterSpacing: -0.8, marginTop: 14 },
+  softField: { borderRadius: 18, backgroundColor: C.surf, borderWidth: 1, borderColor: C.line, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8 },
+  softFieldFocus: { borderColor: C.pink },
+  softInput: { color: C.ink, fontFamily: F.semi, fontSize: 20, paddingVertical: 2 },
+  capsLabel: { fontFamily: F.semi, fontSize: 12, letterSpacing: 1.1, marginTop: 28, marginBottom: 10 },
+  capsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 26, marginBottom: 10 },
+  tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  tileCell: { width: '48%', flexGrow: 1 },
+  tileRing: { borderRadius: 19, padding: 1.5 },
+  tile: { height: 96, borderRadius: 18, backgroundColor: C.surf, borderWidth: 1, borderColor: C.line, padding: 14, justifyContent: 'space-between' },
+  tileOn: { backgroundColor: C.pinkBg, borderColor: 'transparent' },
+  tileTick: { position: 'absolute', right: 12, top: 12, width: 20, height: 20, borderRadius: 10, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center' },
+  segGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  seg: { width: '48%', flexGrow: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.surf, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 4 },
+  segOn: { backgroundColor: C.blueBg, borderColor: C.blue },
+  aboutCard: { marginTop: 28, padding: 18, borderRadius: 22, backgroundColor: C.surf, borderWidth: 1, borderColor: C.line, gap: 12 },
+  aboutInput: { minHeight: 92, borderRadius: 14, borderWidth: 1, borderColor: C.line2, backgroundColor: C.bg, color: C.ink, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12, fontFamily: F.body, fontSize: 15, lineHeight: 21, textAlignVertical: 'top' },
+  dashChip: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 12, borderRadius: 17, borderWidth: 1, borderStyle: 'dashed', borderColor: C.line2 },
+  nightBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 48, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1, borderColor: C.line2 },
   accountIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.pinkBg, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   savedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   emailChoice: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: 52, borderRadius: 26, borderWidth: 1.5, borderColor: C.line2 },
