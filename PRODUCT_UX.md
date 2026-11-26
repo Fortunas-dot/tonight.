@@ -49,6 +49,9 @@ Swinburne University (consent/safety), Fast Company (Pure).
   short blog article (lead, headed sections, "Try saying" bubbles, tips, a pull quote, an "In short" box) with a 16:9 header
   illustration of the masked cartoon crew (§3c); never explicit, always clothed. Every guide reviewed by a sex educator.
   “Add to my wishlist” feeds matching: matches only see items you both added.
+- **Groups (third Lounge tab):** open groups members join (Amsterdam Nights, First Times, Couples Corner, Kink 101,
+  Over 35, Queer & Curious). Group posts stay in their group (posts.group_id), posted under the Lounge alias; you must
+  join to post. Tables `groups`, `group_members`, function `group_list()`. Design: canvas row 18.
 - Why: gives a reason to open the app between dates, builds trust, and serves the consent/safety info women ask for.
 
 ## 3c. Characters (“the crew”)

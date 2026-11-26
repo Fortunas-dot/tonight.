@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { GUIDES, POSTS } from '../data';
-import { Card, LiquidBg, Rise, Segmented, T, Toggle, success, tap } from '../ui';
+import { Card, GradientButton, Header, LiquidBg, Rise, Screen, Segmented, T, Toggle, success, tap } from '../ui';
+import { GROUP_COVERS } from '../art';
 import { MaskEditor } from './MaskEditor';
 import { Grabber, useSwipeDown } from '../sheet';
 import * as api from '../backend';
@@ -472,7 +473,7 @@ async function remindQA() {
   }
 }
 
-export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) {
+export function Lounge({ onGuide, onOpenPost, onCompose, onGroup, profile, refreshKey }) {
   const [tab, setTab] = useState('feed');
   const [reminded, setReminded] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -578,6 +579,7 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
             options={[
               { value: 'feed', label: 'Feed' },
               { value: 'guides', label: 'Guides' },
+              { value: 'groups', label: 'Groups' },
             ]}
           />
         </View>
@@ -712,6 +714,8 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
                 ))
             )}
           </>
+        ) : tab === 'groups' ? (
+          <GroupsTab onGroup={onGroup} refreshKey={refreshKey} />
         ) : (
           <GuidesTab onGuide={onGuide} />
         )}
@@ -725,6 +729,206 @@ export function Lounge({ onGuide, onOpenPost, onCompose, profile, refreshKey }) 
         </Pressable>
       ) : null}
     </View>
+  );
+}
+
+/* ---------- Groups (canvas row 18) ---------- */
+
+function GroupCover({ group, style }) {
+  const src = GROUP_COVERS[group.cover];
+  return src ? (
+    <View style={[style, { overflow: 'hidden' }]}>
+      <Image source={src} style={{ width: '100%', height: '100%' }} resizeMode="cover" accessibilityIgnoresInvertColors />
+    </View>
+  ) : (
+    <LinearGradient colors={['#3B7BFF', '#7B3CFF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[style, { alignItems: 'center', justifyContent: 'center' }]}>
+      <T style={{ fontFamily: F.displayX, fontSize: 18 }} c="#FFFFFF">
+        {group.name.slice(0, 2)}
+      </T>
+    </LinearGradient>
+  );
+}
+
+const membersLabel = (n) => `${n} ${n === 1 ? 'member' : 'members'}`;
+
+function GroupsTab({ onGroup, refreshKey }) {
+  const [groups, setGroups] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const load = useCallback(() => api.loadGroups().then((g) => setGroups(g || [])), []);
+  useEffect(() => {
+    load();
+  }, [load, refreshKey]);
+  const join = async (g) => {
+    tap();
+    setBusy(g.id);
+    if (await api.joinGroup(g.id, !g.joined)) {
+      if (!g.joined) success();
+      await load();
+    }
+    setBusy(null);
+  };
+  if (groups === null) {
+    return (
+      <T v="meta" c={C.muted} style={{ marginTop: 20 }}>
+        Loading groups…
+      </T>
+    );
+  }
+  const mine = groups.filter((g) => g.joined);
+  const rest = groups.filter((g) => !g.joined);
+  return (
+    <View style={{ marginTop: 16 }}>
+      {mine.length ? (
+        <>
+          <T v="small" c={C.muted} style={{ fontFamily: F.semi, letterSpacing: 2, fontSize: 11 }}>
+            YOUR GROUPS
+          </T>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+            {mine.map((g) => (
+              <Pressable key={g.id} accessibilityRole="button" accessibilityLabel={`${g.name}, ${membersLabel(g.members)}`} onPress={() => onGroup?.(g)} style={styles.groupTile}>
+                <GroupCover group={g} style={StyleSheet.absoluteFill} />
+                <LinearGradient colors={['rgba(14,12,16,0)', 'rgba(14,12,16,0.92)']} style={styles.groupTileShade}>
+                  <T style={{ fontFamily: F.bold, fontSize: 14 }} numberOfLines={1}>
+                    {g.name}
+                  </T>
+                  <T v="small" c="#D9D2D6" style={{ fontSize: 11 }}>
+                    {membersLabel(g.members)}
+                  </T>
+                </LinearGradient>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : null}
+      <T v="small" c={C.muted} style={{ fontFamily: F.semi, letterSpacing: 2, fontSize: 11, marginTop: mine.length ? 22 : 0 }}>
+        {mine.length ? 'DISCOVER GROUPS' : 'GROUPS'}
+      </T>
+      <View style={{ gap: 10, marginTop: 10 }}>
+        {rest.map((g) => (
+          <Pressable key={g.id} accessibilityRole="button" accessibilityLabel={g.name} onPress={() => onGroup?.(g)} style={styles.groupRow}>
+            <GroupCover group={g} style={{ width: 56, height: 56, borderRadius: 14, overflow: 'hidden' }} />
+            <View style={{ flex: 1 }}>
+              <T style={{ fontFamily: F.semi, fontSize: 15 }}>{g.name}</T>
+              <T v="small" c={C.muted} style={{ lineHeight: 16 }} numberOfLines={2}>
+                {g.about} {membersLabel(g.members)}
+              </T>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Join ${g.name}`} onPress={() => join(g)} disabled={busy === g.id} style={[styles.joinBtn, busy === g.id && { opacity: 0.5 }]}>
+              <T c="#FFFFFF" style={{ fontFamily: F.semi, fontSize: 13 }}>
+                Join
+              </T>
+            </Pressable>
+          </Pressable>
+        ))}
+        {!rest.length && mine.length ? (
+          <T v="small" c={C.muted}>
+            You’re in every group. More are coming.
+          </T>
+        ) : null}
+      </View>
+      <View style={styles.groupNote}>
+        <Icon name="shieldCheck" size={18} color={C.blueL} />
+        <T v="small" c={C.safeInk} style={{ flex: 1, lineHeight: 17 }}>
+          You post under your Lounge alias. Groups follow the Tonight Code, and Ward keeps watch.
+        </T>
+      </View>
+    </View>
+  );
+}
+
+export function GroupView({ group: start, onBack, onOpenPost, onCompose, refreshKey }) {
+  const [group, setGroup] = useState(start);
+  const [posts, setPosts] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(
+    () =>
+      Promise.all([api.loadGroups(), api.loadFeed('For you', start.id)]).then(([list, feed]) => {
+        const fresh = (list || []).find((g) => g.id === start.id);
+        if (fresh) setGroup(fresh);
+        setPosts(feed || []);
+      }),
+    [start.id],
+  );
+  useEffect(() => {
+    load();
+  }, [load, refreshKey]);
+  const toggleJoin = async () => {
+    tap();
+    setBusy(true);
+    if (await api.joinGroup(group.id, !group.joined)) {
+      if (!group.joined) success();
+      setGroup((g) => ({ ...g, joined: !g.joined, members: g.members + (g.joined ? -1 : 1) }));
+    }
+    setBusy(false);
+  };
+  const like = (p) => {
+    tap();
+    api.likePost(p.id, !p.liked);
+    setPosts((ps) => ps.map((x) => (x.id === p.id ? { ...x, liked: !x.liked, likes: x.likes + (x.liked ? -1 : 1) } : x)));
+  };
+  const save = (p) => {
+    tap();
+    api.savePost(p.id, !p.saved);
+    setPosts((ps) => ps.map((x) => (x.id === p.id ? { ...x, saved: !x.saved } : x)));
+  };
+  const remove = (p) =>
+    Alert.alert('Delete this post?', 'It’s removed for everyone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await api.deletePost(p.id);
+          setPosts((ps) => ps.filter((x) => x.id !== p.id));
+        },
+      },
+    ]);
+  return (
+    <Screen scroll pad={0}>
+      <View style={{ height: 230, marginTop: -60, overflow: 'hidden' }}>
+        <GroupCover group={group} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(14,12,16,0.35)', 'rgba(14,12,16,0)', C.bg]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
+        <View style={{ position: 'absolute', left: 20, right: 20, bottom: 10 }}>
+          <T style={{ fontFamily: F.displayX, fontSize: 28, letterSpacing: -0.5 }}>{group.name}</T>
+          <T v="meta" c="#D9D2D6">
+            {group.about} · {membersLabel(group.members)}
+          </T>
+        </View>
+      </View>
+      <View style={{ position: 'absolute', top: 0, left: 8 }}>
+        <Header title="" onBack={onBack} />
+      </View>
+      <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Pressable accessibilityRole="button" onPress={toggleJoin} disabled={busy} style={[styles.groupBtn, group.joined ? styles.groupBtnGhost : styles.groupBtnJoin, busy && { opacity: 0.5 }]}>
+            <T style={{ fontFamily: F.semi, fontSize: 14 }} c="#FFFFFF">
+              {group.joined ? 'Joined ✓' : 'Join group'}
+            </T>
+          </Pressable>
+          {group.joined ? <GradientButton title="New post" height={44} onPress={() => onCompose?.(group)} style={{ flex: 1 }} /> : null}
+        </View>
+        <View style={{ marginTop: 16, gap: 10 }}>
+          {posts === null ? (
+            <T v="meta" c={C.muted}>
+              Loading…
+            </T>
+          ) : posts.length ? (
+            posts.map((p) => <PostCard key={p.id} post={p} onOpen={() => onOpenPost?.(p)} onLike={() => like(p)} onSave={() => save(p)} onDelete={() => remove(p)} />)
+          ) : (
+            <T v="meta" c={C.muted}>
+              {group.joined ? 'No posts yet. Start the first conversation.' : 'No posts yet. Join to start the first conversation.'}
+            </T>
+          )}
+          <View style={styles.groupNote}>
+            <Icon name="shieldCheck" size={18} color={C.blueL} />
+            <T v="small" c={C.safeInk} style={{ flex: 1, lineHeight: 17 }}>
+              Group rules: the Tonight Code applies. No explicit photos, no selling, no outing anyone. Report anything off and Ward steps in.
+            </T>
+          </View>
+        </View>
+      </View>
+      <View style={{ height: 30 }} />
+    </Screen>
   );
 }
 
@@ -884,7 +1088,7 @@ function GuidesTab({ onGuide }) {
 
 /* ---------- New post ---------- */
 
-export function Compose({ onClose, onPosted }) {
+export function Compose({ onClose, onPosted, group }) {
   const [alias, setAlias] = useState(null);
   const [topic, setTopic] = useState('Confidence');
   const [title, setTitle] = useState('');
@@ -910,7 +1114,7 @@ export function Compose({ onClose, onPosted }) {
   const post = async () => {
     if (!canPost) return;
     setBusy(true);
-    const id = await api.createPost({ topic, title: title.trim(), body: body.trim(), photos, spicy, poll: poll ? poll.map((o) => o.trim()).filter(Boolean) : null });
+    const id = await api.createPost({ topic, title: title.trim(), body: body.trim(), photos, spicy, poll: poll ? poll.map((o) => o.trim()).filter(Boolean) : null, groupId: group?.id });
     setBusy(false);
     if (!id) {
       Alert.alert('Could not post', 'Check your connection and try again.');
@@ -947,7 +1151,9 @@ export function Compose({ onClose, onPosted }) {
             Cancel
           </T>
         </Pressable>
-        <T style={{ fontFamily: F.semi, fontSize: 16 }}>New post</T>
+        <T style={{ fontFamily: F.semi, fontSize: 16 }} numberOfLines={1}>
+          {group ? `Post in ${group.name}` : 'New post'}
+        </T>
         <Pressable accessibilityRole="button" accessibilityState={{ disabled: !canPost }} onPress={post} disabled={!canPost}>
           <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.postBtn, !canPost && { opacity: 0.4 }]}>
             <T c="#FFFFFF" style={{ fontFamily: F.semi, fontSize: 14 }}>
@@ -1321,6 +1527,14 @@ const styles = StyleSheet.create({
   tile: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 72, padding: 12, borderRadius: 18, backgroundColor: '#151217', borderWidth: 1.5, borderColor: C.line },
   tileIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   guideRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line },
+  groupTile: { width: '48%', flexGrow: 1, height: 128, borderRadius: 20, overflow: 'hidden', backgroundColor: C.surf2 },
+  groupTileShade: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingTop: 22, paddingBottom: 10 },
+  groupRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 18, backgroundColor: C.surf3, borderWidth: 1, borderColor: '#221E24' },
+  joinBtn: { height: 34, paddingHorizontal: 14, borderRadius: 17, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center' },
+  groupNote: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 16, backgroundColor: 'rgba(59,123,255,0.10)', borderWidth: 1, borderColor: 'rgba(59,123,255,0.3)' },
+  groupBtn: { flex: 1, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  groupBtnJoin: { backgroundColor: C.pink },
+  groupBtnGhost: { borderWidth: 1.5, borderColor: C.line2 },
   guideThumb: { width: 76, height: 50, borderRadius: 10, overflow: 'hidden', backgroundColor: C.surf2 },
   sheet: { backgroundColor: '#141116', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 10, borderWidth: 1, borderColor: C.line },
   grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#3A3439', marginBottom: 12 },

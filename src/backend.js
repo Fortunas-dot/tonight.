@@ -699,7 +699,7 @@ async function postPhotoUrls(rows) {
 }
 
 /** Newest posts first; topic 'For you' means all. Returns null when offline. */
-export async function loadFeed(topic) {
+export async function loadFeed(topic, groupId) {
   if (!uid) return null;
   // Saved posts (only mine) mark the feed and power the "Saved" tab.
   const { data: saves } = await supabase.from('post_saves').select('post_id').eq('user_id', uid);
@@ -709,6 +709,9 @@ export async function loadFeed(topic) {
     if (!saved.size) return [];
     q = q.in('id', [...saved]);
   } else if (topic && topic !== 'For you') q = q.eq('topic', topic);
+  // Group posts live only in their group; the main feed shows the rest.
+  if (groupId) q = q.eq('group_id', groupId);
+  else if (topic !== 'Saved') q = q.is('group_id', null);
   const { data, error } = await q;
   if (error) return null;
   const urls = await postPhotoUrls(data);
@@ -735,7 +738,7 @@ export async function likePost(id, on) {
 }
 
 /** Creates a post; photos are local uris (already masked if the member chose that). */
-export async function createPost({ topic, title, body, photos = [], spicy, poll }) {
+export async function createPost({ topic, title, body, photos = [], spicy, poll, groupId }) {
   if (!uid) return null;
   const paths = [];
   for (const uri of photos) {
@@ -747,7 +750,7 @@ export async function createPost({ topic, title, body, photos = [], spicy, poll 
   }
   const { data, error } = await supabase
     .from('posts')
-    .insert({ author: uid, topic, title: title || null, body: body || '', photos: paths, spicy: !!spicy, poll_options: poll && poll.length >= 2 ? poll : null })
+    .insert({ author: uid, topic, title: title || null, body: body || '', photos: paths, spicy: !!spicy, poll_options: poll && poll.length >= 2 ? poll : null, group_id: groupId || null })
     .select('id')
     .single();
   if (error) {
@@ -755,6 +758,28 @@ export async function createPost({ topic, title, body, photos = [], spicy, poll 
     return null;
   }
   return data.id;
+}
+
+/* ---------- Lounge groups ---------- */
+
+/** All groups with member counts and whether I joined. */
+export async function loadGroups() {
+  if (!uid) return null;
+  const { data, error } = await supabase.rpc('group_list');
+  if (error) {
+    console.warn('[backend] groups failed', error.message);
+    return null;
+  }
+  return data || [];
+}
+
+export async function joinGroup(groupId, on) {
+  if (!uid) return false;
+  const { error } = on
+    ? await supabase.from('group_members').upsert({ group_id: groupId, user_id: uid })
+    : await supabase.from('group_members').delete().eq('group_id', groupId).eq('user_id', uid);
+  if (error) console.warn('[backend] join group failed', error.message);
+  return !error;
 }
 
 export async function deletePost(id) {

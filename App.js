@@ -16,7 +16,7 @@ import { applyNewestUpdate } from './src/version';
 
 import { Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
 import { Badges, Chat, Chats, CodeView, GuideView, Ideas, Match, Me, Plan, Support, Likes } from './src/screens/Main';
-import { Compose, Lounge, PostView } from './src/screens/Lounge';
+import { Compose, GroupView, Lounge, PostView } from './src/screens/Lounge';
 import { EditProfile } from './src/screens/ProfileFields';
 import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
 import { Privacy, Settings } from './src/screens/Settings';
@@ -489,9 +489,13 @@ export default function App() {
             />
           ) : null;
           break;
+        case 'group':
+          screen = <GroupView group={p.group} refreshKey={feedKey} onBack={pop} onOpenPost={(post) => push('post', { post })} onCompose={(group) => push('compose', { group })} />;
+          break;
         case 'compose':
           screen = (
             <Compose
+              group={p.group}
               onClose={pop}
               onPosted={() => {
                 setFeedKey((k) => k + 1);
@@ -600,7 +604,7 @@ export default function App() {
         ),
         likes: <Likes people={likesYou} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
         chats: <Chats chats={chats} filterExplicit={profile.settings?.filterExplicit !== false} onOpen={(id) => push('chat', { id })} />,
-        lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onOpenPost={(post) => push('post', { post })} />,
+        lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onGroup={(group) => push('group', { group })} onOpenPost={(post) => push('post', { post })} />,
         me: (
           <Me
             profile={profile}

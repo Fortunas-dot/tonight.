@@ -11,6 +11,14 @@ export const ART = {
   review: { src: require('../assets/onboarding/review.jpg'), label: 'Illustration: Ward bringing a sealed letter while Blaze crosses her fingers' },
 };
 
+// Lounge group covers, by the key stored in groups.cover (no key: a gradient with the group's initials).
+export const GROUP_COVERS = {
+  g1: require('../assets/guides/g1.jpg'),
+  g3: require('../assets/guides/g3.jpg'),
+  g4: require('../assets/guides/g4.jpg'),
+  boundaries: require('../assets/onboarding/boundaries.jpg'),
+};
+
 // The art is 4:3 on the app's own dark background, so it sits on the screen without a visible frame.
 export function StepArt({ name, height = 170, style }) {
   const a = ART[name];
