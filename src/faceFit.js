@@ -121,8 +121,9 @@ export function fitMask(face) {
   // Ears: centred on the head (not the nose, which moves off-centre when the head turns), the band just above
   // the top of the face, about as wide as the head.
   if (headTop === null) headTop = -unit * 1.25;
-  // On the hair, not above it: just about the outline's top, which sits at the hairline.
-  const bandY = clamp(headTop - unit * 0.04, -unit * 2.2, -unit * 1.0);
+  // On the hair, not on the forehead: about 1.75 eye-gaps above the eyes, where the top of the head is. On real
+  // photos ML Kit's outline stops at the forehead, so its top alone put headbands on the brow (bunny, bow, devil).
+  const bandY = clamp(Math.min(headTop - unit * 0.04, -unit * 1.75), -unit * 2.3, -unit * 1.5);
   const earsS = clamp(((headW || unit * 2.3) * 0.98) / 170, 0.06, 4);
 
   // Back to the photo.
