@@ -572,14 +572,76 @@ const QUICK = [
   { icon: 'close', label: 'Cancel kindly', cancel: true, text: 'Hey, I can’t make it tonight after all. Sorry for the short notice, hope you have a good night.' },
 ];
 
-const PLAN_TIMES = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'];
+// The time wheel: every quarter from 17:00 to 03:00. Days: tonight, tomorrow and the next few weekdays.
+const WHEEL_TIMES = Array.from({ length: 41 }, (_, i) => {
+  const m = 17 * 60 + i * 15;
+  return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+});
+const WHEEL_ROW = 40;
+function planDays() {
+  const now = new Date();
+  return ['Tonight', 'Tomorrow', ...[2, 3, 4, 5].map((d) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + d).toLocaleDateString('en-US', { weekday: 'long' }))];
+}
+
+function TimeWheel({ value, onChange }) {
+  const scroll = useRef(null);
+  const start = Math.max(0, WHEEL_TIMES.indexOf(value));
+  const [index, setIndex] = useState(start);
+  const settle = (y) => {
+    const i = Math.min(WHEEL_TIMES.length - 1, Math.max(0, Math.round(y / WHEEL_ROW)));
+    if (i !== index) tap();
+    setIndex(i);
+    onChange(WHEEL_TIMES[i]);
+  };
+  return (
+    <View style={styles.wheel}>
+      <View pointerEvents="none" style={styles.wheelBand} />
+      <ScrollView
+        ref={scroll}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={WHEEL_ROW}
+        decelerationRate="fast"
+        contentOffset={{ x: 0, y: start * WHEEL_ROW }}
+        contentContainerStyle={{ paddingVertical: WHEEL_ROW * 2 }}
+        scrollEventThrottle={16}
+        onScroll={(e) => setIndex(Math.min(WHEEL_TIMES.length - 1, Math.max(0, Math.round(e.nativeEvent.contentOffset.y / WHEEL_ROW))))}
+        onMomentumScrollEnd={(e) => settle(e.nativeEvent.contentOffset.y)}
+        onScrollEndDrag={(e) => {
+          if (!e.nativeEvent.velocity || Math.abs(e.nativeEvent.velocity.y) < 0.05) settle(e.nativeEvent.contentOffset.y);
+        }}
+        accessibilityLabel={`Time, ${WHEEL_TIMES[index]}`}
+      >
+        {WHEEL_TIMES.map((t, i) => (
+          <Pressable
+            key={t}
+            accessibilityRole="button"
+            onPress={() => {
+              scroll.current?.scrollTo({ y: i * WHEEL_ROW, animated: true });
+              settle(i * WHEEL_ROW);
+            }}
+            style={{ height: WHEEL_ROW, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <T style={{ fontFamily: i === index ? F.display : F.body, fontSize: i === index ? 24 : 18, opacity: Math.max(0.25, 1 - Math.abs(i - index) * 0.3) }}>{t}</T>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
 
 export function Plan({ chat, onBack, onSend, onSavePlan, onCancelPlan, onFakeCall, onUnmatch, startEditing = false }) {
   const p = chatPerson(chat);
   // Making or changing the plan: a public place and a time. Saved for both of you and posted in the chat.
   const [editing, setEditing] = useState(startEditing || !chat.plan);
   const [place, setPlace] = useState(chat.plan?.place || '');
-  const [time, setTime] = useState(chat.plan?.time || '');
+  // The plan's time is "21:30" for tonight, or "Friday 21:30" / "Tomorrow 21:30".
+  const [days] = useState(planDays);
+  const [day, setDay] = useState(() => {
+    const d = days.findIndex((x) => (chat.plan?.time || '').startsWith(`${x} `));
+    return d > 0 ? d : 0;
+  });
+  const [clock, setClock] = useState(() => (chat.plan?.time || '').match(/(\d{2}:\d{2})$/)?.[1] || '21:00');
+  const time = day === 0 ? clock : `${days[day]} ${clock}`;
   const [saving, setSaving] = useState(false);
   const canSave = place.trim().length > 1 && time.trim().length > 0 && !saving;
   const save = async () => {
@@ -632,33 +694,28 @@ export function Plan({ chat, onBack, onSend, onSavePlan, onCancelPlan, onFakeCal
             <T v="label" c={C.muted} style={{ marginTop: 4 }}>
               When
             </T>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {PLAN_TIMES.map((t) => (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {days.map((d, i) => (
                 <Pressable
-                  key={t}
+                  key={d}
                   accessibilityRole="button"
-                  accessibilityState={{ selected: time === t }}
+                  accessibilityState={{ selected: day === i }}
                   onPress={() => {
                     tap();
-                    setTime(t);
+                    setDay(i);
                   }}
-                  style={[styles.planChip, time === t && styles.planChipOn]}
+                  style={[styles.planChip, day === i && styles.planChipOn]}
                 >
-                  <T v="small" c={time === t ? C.bg : C.ink} style={{ fontFamily: F.semi }}>
-                    {t}
+                  <T v="small" c={day === i ? C.bg : C.ink} style={{ fontFamily: F.semi }}>
+                    {d}
                   </T>
                 </Pressable>
               ))}
-            </View>
-            <TextInput
-              value={PLAN_TIMES.includes(time) ? '' : time}
-              onChangeText={setTime}
-              placeholder="Or type a time, e.g. Friday 20:00"
-              placeholderTextColor={C.faint}
-              maxLength={24}
-              style={styles.planInput}
-              accessibilityLabel="Other time"
-            />
+            </ScrollView>
+            <TimeWheel value={clock} onChange={setClock} />
+            <T v="small" c={C.muted} style={{ textAlign: 'center' }}>
+              {day === 0 ? `Tonight at ${clock}` : `${days[day]} at ${clock}`}
+            </T>
             <GradientButton title={saving ? 'Saving…' : chat.plan ? 'Update plan' : `Send plan to ${p.name}`} disabled={!canSave} onPress={save} style={{ marginTop: 4 }} />
             {chat.plan ? (
               <GhostButton title="Keep the current plan" onPress={() => setEditing(false)} border={false} color={C.muted} />
@@ -1479,6 +1536,8 @@ const styles = StyleSheet.create({
   planInput: { height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, paddingHorizontal: 14, color: C.ink, fontFamily: F.body, fontSize: 15 },
   planChip: { height: 36, paddingHorizontal: 14, borderRadius: 18, borderWidth: 1.5, borderColor: C.line2, alignItems: 'center', justifyContent: 'center' },
   planChipOn: { backgroundColor: C.ink, borderColor: C.ink },
+  wheel: { height: WHEEL_ROW * 5, borderRadius: 16, backgroundColor: C.surf3, overflow: 'hidden' },
+  wheelBand: { position: 'absolute', left: 12, right: 12, top: WHEEL_ROW * 2, height: WHEEL_ROW, borderRadius: 12, backgroundColor: 'rgba(240,40,122,0.14)', borderWidth: 1, borderColor: 'rgba(240,40,122,0.4)' },
   planPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 14, borderRadius: 17, backgroundColor: 'rgba(240,40,122,0.14)', borderWidth: 1, borderColor: 'rgba(240,40,122,0.4)', marginBottom: 8 },
   quick: { flex: 1, height: 64, borderRadius: 16, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center', gap: 5 },
   report: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: '#2A1A1E', borderRadius: 14, padding: 12, margin: 16, marginBottom: 0 },
