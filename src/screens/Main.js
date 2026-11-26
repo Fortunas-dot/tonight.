@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
-import { GUIDES, PEOPLE, VOWS, personById } from '../data';
+import { GUIDES, VOWS } from '../data';
 import { versionLabel } from '../version';
 import { completeness } from '../completeness';
 import * as api from '../backend';
@@ -107,10 +107,8 @@ export function Match({ person, me, onChat, onClose }) {
 
 /* ---------- Likes you ---------- */
 
-export function Likes({ people: real = [], onOpen, blurAll, showExamples = false }) {
-  // Real likes only once the app is online; the examples are for offline previews.
-  const examples = real.length || !showExamples ? [] : PEOPLE;
-  const people = real.length ? real : examples;
+export function Likes({ people: real = [], onOpen, blurAll }) {
+  const people = real;
   return (
     <Screen scroll>
       <T v="title" style={{ marginTop: 8 }}>
@@ -125,9 +123,7 @@ export function Likes({ people: real = [], onOpen, blurAll, showExamples = false
           <View style={{ flex: 1 }}>
             <T style={{ fontFamily: F.semi }}>No likes yet</T>
             <T v="small" c={C.muted}>
-              {showExamples
-                ? 'A complete profile gets noticed faster. Below are examples of how likes show up.'
-                : 'A complete profile gets noticed faster. When someone likes you, they show up here, free.'}
+              A complete profile gets noticed faster. When someone likes you, they show up here, free.
             </T>
           </View>
         </Card>
@@ -156,23 +152,17 @@ export function Likes({ people: real = [], onOpen, blurAll, showExamples = false
 
 /* ---------- Chats ---------- */
 
-const chatPerson = (c) => c.person || personById(c.id);
+const chatPerson = (c) => c.person || {};
 
 export function Chats({ chats, onOpen, filterExplicit = true }) {
   const plan = chats.find((c) => c.plan);
   const fresh = chats.filter((c) => !c.plan && !c.messages.length);
   const talking = chats.filter((c) => !c.plan && c.messages.length);
-  const examples = chats.length && chats.every((c) => !c.real);
   return (
     <Screen scroll>
       <T v="title" style={{ marginTop: 8 }}>
         Chats
       </T>
-      {examples ? (
-        <T v="small" c={C.muted} style={{ marginTop: 4 }}>
-          Example chats. Your real matches show up here.
-        </T>
-      ) : null}
 
       {!chats.length ? (
         <Card style={{ marginTop: 18, alignItems: 'center', gap: 6, paddingVertical: 28 }}>
@@ -1150,7 +1140,6 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
 }
 
 const styles = StyleSheet.create({
-  exampleTag: { position: 'absolute', top: 22, right: 14, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)', justifyContent: 'center', zIndex: 2 },
   complete: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, padding: 14, borderRadius: 22, backgroundColor: '#151217', borderWidth: 1, borderColor: C.line },
   nextStep: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8, height: 26, paddingHorizontal: 10, borderRadius: 13, backgroundColor: C.pinkBg },
   pctBadge: {

@@ -25,105 +25,6 @@ export const TURN_ON_GROUPS = [
 
 export const TURN_ONS = TURN_ON_GROUPS.flatMap((g) => g.items);
 
-export const PEOPLE = [
-  {
-    id: 'lina',
-    details: {
-      orientation: 'Bisexual',
-      relationship: 'Single',
-      pronouns: 'she/her',
-      height: '170–179 cm',
-      hosting: 'I can host',
-      when: ['Weekends', 'Late nights'],
-      drinking: 'Socially',
-      languages: ['English', 'Dutch'],
-      sign: 'Scorpio',
-    },
-    prompts: [
-      { q: 'Green flags', a: 'Asks what I like, remembers it next time.' },
-      { q: 'Ask me about', a: 'The bar I’d take you to first.' },
-    ],
-    turnOns: ['Confidence', 'Eye contact', 'Slow build-up', 'Lingerie'],
-
-    name: 'Lina',
-    age: 29,
-    dist: '2 km away',
-    until: '1:00',
-    fit: 7,
-    tier: 'fire',
-    seed: 0,
-    tested: 'Oct',
-    showsUp: 96,
-    bio: 'Cocktail at Bar Mona first, then let’s see. I like confident and kind.',
-    prompt: 'One drink, good conversation, no rush. If it clicks, it clicks.',
-    both: ['A drink first', 'Protection, always', 'A slow build-up'],
-    maybe: 'Staying over',
-  },
-  {
-    id: 'sam',
-    details: { orientation: 'Straight', relationship: 'Open relationship', height: '160–169 cm', hosting: 'Sometimes', when: ['Weeknights'], drinking: 'Wine o’clock', smoking: 'Never', sign: 'Leo' },
-    prompts: [{ q: 'A turn-off for me', a: 'Being on your phone the whole night.' }],
-    turnOns: ['Humour', 'Massage', 'Good scent'],
-
-    name: 'Sam',
-    age: 31,
-    dist: 'Under 1 km',
-    until: '2:00',
-    fit: 7,
-    tier: 'glow',
-    seed: 3,
-    tested: 'Nov',
-    showsUp: 92,
-    bio: 'Near the canal tonight. Good wine, better company.',
-    prompt: 'Eye contact across a bar, then the slow walk home.',
-    both: ['A drink first', 'Protection, always'],
-    maybe: 'Hosting',
-  },
-  {
-    id: 'noor',
-    name: 'Noor',
-    age: 27,
-    dist: 'About 3 km',
-    until: '0:30',
-    fit: 6,
-    tier: 'verified',
-    seed: 1,
-    tested: 'Sep',
-    showsUp: 100,
-    bio: 'New in town. Show me your favourite spot.',
-    prompt: 'Dancing first. Everything else is a maybe.',
-    both: ['A drink first', 'Kink-friendly'],
-    maybe: 'Staying over',
-  },
-  {
-    id: 'jules',
-    name: 'Jules',
-    age: 34,
-    dist: 'About 2 km',
-    until: '3:00',
-    fit: 6,
-    tier: 'glow',
-    seed: 2,
-    tested: 'Oct',
-    showsUp: 89,
-    bio: 'Late-night person. Bad jokes, good hands.',
-    prompt: 'Massage, music, no phones.',
-    both: ['Protection, always', 'Massage'],
-    maybe: 'Going to theirs',
-  },
-];
-
-export const CHATS = [
-  {
-    id: 'lina',
-    plan: { place: 'Bar Mona', time: '21:30' },
-    messages: [{ me: true, text: 'Drink at Bar Mona, 21:30?' }, { plan: true }, { me: false, text: 'Yes! I’ll grab a seat at the bar' }, { me: true, text: 'Black jacket. Can’t miss me.' }],
-  },
-  { id: 'sam', left: '6h left', messages: [{ me: false, text: 'Free after 10? I’m near the canal' }] },
-  { id: 'noor', left: '23h left', messages: [] },
-  { id: 'jules', left: '40h left', messages: [{ me: false, text: 'Haha fair. What are you up to Friday?' }] },
-];
-
 export const POSTS = [
   { id: 'p1', by: 'velvet_fox', topic: 'Confidence', title: 'How do you bring up boundaries without killing the mood?', likes: 212, replies: 48, expert: true },
   { id: 'p2', by: 'nightowl_k', topic: 'First times', title: 'First hookup in years after a long relationship. Nervous-excited. Tips?', likes: 156, replies: 61 },
@@ -480,8 +381,6 @@ export const IDEAS = [
     reply: 'Rounding protects everyone’s location, so this stays.',
   },
 ];
-
-export const personById = (id) => PEOPLE.find((p) => p.id === id);
 
 // Optional profile details, shown as an icon grid on someone's page. multi: pick several.
 export const DETAILS = [

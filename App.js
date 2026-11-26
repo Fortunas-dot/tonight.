@@ -9,7 +9,7 @@ import { useFonts } from 'expo-font';
 import { BricolageGrotesque_500Medium, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { C } from './src/theme';
-import { CHATS, IDEAS, PEOPLE } from './src/data';
+import { IDEAS } from './src/data';
 import { TabBar } from './src/ui';
 import * as api from './src/backend';
 import { applyNewestUpdate } from './src/version';
@@ -54,7 +54,7 @@ export default function App() {
   const [profile, setProfile] = useState({});
   const [tab, setTab] = useState('discover');
   const [stack, setStack] = useState([]);
-  const [chats, setChats] = useState(CHATS);
+  const [chats, setChats] = useState([]);
   const [ideas, setIdeas] = useState(IDEAS);
   const [online, setOnline] = useState(false);
   const [banned, setBanned] = useState(false);
@@ -172,7 +172,7 @@ export default function App() {
     setLoungeActivity(a || []);
     setDeck(d);
     setLikesYou(l);
-    setChats(c.length ? c : CHATS); // examples until the first real match
+    setChats(c);
     if (i) setIdeas([...i, ...IDEAS]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.boundaries]);
@@ -513,7 +513,7 @@ export default function App() {
                 setStep(0);
                 setStack([]);
                 setTab('discover');
-                setChats(CHATS);
+                setChats([]);
                 setDeck([]);
                 setLikesYou([]);
                 setOnline(false);
@@ -558,7 +558,7 @@ export default function App() {
       const tabs = {
         discover: (
           <DiscoverPage
-            deck={[...deck, ...PEOPLE]}
+            deck={deck}
             profile={profile}
             filters={filters}
             onFilters={(f, show) => {
@@ -571,7 +571,7 @@ export default function App() {
             onGoLive={(until) => setProfile((p) => ({ ...p, liveUntil: until }))}
           />
         ),
-        likes: <Likes people={likesYou} showExamples blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
+        likes: <Likes people={likesYou} blurAll={!!profile.settings?.blurAll} onOpen={(person) => push('profile', { person })} />,
         chats: <Chats chats={chats} filterExplicit={profile.settings?.filterExplicit !== false} onOpen={(id) => push('chat', { id })} />,
         lounge: <Lounge profile={profile} refreshKey={feedKey} onGuide={(guide) => push('guide', { guide })} onCompose={() => push('compose')} onOpenPost={(post) => push('post', { post })} />,
         me: (

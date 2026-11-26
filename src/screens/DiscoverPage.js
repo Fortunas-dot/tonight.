@@ -203,13 +203,6 @@ function PersonPage({ person, me, blurAll, onReport, onBlock, onJump }) {
     <View style={{ gap: 12 }}>
       {/* hero */}
       <BigPhoto person={person} index={0} blurAll={blurAll} width={w}>
-        {!person.real || person.demo ? (
-          <View style={styles.exampleTag}>
-            <T v="small" c={C.ink2} style={{ fontFamily: F.semi, fontSize: 11 }}>
-              {person.demo ? 'Demo profile · AI photos' : 'Example profile'}
-            </T>
-          </View>
-        ) : null}
         {realCount > 1 ? (
           <View style={styles.countTag}>
             <Icon name="image" size={12} color={C.ink2} />
@@ -511,7 +504,6 @@ const styles = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: '#2E2830', backgroundColor: 'rgba(255,255,255,0.03)' },
   chipOn: { borderColor: C.pink, backgroundColor: C.pinkBg },
   heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 18, paddingTop: 90 },
-  exampleTag: { position: 'absolute', top: 14, left: 14, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)', justifyContent: 'center' },
   detailIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   countTag: { position: 'absolute', top: 14, right: 14, flexDirection: 'row', alignItems: 'center', gap: 4, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.7)' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 24, paddingHorizontal: 9, borderRadius: 12, backgroundColor: 'rgba(17,35,27,0.85)', marginLeft: 4 },
