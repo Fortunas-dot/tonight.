@@ -1,5 +1,5 @@
 // Email and password, next to Sign in with Apple:
-// - KeepWithEmail (Settings): ties this account to an email (tap the link in the email), then a password.
+// - KeepWithEmail (sign-up and Settings): ties this account to an email and password in one step (no confirmation email for now).
 // - EmailSignIn (Welcome): sign in on a new phone; "Forgot password?" emails a login link, then a new password.
 // The links open the app (tonight://auth); App.js passes them to api.handleAuthLink, which tells these screens.
 import { useEffect, useState } from 'react';
@@ -118,112 +118,57 @@ function Wrap({ children }) {
   );
 }
 
-/** Settings › Keep your account › Use email: email → code → password. */
+/**
+ * "Save your account" (sign-up) and Settings › Keep your account › Use email: email and password on one screen.
+ * No confirmation email for now: the server saves both at once (api.saveEmailPassword).
+ */
 export function KeepWithEmail({ onBack, onDone, title = 'Keep your account' }) {
-  const [step, setStep] = useState('email'); // email | code | password
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(null);
 
-  const run = async (fn) => {
+  const save = async () => {
     if (busy) return;
+    if (!EMAIL_RE.test(email.trim())) return setProblem('email');
+    if (pw.length < MIN_PW) return setProblem('weak');
     setBusy(true);
     setProblem(null);
-    try {
-      await fn();
-    } finally {
-      setBusy(false);
+    const r = await api.saveEmailPassword(email, pw);
+    setBusy(false);
+    if (r !== 'ok') {
+      thud();
+      return setProblem(r);
     }
+    success();
+    onDone(email.trim().toLowerCase());
   };
-
-  const sendCode = () =>
-    run(async () => {
-      if (!EMAIL_RE.test(email.trim())) return setProblem('email');
-      const r = await api.startEmailLink(email);
-      if (r !== 'sent') {
-        thud();
-        return setProblem(r);
-      }
-      setStep('code');
-    });
-
-
-  const savePw = () =>
-    run(async () => {
-      if (pw.length < MIN_PW) return setProblem('weak');
-      const r = await api.setPassword(pw);
-      if (r !== 'ok') {
-        thud();
-        return setProblem(r);
-      }
-      success();
-      onDone(email.trim().toLowerCase());
-    });
-
-  // The link in the email opens the app; once it's handled, the email is confirmed.
-  useEffect(() => {
-    if (step !== 'code') return undefined;
-    return api.onAuthLink((r) => {
-      if (r.error) return setProblem('code');
-      success();
-      setProblem(null);
-      setStep('password');
-    });
-  }, [step]);
-
-  const checkConfirmed = () =>
-    run(async () => {
-      const links = await api.accountLinks();
-      if (links.email && links.email === email.trim().toLowerCase()) {
-        success();
-        setStep('password');
-      } else setProblem('notyet');
-    });
 
   return (
     <Wrap>
       <Screen scroll>
-        <Header title={title} onBack={step === 'code' ? () => setStep('email') : onBack} />
-        {step === 'email' ? (
-          <>
-            <T v="title" style={{ marginTop: 8 }}>
-              Your email
-            </T>
-            <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
-              We email you a link to check it’s yours. We only use your email to restore your account, never for marketing, and it’s never shown to anyone.
-            </T>
-            <Input
-              label="Email"
-              icon="send"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoComplete="email"
-              textContentType="emailAddress"
-              placeholder="you@example.com"
-              autoFocus
-            />
-            <Problem kind={problem} />
-            <View style={{ height: 24 }} />
-            <GradientButton title={busy ? 'Sending…' : 'Send me the link'} disabled={busy || !email.trim()} onPress={sendCode} />
-          </>
-        ) : step === 'code' ? (
-          <WaitForLink email={email.trim().toLowerCase()} what="We sent a confirmation link." busy={busy} problem={problem} onCheck={checkConfirmed} onResend={sendCode} />
-        ) : (
-          <>
-            <T v="title" style={{ marginTop: 8 }}>
-              Choose a password
-            </T>
-            <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
-              At least {MIN_PW} characters. With this and your email you can sign in on any phone.
-            </T>
-            <Input label="Password" icon="lock" value={pw} onChangeText={setPw} secure autoComplete="new-password" textContentType="newPassword" placeholder="••••••••" autoFocus />
-            <Problem kind={problem} />
-            <View style={{ height: 24 }} />
-            <GradientButton title={busy ? 'Saving…' : 'Save password'} disabled={busy || pw.length < MIN_PW} onPress={savePw} />
-          </>
-        )}
+        <Header title={title} onBack={onBack} />
+        <T v="title" style={{ marginTop: 8 }}>
+          Email and password
+        </T>
+        <T v="meta" c={C.muted} style={{ marginTop: 6 }}>
+          With these you can sign back in on any phone. We only use your email to restore your account, never for marketing, and it’s never shown to anyone.
+        </T>
+        <Input
+          label="Email"
+          icon="send"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoComplete="email"
+          textContentType="emailAddress"
+          placeholder="you@example.com"
+          autoFocus
+        />
+        <Input label="Password" icon="lock" value={pw} onChangeText={setPw} secure autoComplete="new-password" textContentType="newPassword" placeholder={`At least ${MIN_PW} characters`} />
+        <Problem kind={problem} />
+        <View style={{ height: 24 }} />
+        <GradientButton title={busy ? 'Saving…' : 'Save'} disabled={busy || !email.trim() || pw.length < MIN_PW} onPress={save} />
         {busy ? <ActivityIndicator color={C.muted} style={{ marginTop: 16 }} /> : null}
       </Screen>
     </Wrap>

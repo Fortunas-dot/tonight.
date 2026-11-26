@@ -174,6 +174,23 @@ export async function accountLinks() {
   return { apple: !!u?.identities?.some((i) => i.provider === 'apple'), email: u?.email || null, pending: u?.new_email || null };
 }
 
+/**
+ * Keeps the account with an email and password in one step, no confirmation email (server function account-email).
+ * Returns 'ok' or an error kind: 'email', 'weak', 'taken' or 'failed'.
+ */
+export async function saveEmailPassword(email, password) {
+  try {
+    const { data, error } = await supabase.functions.invoke('account-email', { body: { email: email.trim().toLowerCase(), password } });
+    if (error || !data) return 'failed';
+    if (!data.ok) return data.reason || 'failed';
+    await supabase.auth.refreshSession().catch(() => {});
+    return 'ok';
+  } catch (e) {
+    console.warn('[backend] save email failed', e?.message || e);
+    return 'failed';
+  }
+}
+
 /** Step 1 of keeping the account with email: sends a 6-digit code to that address. Returns 'sent' or an error kind. */
 export async function startEmailLink(email) {
   await expectAuthLink('keep');
