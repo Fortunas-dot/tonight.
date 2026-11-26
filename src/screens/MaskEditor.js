@@ -6,7 +6,7 @@ import { ActivityIndicator, Dimensions, Image, PanResponder, Pressable, ScrollVi
 import Svg, { Circle, ClipPath, Defs, Ellipse, G, Image as SvgImage, LinearGradient as SvgLinear, Path, Pattern, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { File, Paths } from 'expo-file-system';
-import { C, F } from '../theme';
+import { C, F, GRAD } from '../theme';
 import { Icon } from '../icons';
 import { Screen, T, Toggle, success, tap } from '../ui';
 import { MANUAL, VH, VW, findFace } from '../faces';
@@ -391,43 +391,69 @@ function Frost() {
   );
 }
 
+// group: the picker's sections, in this order.
 const MASKS = [
-  { id: 'none', label: 'None' },
-  { id: 'bunny', label: 'Bunny', Comp: Bunny, ears: true },
-  { id: 'masq', label: 'Masquerade', Comp: Masquerade },
-  { id: 'kitten', label: 'Kitten', Comp: Kitten, ears: true },
-  { id: 'devil', label: 'Devil', Comp: Devil, ears: true },
-  { id: 'angel', label: 'Angel', Comp: Angel, ears: true },
-  { id: 'lace', label: 'Lace', Comp: BlackLace },
-  { id: 'latex', label: 'Latex', Comp: Latex },
-  { id: 'bow', label: 'Bow', Comp: Bow, ears: true },
-  { id: 'crystal', label: 'Crystal', Comp: Crystal },
-  { id: 'frost', label: 'Frost', Comp: Frost },
+  { id: 'none', label: 'None', group: 'none' },
+  { id: 'bunny', label: 'Bunny', Comp: Bunny, ears: true, group: 'Cute' },
+  { id: 'kitten', label: 'Kitten', Comp: Kitten, ears: true, group: 'Cute' },
+  { id: 'devil', label: 'Devil', Comp: Devil, ears: true, group: 'Sexy' },
+  { id: 'angel', label: 'Angel', Comp: Angel, ears: true, group: 'Sexy' },
+  { id: 'lace', label: 'Lace', Comp: BlackLace, group: 'Sexy' },
+  { id: 'latex', label: 'Latex', Comp: Latex, group: 'Sexy' },
+  { id: 'bow', label: 'Bow', Comp: Bow, ears: true, group: 'Sexy' },
+  { id: 'masq', label: 'Masquerade', Comp: Masquerade, group: 'Glam' },
+  { id: 'crystal', label: 'Crystal', Comp: Crystal, group: 'Glam' },
+  { id: 'frost', label: 'Frost', Comp: Frost, group: 'Hide' },
 ];
+const GROUPS = ['none', 'Cute', 'Sexy', 'Glam', 'Hide'];
 
-function Thumb({ id }) {
+// A mask on its own for the picker: the whole headpiece when it has one, else cropped close so it reads large.
+function Thumb({ id, size = 62 }) {
   if (id === 'none')
     return (
-      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth={1.8} strokeLinecap="round">
+      <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth={1.8} strokeLinecap="round">
         <Circle cx={12} cy={12} r={8} />
         <Path d="M6.5 17.5l11-11" />
       </Svg>
     );
-  if (id === 'frost')
-    return (
-      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#6FA8FF" strokeWidth={1.8} strokeLinecap="round">
-        <Circle cx={12} cy={12} r={8} strokeDasharray="2 3" />
-        <Circle cx={12} cy={12} r={3} />
-      </Svg>
-    );
-  const M = MASKS.find((m) => m.id === id).Comp;
+  const m = MASKS.find((x) => x.id === id);
+  const M = m.Comp;
+  const box = m.ears ? '46 -14 250 290' : id === 'frost' ? '71 122 200 274' : id === 'masq' ? '64 82 270 270' : '62 128 218 218';
   return (
-    <Svg width={46} height={46} viewBox="66 -16 210 290">
+    <Svg width={size} height={size} viewBox={box}>
       <Defs>
         <MaskDefs />
       </Defs>
       <M />
     </Svg>
+  );
+}
+
+// One mask in the picker: a card with the mask large, its name under it; the chosen one gets the gradient edge.
+function MaskCard({ m, on, onPress }) {
+  const inner = (
+    <View style={[styles.card, on && styles.cardOn]}>
+      <View style={styles.cardArt}>
+        <Thumb id={m.id} />
+      </View>
+      <T v="small" c={on ? C.ink : C.muted} numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: on ? F.semi : F.medium, fontSize: 12 }}>
+        {m.label}
+      </T>
+    </View>
+  );
+  return (
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${m.label} mask`} onPress={onPress} style={({ pressed }) => pressed && { transform: [{ scale: 0.96 }] }}>
+      {on ? (
+        <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardRing}>
+          {inner}
+          <View style={styles.cardTick}>
+            <Icon name="check" size={10} color="#FFFFFF" stroke={3.4} />
+          </View>
+        </LinearGradient>
+      ) : (
+        <View style={styles.cardRing}>{inner}</View>
+      )}
+    </Pressable>
   );
 }
 
@@ -736,50 +762,32 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
         </View>
       ) : null}
 
-      {/* Scrolls sideways: more masks than fit across the screen */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row} contentContainerStyle={{ gap: 4 }}>
-        {MASKS.map((m) => {
-          const on = mask === m.id;
-          return (
-            <Pressable
-              key={m.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              accessibilityLabel={`${m.label} mask`}
-              onPress={() => {
-                tap();
-                setMask(m.id);
-              }}
-              style={{ alignItems: 'center', gap: 6, width: 64 }}
-            >
-              {on ? (
-                <LinearGradient colors={[C.pink, C.blue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ring}>
-                  <View
-                    style={[
-                      styles.bubble,
-                      {
-                        width: 56,
-                        height: 56,
-                        borderRadius: 28,
-                        borderWidth: 0,
-                      },
-                    ]}
-                  >
-                    <Thumb id={m.id} />
-                  </View>
-                </LinearGradient>
-              ) : (
-                <View style={styles.bubble}>
-                  <Thumb id={m.id} />
-                </View>
-              )}
-              <T v="small" c={on ? C.ink : C.muted} numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: on ? F.semi : F.medium, fontSize: 12 }}>
-                {m.label}
+      {/* The masks in sections (Cute, Sexy, Glam, Hide), scrolling sideways; the fade at the edge says there's more. */}
+      <View style={styles.picker}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerRow}>
+          {GROUPS.map((g) => (
+            <View key={g} style={g === 'none' ? null : styles.section}>
+              <T v="small" c={g === 'none' ? 'transparent' : C.faint} style={styles.sectionLabel}>
+                {g === 'none' ? ' ' : g.toUpperCase()}
               </T>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+              <View style={styles.sectionCards}>
+                {MASKS.filter((m) => m.group === g).map((m) => (
+                  <MaskCard
+                    key={m.id}
+                    m={m}
+                    on={mask === m.id}
+                    onPress={() => {
+                      tap();
+                      setMask(m.id);
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+        <LinearGradient colors={['rgba(14,12,16,0)', C.bg]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.pickerFade} pointerEvents="none" />
+      </View>
 
       {photos.length > 1 ? (
         <View style={styles.applyCard}>
@@ -866,24 +874,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  row: { flexGrow: 0, marginTop: 16, marginHorizontal: -4 },
-  ring: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bubble: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+  picker: { marginTop: 14, marginHorizontal: -24 },
+  pickerRow: { paddingHorizontal: 24, paddingRight: 48, gap: 14 },
+  pickerFade: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 36 },
+  section: { borderLeftWidth: 1, borderLeftColor: C.line, paddingLeft: 14 },
+  sectionLabel: { fontFamily: F.semi, fontSize: 10, letterSpacing: 1.2, marginBottom: 6, marginLeft: 2 },
+  sectionCards: { flexDirection: 'row', gap: 8 },
+  cardRing: { borderRadius: 18, padding: 2 },
+  card: {
+    width: 76,
+    height: 96,
+    borderRadius: 16,
     backgroundColor: C.surf2,
-    borderWidth: 2,
-    borderColor: '#2E2830',
+    borderWidth: 1,
+    borderColor: C.line,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    gap: 4,
+    paddingBottom: 6,
+  },
+  cardOn: { backgroundColor: '#221A26', borderColor: 'transparent' },
+  cardArt: { height: 64, alignItems: 'center', justifyContent: 'center' },
+  cardTick: {
+    position: 'absolute',
+    right: -3,
+    top: -3,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: C.pink,
+    borderWidth: 2,
+    borderColor: C.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   applyCard: {
     flexDirection: 'row',
