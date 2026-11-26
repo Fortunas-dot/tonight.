@@ -336,11 +336,40 @@ export default function App() {
       const tempId = `local-${Date.now()}`;
       setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: [...c.messages, { ...msg, id: tempId, at: new Date().toISOString() }] } : c)));
       api.sendMessage(chat.matchId, msg.text).then((realId) => {
-        if (realId) setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: c.messages.filter((m) => m.id !== realId).map((m) => (m.id === tempId ? { ...m, id: realId } : m)) } : c)));
+        // Failed (no signal, server error): keep it on screen marked as not sent, so it can be retried.
+        setChats((cs) =>
+          cs.map((c) =>
+            c.id === id
+              ? { ...c, messages: realId ? c.messages.filter((m) => m.id !== realId).map((m) => (m.id === tempId ? { ...m, id: realId } : m)) : c.messages.map((m) => (m.id === tempId ? { ...m, failed: true } : m)) }
+              : c,
+          ),
+        );
       });
       return;
     }
     setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: [...c.messages, msg] } : c)));
+  };
+
+  // Report / block: if it didn't reach the server, say so instead of pretending it worked.
+  const reportPerson = async (person, reason) => {
+    const ok = await api.report(person.id, reason);
+    if (!ok) Alert.alert('Report not sent', 'Check your connection and try again. Your safety matters to us.');
+    return ok;
+  };
+  const blockPerson = async (person) => {
+    const ok = await api.block(person.id);
+    if (!ok) Alert.alert('Couldn’t block', 'Check your connection and try again.');
+    else refresh();
+    return ok;
+  };
+
+  // Tap on a message that didn't go out: take it away and send it again.
+  const retryMessage = (id, msgId) => {
+    const chat = chats.find((c) => c.id === id);
+    const msg = chat?.messages.find((m) => m.id === msgId);
+    if (!msg) return;
+    setChats((cs) => cs.map((c) => (c.id === id ? { ...c, messages: c.messages.filter((m) => m.id !== msgId) } : c)));
+    sendMessage(id, { me: true, text: msg.text });
   };
 
   // Resolves to true when liking makes a match.
@@ -449,11 +478,10 @@ export default function App() {
                 if (await likeIt(person)) replaceTop('match', { person });
                 else pop();
               }}
-              onReport={(person) => person.real && api.report(person.id, 'Reported from profile')}
-              onBlock={(person) => {
+              onReport={(person) => person.real && reportPerson(person, 'Reported from profile')}
+              onBlock={async (person) => {
                 if (!person.real) return pop();
-                api.block(person.id).then(refresh);
-                pop();
+                if (await blockPerson(person)) pop();
               }}
             />
           );
@@ -464,6 +492,7 @@ export default function App() {
         case 'chat':
           screen = chat ? (
             <Chat
+              onRetry={retryMessage}
               key={chat.id}
               chat={chat}
               live={!chat.plan && !chat.real}
@@ -486,8 +515,11 @@ export default function App() {
               onFakeCall={() => setTimeout(() => setRinging(true), 20000)}
               onUnmatch={async (c, reported) => {
                 if (c.real) {
-                  if (reported) await api.report(c.id, 'Reported from chat');
-                  await api.unmatch(c.matchId);
+                  if (reported && !(await reportPerson(c, 'Reported from chat'))) return;
+                  if (!(await api.unmatch(c.matchId))) {
+                    Alert.alert('Couldn’t unmatch', 'Check your connection and try again.');
+                    return;
+                  }
                 }
                 setChats((cs) => cs.filter((x) => x.id !== c.id));
                 setStack([]);
@@ -604,8 +636,8 @@ export default function App() {
               if (show && show.join() !== (profile.show || []).join()) setProfile((p) => ({ ...p, show }));
             }}
             onLike={like}
-            onReport={(person) => person.real && api.report(person.id, 'Reported from Discover')}
-            onBlock={(person) => person.real && api.block(person.id).then(refresh)}
+            onReport={(person) => person.real && reportPerson(person, 'Reported from Discover')}
+            onBlock={(person) => person.real && blockPerson(person)}
             onGoLive={(until) => setProfile((p) => ({ ...p, liveUntil: until }))}
           />
         ),

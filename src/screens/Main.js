@@ -356,7 +356,7 @@ function HiddenMessage({ text }) {
   );
 }
 
-export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExplicit = true }) {
+export function Chat({ chat, onSend, onRetry, onBack, onPlan, onProfile, live, filterExplicit = true }) {
   // Messages they sent before you ever replied count as "first messages".
   const firstMine = chat.messages.findIndex((m) => m.me);
   const hide = (m, i) => filterExplicit && !m.me && !m.plan && (firstMine === -1 || i < firstMine) && EXPLICIT.test(m.text || '');
@@ -504,7 +504,13 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
                   <LinearGradient colors={['#D81B6A', '#9B2BA0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.me}>
                     <T c="#FFFFFF">{m.text}</T>
                   </LinearGradient>
-                  {i === lastMine && chat.real ? (
+                  {m.failed ? (
+                    <Pressable accessibilityRole="button" accessibilityLabel="Message not sent, tap to try again" onPress={() => onRetry?.(chat.id, m.id)} hitSlop={8} style={{ alignSelf: 'flex-end', marginTop: 3 }}>
+                      <T v="small" c="#FF7A8A" style={{ fontSize: 11, fontFamily: F.semi }}>
+                        Not sent · tap to retry
+                      </T>
+                    </Pressable>
+                  ) : i === lastMine && chat.real ? (
                     <T v="small" c={lastMineSeen ? C.blueL : C.faint} style={{ alignSelf: 'flex-end', marginTop: 3, fontSize: 11 }}>
                       {lastMineSeen ? 'Seen' : String(m.id).startsWith('local-') ? 'Sending…' : 'Sent'}
                     </T>

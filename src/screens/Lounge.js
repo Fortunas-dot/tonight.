@@ -319,8 +319,15 @@ function reportMenu(post) {
     ...REPORT_REASONS.map((r) => ({
       text: r,
       onPress: () => {
+        if (post.real) {
+          api.reportPost(post.id, r).then((ok) => {
+            if (!ok) return Alert.alert('Report not sent', 'Check your connection and try again.');
+            success();
+            Alert.alert('Thanks for reporting', 'We’ll take a look.');
+          });
+          return;
+        }
         success();
-        if (post.real) api.reportPost(post.id, r);
         Alert.alert('Thanks for reporting', 'We’ll take a look.');
       },
     })),

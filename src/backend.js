@@ -496,14 +496,22 @@ export async function like(personId) {
   return !!data;
 }
 
+// Safety actions say whether they went through (true), so the app never claims a report or block that didn't.
 export async function report(personId, reason) {
-  if (!uid) return;
-  await supabase.from('reports').insert({ reporter: uid, target: personId, reason });
+  if (!uid) return false;
+  const { error } = await supabase.from('reports').insert({ reporter: uid, target: personId, reason });
+  if (error) console.warn('[backend] report failed', error.message);
+  return !error;
 }
 
 export async function block(personId) {
-  if (!uid) return;
-  await supabase.from('blocks').insert({ blocker: uid, blocked: personId });
+  if (!uid) return false;
+  const { error } = await supabase.from('blocks').insert({ blocker: uid, blocked: personId });
+  if (error && error.code !== '23505') {
+    console.warn('[backend] block failed', error.message);
+    return false;
+  }
+  return true;
 }
 
 /* ---------- Chats ---------- */
@@ -1084,6 +1092,8 @@ export async function unmatch(matchId) {
 
 /** Reports a Lounge post. The server adds its author for the moderators (members can't see who wrote a post). */
 export async function reportPost(postId, reason = 'Reported from the Lounge') {
-  if (!uid) return;
-  await supabase.from('reports').insert({ reporter: uid, post_id: postId, reason });
+  if (!uid) return false;
+  const { error } = await supabase.from('reports').insert({ reporter: uid, post_id: postId, reason });
+  if (error) console.warn('[backend] report post failed', error.message);
+  return !error;
 }
