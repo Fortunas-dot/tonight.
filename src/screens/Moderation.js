@@ -306,8 +306,71 @@ function Applications({ refreshKey }) {
   );
 }
 
-export function Moderation({ onBack }) {
-  const [section, setSection] = useState('apps');
+// Support conversations: newest first, the ones still waiting on an answer marked.
+function SupportList({ refreshKey, onOpen }) {
+  const [list, setList] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    api.modSupport().then((l) => alive && setList(l));
+    return () => {
+      alive = false;
+    };
+  }, [refreshKey]);
+  if (list === null) return <ActivityIndicator color={C.muted} style={{ marginTop: 40 }} />;
+  if (!list.length) {
+    return (
+      <Card style={{ alignItems: 'center', paddingVertical: 32, gap: 8 }}>
+        <Icon name="chat" size={30} color={C.blueL} />
+        <T style={{ fontFamily: F.semi }}>No messages yet</T>
+        <T v="small" c={C.muted} style={{ textAlign: 'center' }}>
+          What members write in Me › Support shows up here.
+        </T>
+      </Card>
+    );
+  }
+  return list.map((s) => {
+    const who = s.name || (s.alias ? `@${s.alias}` : 'Member');
+    return (
+      <Pressable key={s.user_id} accessibilityRole="button" accessibilityLabel={`Support chat with ${who}${s.waiting ? ', waiting for a reply' : ''}`} onPress={() => onOpen(s.user_id, who)}>
+        <Card style={{ marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <T style={{ fontFamily: F.semi, flexShrink: 1 }} numberOfLines={1}>
+                {who}
+              </T>
+              {s.waiting ? (
+                <View style={[styles.badge, { backgroundColor: C.pinkBg }]}>
+                  <T v="small" c={C.pinkL} style={{ fontSize: 11 }}>
+                    Needs reply
+                  </T>
+                </View>
+              ) : null}
+            </View>
+            <T v="small" c={C.muted} numberOfLines={2} style={{ marginTop: 2 }}>
+              {s.last_body}
+            </T>
+          </View>
+          <T v="small" c={C.faint}>
+            {ago(s.last_at)}
+          </T>
+        </Card>
+      </Pressable>
+    );
+  });
+}
+
+// Remembered while the app runs, so coming back from a support chat lands on the Support tab again.
+const remembered = { section: 'apps' };
+const remember = (k) => {
+  remembered.section = k;
+};
+
+export function Moderation({ onBack, onOpenSupport }) {
+  const [section, setSectionState] = useState(remembered.section);
+  const setSection = (k) => {
+    remember(k);
+    setSectionState(k);
+  };
   const [appsKey, setAppsKey] = useState(0);
   const insets = useSafeAreaInsets();
   const [view, setView] = useState('open');
@@ -350,7 +413,7 @@ export function Moderation({ onBack }) {
             refreshing={refreshing}
             onRefresh={async () => {
               setRefreshing(true);
-              if (section === 'apps') setAppsKey((k) => k + 1);
+              if (section === 'apps' || section === 'support') setAppsKey((k) => k + 1);
               else await load();
               setRefreshing(false);
             }}
@@ -362,6 +425,7 @@ export function Moderation({ onBack }) {
           {[
             ['apps', 'Applications'],
             ['reports', 'Reports'],
+            ['support', 'Support'],
           ].map(([k, label]) => (
             <Pressable
               key={k}
@@ -381,6 +445,8 @@ export function Moderation({ onBack }) {
         </View>
         {section === 'apps' ? (
           <Applications refreshKey={appsKey} />
+        ) : section === 'support' ? (
+          <SupportList refreshKey={appsKey} onOpen={(id, who) => onOpenSupport?.(id, who)} />
         ) : (
           <>
             <T v="meta" c={C.muted} style={{ marginBottom: 14 }}>

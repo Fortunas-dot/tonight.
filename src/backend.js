@@ -516,9 +516,10 @@ export async function block(personId) {
 
 /* ---------- Chats ---------- */
 
+// "12h left" of the 48 hours to make a plan; nothing once they're up (it used to sit at "0h left" for good).
 const leftFor = (created) => {
-  const h = Math.max(0, 48 - Math.floor((Date.now() - new Date(created).getTime()) / 3600000));
-  return `${h}h left`;
+  const h = 48 - Math.floor((Date.now() - new Date(created).getTime()) / 3600000);
+  return h > 0 ? `${h}h left` : null;
 };
 
 /** My matches as chat objects: { id: otherUserId, matchId, person, messages, plan, left, real }. */
@@ -547,6 +548,7 @@ export async function loadChats(me) {
         real: true,
         person,
         left: leftFor(m.created_at),
+        matchedAt: m.created_at,
         plan: plan ? { place: plan.place, time: plan.at_time } : undefined,
         messages: (msgs || []).filter((x) => x.match_id === m.id).map((x) => ({ id: x.id, me: x.sender === uid, text: x.body, at: x.created_at })),
         // When the other person last read this chat / last typed in it.
@@ -768,12 +770,20 @@ export async function likePost(id, on) {
 export async function createPost({ topic, title, body, photos = [], spicy, poll, groupId }) {
   if (!uid) return null;
   const paths = [];
+  // A photo that doesn't upload stops the post (instead of quietly posting without it, or hanging on "Posting…").
   for (const uri of photos) {
     const ext = (uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
     const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext === 'jpeg' ? 'jpg' : ext}`;
-    const bytes = await new File(uri).arrayBuffer();
-    const { error } = await supabase.storage.from(POST_BUCKET).upload(path, bytes, { contentType: ext === 'png' ? 'image/png' : 'image/jpeg' });
-    if (!error) paths.push(path);
+    try {
+      const bytes = /^(blob|data|https?):/.test(uri) ? await (await fetch(uri)).arrayBuffer() : await new File(uri).arrayBuffer();
+      const { error } = await supabase.storage.from(POST_BUCKET).upload(path, bytes, { contentType: ext === 'png' ? 'image/png' : 'image/jpeg' });
+      if (error) throw error;
+      paths.push(path);
+    } catch (e) {
+      console.warn('[backend] post photo upload failed', e?.message || e);
+      if (paths.length) await supabase.storage.from(POST_BUCKET).remove(paths).catch(() => {});
+      return null;
+    }
   }
   const { data, error } = await supabase
     .from('posts')
@@ -1081,6 +1091,40 @@ export async function refreshMyPhotos(profile) {
     if (profile.masked?.[u]) nextMasked[nextPhotos[i]] = profile.masked[u];
   });
   return { photos: nextPhotos, uploaded: nextUploaded, masked: nextMasked };
+}
+
+/* ---------- Support ---------- */
+
+/** My conversation with the Tonight team, oldest first ({ id, me, text, at }), or null when it couldn't load. */
+export async function loadSupport(userId = uid) {
+  if (!uid || !userId) return null;
+  const { data, error } = await supabase.from('support_messages').select('*').eq('user_id', userId).order('created_at');
+  if (error) {
+    console.warn('[backend] support failed', error.message);
+    return null;
+  }
+  // "me" is the member's side; a moderator reading the thread sees the team's messages as theirs.
+  const asTeam = userId !== uid;
+  return data.map((m) => ({ id: m.id, me: asTeam ? m.from_team : !m.from_team, text: m.body, at: m.created_at }));
+}
+
+/** Sends a message to support (or, for a moderator, a reply into a member's conversation). Returns true when saved. */
+export async function sendSupport(text, toUserId = null) {
+  if (!uid) return false;
+  const row = toUserId ? { user_id: toUserId, from_team: true, body: text } : { user_id: uid, body: text };
+  const { error } = await supabase.from('support_messages').insert(row);
+  if (error) console.warn('[backend] support send failed', error.message);
+  return !error;
+}
+
+/** Moderators: every support conversation, newest first. */
+export async function modSupport() {
+  const { data, error } = await supabase.rpc('mod_support');
+  if (error) {
+    console.warn('[backend] mod support failed', error.message);
+    return [];
+  }
+  return data || [];
 }
 
 /** Ends a match for both people (the chat and plan go with it). */

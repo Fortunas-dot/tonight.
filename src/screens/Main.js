@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Easing, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
@@ -356,6 +356,13 @@ function HiddenMessage({ text }) {
   );
 }
 
+// "Matched today", "Matched yesterday" or "Matched on 3 Nov" (sample chats have no date: today).
+function matchedLabel(iso) {
+  const d = iso ? new Date(iso) : new Date();
+  const days = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86400000);
+  return days <= 0 ? 'Matched today' : days === 1 ? 'Matched yesterday' : `Matched on ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+}
+
 export function Chat({ chat, onSend, onRetry, onBack, onPlan, onProfile, live, filterExplicit = true }) {
   // Messages they sent before you ever replied count as "first messages".
   const firstMine = chat.messages.findIndex((m) => m.me);
@@ -367,6 +374,8 @@ export function Chat({ chat, onSend, onRetry, onBack, onPlan, onProfile, live, f
   const [revealed, setRevealed] = useState(false);
   const [now, setNow] = useState(() => new Date().toISOString());
   const lastTypingSent = useRef(0);
+  // Open on the newest message and follow new ones (it used to open at the top of a long chat).
+  const scrollRef = useRef(null);
 
   // Real chats: mark them read while open, and tell the other side when I'm typing.
   const msgCount = chat.messages.length;
@@ -430,7 +439,7 @@ export function Chat({ chat, onSend, onRetry, onBack, onPlan, onProfile, live, f
           <View style={{ flex: 1 }}>
             <T style={{ fontFamily: F.semi }}>{p.name}</T>
             <T v="small" c={C.green}>
-              {theyType ? 'typing…' : chat.plan ? `Plan at ${chat.plan.time}` : `Live until ${p.until}`} ·{' '}
+              {theyType ? 'typing…' : chat.plan ? `Plan at ${chat.plan.time}` : !chat.real || p.hereTonight ? `Live until ${p.until}` : chat.left ? `${chat.left} to make a plan` : 'Matched'} ·{' '}
               <T v="small" c={C.muted}>
                 view profile
               </T>
@@ -439,9 +448,9 @@ export function Chat({ chat, onSend, onRetry, onBack, onPlan, onProfile, live, f
         </Pressable>
         <IconButton name="shield" label="Safety tools" color={C.blueL} onPress={() => onPlan(chat.id)} />
       </View>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 8 }}>
+      <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 8 }}>
         <T v="small" c={C.faint} style={{ alignSelf: 'center' }}>
-          Matched today · open for 48 hours
+          {matchedLabel(chat.matchedAt)}
         </T>
         {both.length ? (
           <View style={styles.bothSaved}>
@@ -554,6 +563,7 @@ export function Chat({ chat, onSend, onRetry, onBack, onPlan, onProfile, live, f
             onChangeText={onType}
             placeholder={`Message ${p.name}`}
             placeholderTextColor={C.faint}
+            maxLength={2000}
             style={styles.composerInput}
             onSubmitEditing={send}
             returnKeyType="send"
@@ -1430,23 +1440,45 @@ export function CodeView({ onBack }) {
   );
 }
 
-export function Support({ onBack }) {
+const SUPPORT_HELLO = { id: 'hello', me: false, text: 'Hi! Ask us anything: verification, your account, a bug. A real person on the team reads every message and replies here.' };
+
+// Me › Support: a real conversation with the team, saved on the server. A moderator opens the same screen with
+// `userId` (Moderation › Support) to answer that member; the member gets a notification for the reply.
+export function Support({ onBack, userId = null, title = 'Support' }) {
   const insets = useSafeAreaInsets();
-  const [msgs, setMsgs] = useState([{ me: false, text: 'Hi! Ask us anything: billing, verification, a bug. A real person reads every message.' }]);
+  const asTeam = !!userId;
+  const [msgs, setMsgs] = useState(null); // null while loading
   const [text, setText] = useState('');
-  const [typing, setTyping] = useState(false);
-  const send = () => {
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef(null);
+  const load = useCallback(async () => {
+    const list = await api.loadSupport(userId || undefined);
+    if (list) setMsgs(list);
+    else setMsgs((m) => m || []);
+  }, [userId]);
+  // Load now and keep checking for replies while the screen is open.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+    const t = setInterval(load, 10000);
+    return () => clearInterval(t);
+  }, [load]);
+  const send = async () => {
     const t = text.trim();
-    if (!t) return;
+    if (!t || sending) return;
     tap();
-    setMsgs((m) => [...m, { me: true, text: t }]);
+    setSending(true);
+    const ok = await api.sendSupport(t, userId);
+    setSending(false);
+    if (!ok) {
+      Alert.alert('Message not sent', 'Check your connection and try again.');
+      return;
+    }
     setText('');
-    setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
-      setMsgs((m) => [...m, { me: false, text: 'Thanks! In this test build a teammate will follow up by email at info@fortunas.nl.' }]);
-    }, 1500);
+    load();
   };
+  const shown = msgs === null ? [] : asTeam ? msgs : [SUPPORT_HELLO, ...msgs];
+  const waiting = !asTeam && msgs?.length && msgs[msgs.length - 1].me;
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={[styles.chatHead, { paddingTop: insets.top + 4 }]}>
@@ -1457,12 +1489,13 @@ export function Support({ onBack }) {
           </T>
         </LinearGradient>
         <View style={{ flex: 1 }}>
-          <T style={{ fontFamily: F.semi }}>Support</T>
+          <T style={{ fontFamily: F.semi }}>{title}</T>
           <T v="small" c={C.green}>
-            Real people · usually reply in minutes
+            {asTeam ? 'Your reply reaches them as a notification' : 'Real people · we reply here'}
           </T>
         </View>
       </View>
+      {asTeam ? null : (
       <Pressable accessibilityRole="button" onPress={() => setText('I want to report someone: ')} style={styles.report}>
         <Icon name="shield" size={18} color="#FFC9CE" />
         <T v="small" c="#FFC9CE" style={{ flex: 1 }}>
@@ -1472,9 +1505,11 @@ export function Support({ onBack }) {
           </T>
         </T>
       </Pressable>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 8 }}>
-        {msgs.map((m, i) => (
-          <Rise key={i} style={m.me ? { alignSelf: 'flex-end', maxWidth: '80%' } : { alignSelf: 'flex-start', maxWidth: '80%' }}>
+      )}
+      <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 8 }}>
+        {msgs === null ? <ActivityIndicator color={C.muted} style={{ marginTop: 30 }} /> : null}
+        {shown.map((m) => (
+          <Rise key={m.id} style={m.me ? { alignSelf: 'flex-end', maxWidth: '80%' } : { alignSelf: 'flex-start', maxWidth: '80%' }}>
             {m.me ? (
               <LinearGradient colors={['#D81B6A', '#9B2BA0']} style={styles.me}>
                 <T c="#FFFFFF">{m.text}</T>
@@ -1486,14 +1521,20 @@ export function Support({ onBack }) {
             )}
           </Rise>
         ))}
-        {typing ? <Typing /> : null}
+        {waiting ? (
+          <T v="small" c={C.faint} style={{ alignSelf: 'flex-end' }}>
+            Sent · we’ll reply here and send you a notification
+          </T>
+        ) : null}
       </ScrollView>
       <View style={[styles.composer, { paddingBottom: insets.bottom + 10 }]}>
         <View style={styles.composerPill}>
           <TextInput
             value={text}
             onChangeText={setText}
-            placeholder="Write a message…"
+            maxLength={2000}
+            editable={!sending}
+            placeholder={asTeam ? 'Write a reply…' : 'Write a message…'}
             placeholderTextColor={C.faint}
             style={styles.composerInput}
             onSubmitEditing={send}
@@ -1532,7 +1573,15 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
     success();
     const tempId = `n${Date.now()}`;
     setIdeas([{ id: tempId, title: t, desc: '', by: 'You', cat: 'New', status: 'Open', score: 1, mine: 1 }, ...ideas]);
-    onPost?.(t).then((id) => id && setIdeas((list) => list.map((i) => (i.id === tempId ? { ...i, id, real: true } : i))));
+    // Didn't save: take it back off the list and say so (it used to stay there as if it had been posted).
+    onPost?.(t).then((id) => {
+      if (id) setIdeas((list) => list.map((i) => (i.id === tempId ? { ...i, id, real: true } : i)));
+      else {
+        setIdeas((list) => list.filter((i) => i.id !== tempId));
+        setDraft(t);
+        Alert.alert('Idea not posted', 'Check your connection and try again.');
+      }
+    });
     setDraft('');
     setSort('new');
   };
@@ -1548,6 +1597,7 @@ export function Ideas({ ideas, setIdeas, onPost, onVote, onBack }) {
         <TextInput
           value={draft}
           onChangeText={setDraft}
+          maxLength={200}
           placeholder="Suggest an idea…"
           placeholderTextColor={C.faint}
           style={{ flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 }}

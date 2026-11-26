@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Linking, Platform, StyleSheet, View } from 'react-native';
+import { Alert, AppState, Linking, Platform, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -185,7 +185,10 @@ export default function App() {
     return onNotificationTap((data) => {
       setStack([]);
       if (data.kind === 'review') api.myReview().then((r) => r && setReview(r));
-      if (data.kind === 'moderation') {
+      if (data.kind === 'support') {
+        setTab('me');
+        setStack([{ name: 'support' }]);
+      } else if (data.kind === 'moderation') {
         setTab('me');
         setStack([{ name: 'moderation' }]);
       } else if (data.kind === 'likes') setTab('likes');
@@ -254,6 +257,20 @@ export default function App() {
       onState: (matchId, st) => setChats((cs) => cs.map((c) => (c.matchId === matchId ? { ...c, theirRead: st.readAt || c.theirRead, theirTyping: st.typingAt || c.theirTyping } : c))),
     });
   }, [online, onboarded, refresh]);
+
+  // Back from the background: the phone may have dropped the live connection, so catch up on messages,
+  // matches, likes and Lounge replies that came in meanwhile (they used to wait for the next app start).
+  useEffect(() => {
+    if (!online || !onboarded || Platform.OS === 'web') return undefined;
+    let last = Date.now();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' || Date.now() - last < 15000) return;
+      last = Date.now();
+      refresh();
+      checkReview();
+    });
+    return () => sub.remove();
+  }, [online, onboarded, refresh, checkReview]);
 
   // Discretion: block screenshots / recordings and blur the app switcher preview.
   // Screenshots are allowed while testing; set BLOCK_SCREENSHOTS to true again before launch.
@@ -607,13 +624,13 @@ export default function App() {
           );
           break;
         case 'moderation':
-          screen = <Moderation onBack={pop} />;
+          screen = <Moderation onBack={pop} onOpenSupport={(userId, title) => push('support', { userId, title })} />;
           break;
         case 'privacy':
           screen = <Privacy profile={profile} setProfile={setProfile} onBack={pop} />;
           break;
         case 'support':
-          screen = <Support onBack={pop} />;
+          screen = <Support key={p.userId || 'me'} onBack={pop} userId={p.userId} title={p.title} />;
           break;
         case 'ideas':
           screen = <Ideas ideas={ideas} setIdeas={setIdeas} onPost={api.postIdea} onVote={api.voteIdea} onBack={pop} />;

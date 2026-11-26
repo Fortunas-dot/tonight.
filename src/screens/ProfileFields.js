@@ -666,7 +666,7 @@ export function EditProfile({ profile, setProfile, onBack }) {
           </View>
         </Section>
         <Section icon="user" title="The basics" caption="Only your first name and age are shown.">
-          <Field label="First name or nickname" icon="user" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" />
+          <Field label="First name or nickname" icon="user" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" maxLength={30} />
           <Field
             label="Age"
             icon="cake"

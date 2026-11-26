@@ -564,7 +564,7 @@ export function Basics({ profile, setProfile, next, back }) {
       </T>
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <SoftField label="First name" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" style={{ flex: 1 }} />
+        <SoftField label="First name" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" maxLength={30} style={{ flex: 1 }} />
         <SoftField label="Age" value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} placeholder="18+" keyboardType="number-pad" maxLength={2} style={{ width: 92 }} bad={tooYoung} />
       </View>
       {tooYoung ? (
