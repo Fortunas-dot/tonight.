@@ -1129,7 +1129,7 @@ function CompletenessCard({ profile, go }) {
 /* ---------- Badges ---------- */
 
 // Profile frames (PRODUCT_UX §3e): earned, never bought. Each builds on the one before; the numbers come from
-// private check-ins after a meet (my_badge_stats). Each frame looks clearly different: thin blue, thin pink→blue,
+// private check-ins after a meet (my_badge_stats). Each frame has its own colour and weight: thin blue, emerald green,
 // thick violet with a slow-turning glow, thick fire with an orange glow.
 const FRAMES = [
   {
@@ -1143,8 +1143,8 @@ const FRAMES = [
   {
     id: 'trusted',
     name: 'Trusted',
-    ring: ['#F0287A', '#3B7BFF'],
-    look: { width: 3 },
+    ring: ['#2BC48A', '#5FE3C0'],
+    look: { width: 3.5 },
     how: 'Verified, plus 3 positive check-ins from people you met.',
     has: (p, s) => !!p.verified && s.positive >= 3,
     progress: (s) => `${Math.min(3, s.positive)} of 3 positive check-ins`,
@@ -1152,8 +1152,8 @@ const FRAMES = [
   {
     id: 'glowing',
     name: 'Glowing',
-    ring: ['#A35BFF', '#F0287A', '#3B7BFF', '#A35BFF'],
-    look: { width: 5, glow: '#A35BFF', spin: true },
+    ring: ['#D9A6FF', '#9B4DFF', '#6A2CE0', '#D9A6FF'],
+    look: { width: 5, glow: '#9B4DFF', spin: true },
     how: 'Trusted, plus you showed up to your last 5 plans, and to at least 90% of all your plans.',
     has: (p, s) => FRAMES[1].has(p, s) && s.last5 >= 5 && s.last5_all && s.checkins > 0 && s.shows / s.checkins >= 0.9,
     progress: (s) => `Showed up ${s.shows} of ${s.checkins} · last ${Math.min(5, s.last5)} of 5 in a row${s.last5_all ? '' : ' (reset)'}`,

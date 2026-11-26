@@ -577,9 +577,9 @@ export function Lounge({ onGuide, onOpenPost, onCompose, onGroup, profile, refre
             value={tab}
             onChange={setTab}
             options={[
-              { value: 'feed', label: 'Feed' },
-              { value: 'guides', label: 'Guides' },
-              { value: 'groups', label: 'Groups' },
+              { value: 'feed', label: 'Feed', icon: 'chat' },
+              { value: 'guides', label: 'Guides', icon: 'book' },
+              { value: 'groups', label: 'Groups', icon: 'group' },
             ]}
           />
         </View>

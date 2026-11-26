@@ -229,8 +229,9 @@ export function Segmented({ options, value, onChange }) {
             tap();
             onChange(o.value);
           }}
-          style={[styles.segBtn, value === o.value && { backgroundColor: C.ink }]}
+          style={[styles.segBtn, o.icon && { flexDirection: 'row', gap: 6 }, value === o.value && { backgroundColor: C.ink }]}
         >
+          {o.icon ? <Icon name={o.icon} size={16} color={value === o.value ? C.bg : C.muted} stroke={value === o.value ? 2.2 : 1.8} /> : null}
           <T v="label" c={value === o.value ? C.bg : C.muted} style={{ fontSize: 14 }}>
             {o.label}
           </T>
