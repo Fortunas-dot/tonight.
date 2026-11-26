@@ -37,8 +37,11 @@ node scripts/seed-demo.mjs                         # create / update the demo pr
 - **Size:** 768x1024
 - **Show:** 4, 5, 6, 7
 
+A person's own **Show** line replaces this list for them (Lotte: the café Candid looked fake, removed Nov 2026).
+
 ## Lotte (lotte)
 
+- **Show:** 4, 5, 6
 - **Mask:** bunny
 - **Gender:** Woman
 - **Age:** 28

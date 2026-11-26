@@ -81,7 +81,8 @@ async function seed() {
   for (const p of people) {
     const dir = join(root, 'assets', 'demo-raw', p.slug);
     // The photos in Show, masked (scripts/mask-people.mjs) when there is a masked version, like a member who masked theirs.
-    const files = show
+    // A person's own Show line (people-prompts.md) wins over the shared one, e.g. to drop a photo that looks fake.
+    const files = (p.Show ? p.Show.split(/,\s*/) : show)
       .map((n) => (existsSync(join(dir, `masked-${n}.png`)) ? `masked-${n}.png` : `${n}.jpg`))
       .filter((f) => existsSync(join(dir, f)));
     if (!files.length) { console.log(`${p.name}: no photos yet — run generate-people.mjs first`); continue; }
@@ -114,7 +115,8 @@ async function photosOnly(slugs) {
   for (const p of people.filter((x) => slugs.includes(x.slug))) {
     if (!sessions[p.slug]) { console.log(`${p.slug}: no demo account yet — run without --photos first`); continue; }
     const dir = join(root, 'assets', 'demo-raw', p.slug);
-    const files = show
+    // A person's own Show line (people-prompts.md) wins over the shared one, e.g. to drop a photo that looks fake.
+    const files = (p.Show ? p.Show.split(/,\s*/) : show)
       .map((n) => (existsSync(join(dir, `masked-${n}.png`)) ? `masked-${n}.png` : `${n}.jpg`))
       .filter((f) => existsSync(join(dir, f)));
     const { client, id } = await signIn(p.slug);

@@ -149,7 +149,7 @@ const wanted = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const todo = people.filter((p) => !wanted.length || wanted.includes(p.slug));
 // The photos the app shows (Show in people-prompts.md), each given a phone-camera finish first (roughen.py → rough-N.jpg).
 const jobs = todo.flatMap((p) =>
-  show
+  (p.Show ? p.Show.split(/,\s*/) : show)
     .map((n) => ({ p, n, src: join(root, 'assets', 'demo-raw', p.slug, `${n}.jpg`), file: join(root, 'assets', 'demo-raw', p.slug, `rough-${n}.jpg`) }))
     .filter((j) => existsSync(j.src)),
 );
