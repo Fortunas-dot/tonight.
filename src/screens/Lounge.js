@@ -735,7 +735,7 @@ export function Lounge({ onGuide, onOpenPost, onCompose, onGroup, profile, refre
 /* ---------- Groups (canvas row 18) ---------- */
 
 function GroupCover({ group, style }) {
-  const src = GROUP_COVERS[group.cover];
+  const src = group.photoUrl ? { uri: group.photoUrl } : GROUP_COVERS[group.cover];
   return src ? (
     <View style={[style, { overflow: 'hidden' }]}>
       <Image source={src} style={{ width: '100%', height: '100%' }} resizeMode="cover" accessibilityIgnoresInvertColors />
@@ -751,47 +751,61 @@ function GroupCover({ group, style }) {
 
 const membersLabel = (n) => `${n} ${n === 1 ? 'member' : 'members'}`;
 
-// Any member can start a group (up to 3) and becomes its first member.
-function StartGroup({ onCreated }) {
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [about, setAbout] = useState('');
+// The fields of a group: photo, name and what it's about. Used to start a group and to edit one you started.
+function GroupForm({ title, group, submitLabel, busyLabel, onSubmit, onCancel }) {
+  const [name, setName] = useState(group?.name || '');
+  const [about, setAbout] = useState(group?.about || '');
+  // photo: undefined = keep what's there, null = removed, a uri = newly picked
+  const [photo, setPhoto] = useState(undefined);
   const [busy, setBusy] = useState(false);
+  const shown = photo === undefined ? group?.photoUrl || null : photo;
   const ok = name.trim().length >= 3 && about.trim().length >= 5 && !busy;
-  const create = async () => {
+  const pick = async () => {
+    tap();
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+    if (!res.canceled && res.assets?.[0]) setPhoto(res.assets[0].uri);
+  };
+  const submit = async () => {
     if (!ok) return;
     setBusy(true);
-    const r = await api.createGroup(name.trim(), about.trim());
+    await onSubmit({ name: name.trim(), about: about.trim(), photoUri: photo });
     setBusy(false);
-    if (!r?.id) {
-      Alert.alert('Couldn’t start the group', r?.error === 'limit' ? 'You can start up to 3 groups.' : 'Check your connection and try again.');
-      return;
-    }
-    success();
-    setOpen(false);
-    setName('');
-    setAbout('');
-    onCreated?.(r.id);
   };
-  if (!open) {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => {
-          tap();
-          setOpen(true);
-        }}
-        style={styles.startGroup}
-      >
-        <Icon name="plus" size={18} color={C.pinkL} stroke={2.4} />
-        <T style={{ fontFamily: F.semi, flex: 1 }}>Start a group</T>
-        <Icon name="chev" size={16} color={C.muted} />
-      </Pressable>
-    );
-  }
   return (
     <Card style={{ gap: 10, marginBottom: 18 }}>
-      <T style={{ fontFamily: F.semi, fontSize: 16 }}>Start a group</T>
+      <T style={{ fontFamily: F.semi, fontSize: 16 }}>{title}</T>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={shown ? 'Change group photo' : 'Add a group photo'} onPress={pick} style={styles.groupPhotoPick}>
+          {shown ? (
+            <Image source={{ uri: shown }} style={StyleSheet.absoluteFill} />
+          ) : (
+            <>
+              <Icon name="camera" size={22} color={C.pinkL} />
+              <T v="small" c={C.muted} style={{ fontSize: 11, marginTop: 2 }}>
+                Photo
+              </T>
+            </>
+          )}
+          {shown ? (
+            <View style={styles.groupPhotoBadge}>
+              <Icon name="pen" size={12} color="#FFFFFF" />
+            </View>
+          ) : null}
+        </Pressable>
+        <View style={{ flex: 1, gap: 4 }}>
+          <T style={{ fontFamily: F.semi, fontSize: 14 }}>{shown ? 'Group photo' : 'Add a group photo'}</T>
+          <T v="small" c={C.muted} style={{ lineHeight: 16 }}>
+            Shown on the group’s cover and in the list. No nudity.
+          </T>
+          {shown ? (
+            <Pressable accessibilityRole="button" onPress={() => setPhoto(null)} hitSlop={6}>
+              <T v="small" c={C.pinkL} style={{ fontFamily: F.semi }}>
+                Remove photo
+              </T>
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
       <TextInput
         value={name}
         onChangeText={setName}
@@ -815,13 +829,45 @@ function StartGroup({ onCreated }) {
         Open to every member. The Tonight Code applies, and Ward can close groups that break it.
       </T>
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Pressable accessibilityRole="button" onPress={() => setOpen(false)} style={[styles.groupBtn, styles.groupBtnGhost]}>
+        <Pressable accessibilityRole="button" onPress={onCancel} style={[styles.groupBtn, styles.groupBtnGhost]}>
           <T style={{ fontFamily: F.semi, fontSize: 14 }}>Cancel</T>
         </Pressable>
-        <GradientButton title={busy ? 'Starting…' : 'Start group'} height={44} disabled={!ok} onPress={create} style={{ flex: 1 }} />
+        <GradientButton title={busy ? busyLabel : submitLabel} height={44} disabled={!ok} onPress={submit} style={{ flex: 1 }} />
       </View>
     </Card>
   );
+}
+
+// Any member can start a group (up to 3) and becomes its first member.
+function StartGroup({ onCreated }) {
+  const [open, setOpen] = useState(false);
+  const create = async ({ name, about, photoUri }) => {
+    const r = await api.createGroup(name, about, photoUri || null);
+    if (!r?.id) {
+      Alert.alert('Couldn’t start the group', r?.error === 'limit' ? 'You can start up to 3 groups.' : 'Check your connection and try again.');
+      return;
+    }
+    success();
+    setOpen(false);
+    onCreated?.(r.id);
+  };
+  if (!open) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          tap();
+          setOpen(true);
+        }}
+        style={styles.startGroup}
+      >
+        <Icon name="plus" size={18} color={C.pinkL} stroke={2.4} />
+        <T style={{ fontFamily: F.semi, flex: 1 }}>Start a group</T>
+        <Icon name="chev" size={16} color={C.muted} />
+      </Pressable>
+    );
+  }
+  return <GroupForm title="Start a group" submitLabel="Start group" busyLabel="Starting…" onSubmit={create} onCancel={() => setOpen(false)} />;
 }
 
 function GroupsTab({ onGroup, refreshKey }) {
@@ -921,6 +967,7 @@ export function GroupView({ group: start, onBack, onOpenPost, onCompose, refresh
   const [group, setGroup] = useState(start);
   const [posts, setPosts] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const load = useCallback(
     () =>
       Promise.all([api.loadGroups(), api.loadFeed('For you', start.id)]).then(([list, feed]) => {
@@ -933,6 +980,15 @@ export function GroupView({ group: start, onBack, onOpenPost, onCompose, refresh
   useEffect(() => {
     load();
   }, [load, refreshKey]);
+  const saveEdit = async (change) => {
+    if (!(await api.updateGroup(group.id, change))) {
+      Alert.alert('Couldn’t save the group', 'Check your connection and try again.');
+      return;
+    }
+    success();
+    setEditing(false);
+    load();
+  };
   const toggleJoin = async () => {
     tap();
     setBusy(true);
@@ -987,7 +1043,25 @@ export function GroupView({ group: start, onBack, onOpenPost, onCompose, refresh
       >
         <Icon name="back" size={20} color="#FFFFFF" />
       </Pressable>
+      {group.mine ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edit group"
+          onPress={() => {
+            tap();
+            setEditing((e) => !e);
+          }}
+          hitSlop={8}
+          style={[styles.groupEditBtn, { top: insets.top + 6 }]}
+        >
+          <Icon name="pen" size={15} color="#FFFFFF" />
+          <T c="#FFFFFF" style={{ fontFamily: F.semi, fontSize: 13 }}>
+            Edit
+          </T>
+        </Pressable>
+      ) : null}
       <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>
+        {editing ? <GroupForm title="Edit group" group={group} submitLabel="Save" busyLabel="Saving…" onSubmit={saveEdit} onCancel={() => setEditing(false)} /> : null}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Pressable accessibilityRole="button" onPress={toggleJoin} disabled={busy} style={[styles.groupBtn, group.joined ? styles.groupBtnGhost : styles.groupBtnJoin, busy && { opacity: 0.5 }]}>
             <T style={{ fontFamily: F.semi, fontSize: 14 }} c="#FFFFFF">
@@ -1625,6 +1699,9 @@ const styles = StyleSheet.create({
   groupBtnJoin: { backgroundColor: C.pink },
   groupBtnGhost: { borderWidth: 1.5, borderColor: C.line2 },
   startGroup: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingHorizontal: 16, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(240,40,122,0.5)', marginBottom: 18 },
+  groupPhotoPick: { width: 72, height: 72, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(240,40,122,0.55)', backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  groupPhotoBadge: { position: 'absolute', right: 4, bottom: 4, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
+  groupEditBtn: { position: 'absolute', right: 16, height: 40, paddingHorizontal: 14, borderRadius: 20, backgroundColor: 'rgba(14,12,16,0.6)', flexDirection: 'row', alignItems: 'center', gap: 6 },
   groupInput: { height: 46, borderRadius: 12, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, paddingHorizontal: 12, color: C.ink, fontFamily: F.body, fontSize: 15 },
   guideThumb: { width: 76, height: 50, borderRadius: 10, overflow: 'hidden', backgroundColor: C.surf2 },
   sheet: { backgroundColor: '#141116', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 10, borderWidth: 1, borderColor: C.line },

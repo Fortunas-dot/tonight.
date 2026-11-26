@@ -808,11 +808,28 @@ export async function myBadgeStats() {
 
 /* ---------- Lounge groups ---------- */
 
+// Group photos live in the post-photos bucket (members can see it), in my own folder.
+async function uploadGroupPhoto(uri) {
+  const ext = (uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
+  const clean = ['png', 'webp', 'heic'].includes(ext) ? ext : 'jpg';
+  const path = `${uid}/group-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${clean}`;
+  try {
+    const body = /^(blob|data|https?):/.test(uri) ? await (await fetch(uri)).arrayBuffer() : await new File(uri).arrayBuffer();
+    const { error } = await supabase.storage.from(POST_BUCKET).upload(path, body, { contentType: clean === 'jpg' ? 'image/jpeg' : `image/${clean}` });
+    if (error) throw error;
+    return path;
+  } catch (e) {
+    console.warn('[backend] group photo upload failed', e?.message || e);
+    return null;
+  }
+}
+
 /** Starts a group (members can start up to 3); you become its first member. Returns the new group's id. */
-export async function createGroup(name, about) {
+export async function createGroup(name, about, photoUri) {
   if (!uid) return null;
   const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)}-${Math.random().toString(36).slice(2, 6)}`;
-  const { data, error } = await supabase.from('groups').insert({ slug, name, about, created_by: uid, sort: 100 }).select('id').single();
+  const photo = photoUri ? await uploadGroupPhoto(photoUri) : null;
+  const { data, error } = await supabase.from('groups').insert({ slug, name, about, photo, created_by: uid, sort: 100 }).select('id').single();
   if (error) {
     console.warn('[backend] create group failed', error.message);
     return { error: /groups_started_by|policy/.test(error.message) ? 'limit' : 'failed' };
@@ -820,7 +837,22 @@ export async function createGroup(name, about) {
   return { id: data.id };
 }
 
-/** All groups with member counts and whether I joined. */
+/** Edits a group I started. photoUri: a new picture to upload, null to remove the photo, undefined to keep it. */
+export async function updateGroup(id, { name, about, photoUri }) {
+  if (!uid) return false;
+  const change = { name, about };
+  if (photoUri === null) change.photo = null;
+  else if (photoUri) {
+    const photo = await uploadGroupPhoto(photoUri);
+    if (!photo) return false;
+    change.photo = photo;
+  }
+  const { data, error } = await supabase.from('groups').update(change).eq('id', id).select('id');
+  if (error || !data?.length) console.warn('[backend] update group failed', error?.message || 'not yours');
+  return !error && !!data?.length;
+}
+
+/** All groups with member counts, whether I joined, whether I started it, and a link to its photo. */
 export async function loadGroups() {
   if (!uid) return null;
   const { data, error } = await supabase.rpc('group_list');
@@ -828,7 +860,10 @@ export async function loadGroups() {
     console.warn('[backend] groups failed', error.message);
     return null;
   }
-  return data || [];
+  const paths = (data || []).map((g) => g.photo).filter(Boolean);
+  const { data: signed } = paths.length ? await supabase.storage.from(POST_BUCKET).createSignedUrls(paths, URL_TTL) : { data: [] };
+  const urls = Object.fromEntries((signed || []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  return (data || []).map((g) => ({ ...g, photoUrl: g.photo ? urls[g.photo] || null : null }));
 }
 
 export async function joinGroup(groupId, on) {
