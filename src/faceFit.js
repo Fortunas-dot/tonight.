@@ -119,8 +119,10 @@ export function fitMask(face) {
   const byEyeR = (up(eyeR).x - bridge) / ART_EYE_DX;
   const byEdgeL = (bridge - left) / ART_HALF_W;
   const byEdgeR = (right - bridge) / ART_HALF_W;
-  const sl = clamp(clamp(byEyeL, byEdgeL * 0.75, byEdgeL * 1.35), 0.06, 4);
-  const sr = clamp(clamp(byEyeR, byEdgeR * 0.75, byEdgeR * 1.35), 0.06, 4);
+  // At most a little past that side's edge: on a turned head the far side is narrow, and sized by its eye alone
+  // that half stuck out past the cheek (Lotte at the club).
+  const sl = clamp(clamp(byEyeL, byEdgeL * 0.8, byEdgeL * 1.15), 0.06, 4);
+  const sr = clamp(clamp(byEyeR, byEdgeR * 0.8, byEdgeR * 1.15), 0.06, 4);
   // Height keeps the art's proportions (both halves together, so a turned head doesn't flatten it):
   // following the face's height instead made a tall, narrow, squashed mask.
   const sy = clamp((sl + sr) / 2, 0.1, 4);
