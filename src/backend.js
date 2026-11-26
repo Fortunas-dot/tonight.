@@ -542,6 +542,19 @@ export async function sendMessage(matchId, text) {
   return data.id;
 }
 
+/** Sets (or changes) the plan for a match: one per match, either person can change it. */
+export async function savePlan(matchId, place, time) {
+  if (!uid || !matchId) return false;
+  const { error } = await supabase
+    .from('plans')
+    .upsert({ match_id: matchId, place, at_time: time, created_by: uid, created_at: new Date().toISOString() });
+  if (error) {
+    console.warn('[backend] save plan failed', error.message);
+    return false;
+  }
+  return true;
+}
+
 /** Guide ids both people in this match added to their wishlist (never the rest of either list). */
 export async function sharedWishlist(matchId) {
   if (!uid || !matchId) return [];
@@ -569,7 +582,7 @@ export async function setTyping(matchId) {
  * Calls onMessage(matchId, msg) for new messages, onMatch() for new matches and onState(matchId, { readAt, typingAt })
  * when the other person reads or types. Returns an unsubscribe function.
  */
-export function subscribe({ onMessage, onMatch, onState, onComment }) {
+export function subscribe({ onMessage, onMatch, onState, onComment, onPlan }) {
   if (!uid) return () => {};
   const channel = supabase
     .channel(`user-${uid}`)
@@ -582,6 +595,10 @@ export function subscribe({ onMessage, onMatch, onState, onComment }) {
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'match_state' }, ({ new: s }) => {
       if (s && s.user_id !== uid) onState?.(s.match_id, { readAt: s.read_at, typingAt: s.typing_at });
+    })
+    // A plan made or changed in one of my chats (by either of us).
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'plans' }, ({ new: p }) => {
+      if (p && p.match_id) onPlan?.(p.match_id, { place: p.place, time: p.at_time });
     })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'matches' }, ({ new: m }) => {
       if (m.user_a === uid || m.user_b === uid) onMatch();

@@ -432,6 +432,24 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
             </T>
           </View>
         ) : null}
+        {chat.plan && !chat.messages.some((m) => m.plan) ? (
+          <Pressable accessibilityRole="button" accessibilityLabel={`Plan: ${chat.plan.place} at ${chat.plan.time}. Open plan and safety`} onPress={() => onPlan(chat.id)}>
+            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20 }}>
+              <LinearGradient colors={GRAD} style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="pin" size={18} color="#FFFFFF" />
+              </LinearGradient>
+              <View style={{ flex: 1 }}>
+                <T style={{ fontFamily: F.semi }}>
+                  {chat.plan.place} · {chat.plan.time}
+                </T>
+                <T v="small" c={C.muted}>
+                  Your plan · tap to change it or for safety tools
+                </T>
+              </View>
+              <Icon name="chev" size={16} color={C.muted} />
+            </Card>
+          </Pressable>
+        ) : null}
         {chat.messages.map((m, i) =>
           m.plan ? (
             <Pressable key={i} accessibilityRole="button" onPress={() => onPlan(chat.id)}>
@@ -487,6 +505,14 @@ export function Chat({ chat, onSend, onBack, onPlan, onProfile, live, filterExpl
         {typing || theyType ? <Typing /> : null}
       </ScrollView>
       <View style={[styles.composer, { paddingBottom: insets.bottom + 10 }]}>
+        {!chat.plan ? (
+          <Pressable accessibilityRole="button" onPress={() => onPlan(chat.id)} style={styles.planPill}>
+            <Icon name="pin" size={14} color={C.pinkL} />
+            <T v="small" c={C.ink} style={{ fontFamily: F.semi }}>
+              Make a plan
+            </T>
+          </Pressable>
+        ) : null}
         <View style={styles.composerPill}>
           <TextInput
             value={text}
@@ -517,8 +543,28 @@ const QUICK = [
   { icon: 'close', label: 'Cancel kindly', text: 'Hey, I can’t make it tonight after all. Sorry for the short notice, hope you have a good night.' },
 ];
 
-export function Plan({ chat, onBack, onSend, onFakeCall, onUnmatch }) {
+const PLAN_TIMES = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'];
+
+export function Plan({ chat, onBack, onSend, onSavePlan, onFakeCall, onUnmatch, startEditing = false }) {
   const p = chatPerson(chat);
+  // Making or changing the plan: a public place and a time. Saved for both of you and posted in the chat.
+  const [editing, setEditing] = useState(startEditing || !chat.plan);
+  const [place, setPlace] = useState(chat.plan?.place || '');
+  const [time, setTime] = useState(chat.plan?.time || '');
+  const [saving, setSaving] = useState(false);
+  const canSave = place.trim().length > 1 && time.trim().length > 0 && !saving;
+  const save = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    const ok = await onSavePlan?.(chat.id, place.trim(), time.trim());
+    setSaving(false);
+    if (!ok) {
+      Alert.alert('Couldn’t save the plan', 'Check your connection and try again.');
+      return;
+    }
+    success();
+    setEditing(false);
+  };
   return (
     <Screen scroll>
       <Header title={`Tonight with ${p.name}`} onBack={onBack} />
@@ -531,7 +577,65 @@ export function Plan({ chat, onBack, onSend, onFakeCall, onUnmatch }) {
           <T v="meta" c={C.muted}>
             Public venue first. Always.
           </T>
+          {chat.plan && !editing ? (
+            <Pressable accessibilityRole="button" onPress={() => setEditing(true)} style={{ marginTop: 10, alignSelf: 'flex-start' }} hitSlop={8}>
+              <T v="label" c={C.pinkL}>
+                Change plan
+              </T>
+            </Pressable>
+          ) : null}
         </View>
+        {editing ? (
+          <View style={{ paddingHorizontal: 14, paddingBottom: 16, gap: 10 }}>
+            <T v="label" c={C.muted}>
+              Where
+            </T>
+            <TextInput
+              value={place}
+              onChangeText={setPlace}
+              placeholder="A bar or café, e.g. Bar Mona"
+              placeholderTextColor={C.faint}
+              maxLength={60}
+              autoCapitalize="words"
+              style={styles.planInput}
+              accessibilityLabel="Where you meet"
+            />
+            <T v="label" c={C.muted} style={{ marginTop: 4 }}>
+              When
+            </T>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {PLAN_TIMES.map((t) => (
+                <Pressable
+                  key={t}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: time === t }}
+                  onPress={() => {
+                    tap();
+                    setTime(t);
+                  }}
+                  style={[styles.planChip, time === t && styles.planChipOn]}
+                >
+                  <T v="small" c={time === t ? C.bg : C.ink} style={{ fontFamily: F.semi }}>
+                    {t}
+                  </T>
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              value={PLAN_TIMES.includes(time) ? '' : time}
+              onChangeText={setTime}
+              placeholder="Or type a time, e.g. Friday 20:00"
+              placeholderTextColor={C.faint}
+              maxLength={24}
+              style={styles.planInput}
+              accessibilityLabel="Other time"
+            />
+            <GradientButton title={saving ? 'Saving…' : chat.plan ? 'Update plan' : `Send plan to ${p.name}`} disabled={!canSave} onPress={save} style={{ marginTop: 4 }} />
+            {chat.plan ? (
+              <GhostButton title="Keep the current plan" onPress={() => setEditing(false)} border={false} color={C.muted} />
+            ) : null}
+          </View>
+        ) : null}
       </Card>
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
         {QUICK.map((q) => (
@@ -1214,6 +1318,10 @@ const styles = StyleSheet.create({
   },
   composerInput: { flex: 1, color: C.ink, fontFamily: F.body, fontSize: 15 },
   sendBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  planInput: { height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, paddingHorizontal: 14, color: C.ink, fontFamily: F.body, fontSize: 15 },
+  planChip: { height: 36, paddingHorizontal: 14, borderRadius: 18, borderWidth: 1.5, borderColor: C.line2, alignItems: 'center', justifyContent: 'center' },
+  planChipOn: { backgroundColor: C.ink, borderColor: C.ink },
+  planPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 14, borderRadius: 17, backgroundColor: 'rgba(240,40,122,0.14)', borderWidth: 1, borderColor: 'rgba(240,40,122,0.4)', marginBottom: 8 },
   quick: { flex: 1, height: 64, borderRadius: 16, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, alignItems: 'center', justifyContent: 'center', gap: 5 },
   report: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: '#2A1A1E', borderRadius: 14, padding: 12, margin: 16, marginBottom: 0 },
   ideaInput: {

@@ -249,6 +249,7 @@ export default function App() {
       onMessage: (matchId, msg) => setChats((cs) => cs.map((c) => (c.matchId === matchId && !c.messages.some((m) => m.id === msg.id) ? { ...c, messages: [...c.messages, msg] } : c))),
       onMatch: () => refresh(),
       onComment: () => api.loungeActivity().then((a) => setLoungeActivity(a || [])),
+      onPlan: (matchId, plan) => setChats((cs) => cs.map((c) => (c.matchId === matchId ? { ...c, plan } : c))),
       onState: (matchId, st) => setChats((cs) => cs.map((c) => (c.matchId === matchId ? { ...c, theirRead: st.readAt || c.theirRead, theirTyping: st.typingAt || c.theirTyping } : c))),
     });
   }, [online, onboarded, refresh]);
@@ -306,6 +307,17 @@ export default function App() {
   const push = (name, params) => setStack((s) => [...s, { name, params }]);
   const pop = () => setStack((s) => s.slice(0, -1));
   const replaceTop = (name, params) => setStack((s) => [...s.slice(0, -1), { name, params }]);
+
+  // Make or change the plan for a chat: saved for both of you, and announced in the chat.
+  const savePlan = async (id, place, time) => {
+    const chat = chats.find((c) => c.id === id);
+    if (!chat) return false;
+    if (chat.real && !(await api.savePlan(chat.matchId, place, time))) return false;
+    const changed = !!chat.plan;
+    setChats((cs) => cs.map((c) => (c.id === id ? { ...c, plan: { place, time } } : c)));
+    sendMessage(id, { me: true, text: `${changed ? 'New plan' : 'Plan'}: ${place} at ${time}` });
+    return true;
+  };
 
   const sendMessage = (id, msg) => {
     const chat = chats.find((c) => c.id === id);
@@ -452,6 +464,7 @@ export default function App() {
               chat={chat}
               onBack={pop}
               onSend={sendMessage}
+              onSavePlan={savePlan}
               onFakeCall={() => setTimeout(() => setRinging(true), 20000)}
               onUnmatch={async (c, reported) => {
                 if (c.real) {
