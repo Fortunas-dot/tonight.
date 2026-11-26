@@ -735,6 +735,10 @@ const CAT_STYLE = {
   'Sexual health': { icon: 'shieldCheck', colors: ['#2BC48A', '#3B7BFF'] },
   Aftercare: { icon: 'heart', colors: ['#F0287A', '#FF8A3D'] },
   'First meet': { icon: 'pin', colors: ['#F0287A', '#7B3CFF'] },
+  'Kink basics': { icon: 'flame', colors: ['#FF8A3D', '#F0287A'] },
+  Safety: { icon: 'shield', colors: ['#3B7BFF', '#2BC48A'] },
+  Confidence: { icon: 'spark', colors: ['#FFB23D', '#F0287A'] },
+  Hosting: { icon: 'home', colors: ['#7B3CFF', '#3B7BFF'] },
 };
 const catStyle = (cat) => CAT_STYLE[cat] || { icon: 'book', colors: [C.pink, C.blue] };
 

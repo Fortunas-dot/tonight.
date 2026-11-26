@@ -158,6 +158,41 @@ const GUIDE_ART = {
       'her phone on the table shows a small blue shield with a check mark; the Doberman from image 3 sits calmly nearby keeping watch; ' +
       'string lights, other people blurred in the background',
   },
+  g5: {
+    cast: ['nova', 'volt'],
+    scene: 'the woman from image 1 and the man from image 2 sit facing each other on a couch; she holds up one hand in a calm, friendly "not that" gesture ' +
+      'while smiling warmly, and he nods with an understanding, relaxed smile; a small speech bubble with a soft pink heart; warm, respectful, cozy lamp light',
+  },
+  g6: {
+    cast: ['vi', 'blaze'],
+    scene: 'the person from image 1 and the woman from image 2 stand at a small bedside table by night, laughing together while one of them ' +
+      'holds up a closed wrapped condom packet and the other a small pill box with a blue plus sign; playful, matter-of-fact, soft pink and blue light, fully clothed',
+  },
+  g7: {
+    cast: ['blaze', 'ash'],
+    scene: 'the woman from image 1 and the man from image 2 sit cross-legged on a bed, fully clothed, talking with curious smiles; between them float three glowing ' +
+      'traffic-light dots (green, yellow, red) and a loosely coiled soft red silk ribbon; intimate but tasteful, warm dim light',
+  },
+  g8: {
+    cast: ['vi', 'ward'],
+    scene: 'the person from image 1 sits on a windowsill at night, masked, looking at their phone which shows a small padlock icon; ' +
+      'the Doberman from image 2 rests beside them watchfully; city lights blurred outside, calm and reassuring, pink and blue glow',
+  },
+  g9: {
+    cast: ['ash'],
+    scene: 'the man from image 1 stands in front of a mirror getting ready for a night out, adjusting his jacket, taking a slow calm breath with a small nervous smile; ' +
+      'tiny pink butterflies flutter around him; warm bathroom light, encouraging and sweet',
+  },
+  g10: {
+    cast: ['nova', 'volt'],
+    scene: 'the woman from image 1 opens the front door of her cozy apartment with a welcoming smile to the man from image 2 who arrives holding a small bottle; ' +
+      'behind her a tidy living room with fairy lights, a coat rack by the door, two glasses of water on a table; warm, inviting',
+  },
+  g11: {
+    cast: ['blaze', 'ash'],
+    scene: 'the woman from image 1 and the man from image 2 stand outside a bar at night, giving each other a friendly, relaxed goodbye wave, both smiling politely; ' +
+      'she is about to walk off toward a tram stop; no drama, kind and light, string lights and soft city glow',
+  },
 };
 
 // ── Onboarding illustrations → assets/cartoons-raw/onboarding/<id>-N.png   (node scripts/generate-cartoons.mjs --onboarding [id …])
