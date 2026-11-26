@@ -107,6 +107,34 @@ async function seed() {
   console.log(`\nMark them as demo:\nupdate public.profiles set is_demo = true where id in (${ids.map((i) => `'${i}'`).join(', ')});`);
 }
 
+// node scripts/seed-demo.mjs --photos <slug> [<slug> …]: replace only those people's photos (e.g. after fixing a mask).
+// New file names each time, because the app caches photos by path; the rest of the profile is left alone.
+async function photosOnly(slugs) {
+  const { people, show } = await loadPeople();
+  for (const p of people.filter((x) => slugs.includes(x.slug))) {
+    if (!sessions[p.slug]) { console.log(`${p.slug}: no demo account yet — run without --photos first`); continue; }
+    const dir = join(root, 'assets', 'demo-raw', p.slug);
+    const files = show
+      .map((n) => (existsSync(join(dir, `masked-${n}.png`)) ? `masked-${n}.png` : `${n}.jpg`))
+      .filter((f) => existsSync(join(dir, f)));
+    const { client, id } = await signIn(p.slug);
+    const stamp = Date.now().toString(36);
+    const paths = [];
+    for (const f of files) {
+      const path = `${id}/demo-${stamp}-${f}`;
+      const { error } = await client.storage.from('photos').upload(path, await readFile(join(dir, f)), { contentType: f.endsWith('.png') ? 'image/png' : 'image/jpeg', upsert: true });
+      if (error) throw new Error(`${p.name} ${f}: ${error.message}`);
+      paths.push(path);
+    }
+    const { error } = await client.from('profiles').update({ photos: paths }).eq('id', id);
+    if (error) throw new Error(`${p.name}: ${error.message}`);
+    const { data: stored } = await client.storage.from('photos').list(id, { limit: 100 });
+    const stale = (stored || []).map((s) => `${id}/${s.name}`).filter((s) => !paths.includes(s));
+    if (stale.length) await client.storage.from('photos').remove(stale);
+    console.log(`${p.name}: photos replaced (${paths.length})`);
+  }
+}
+
 async function removeAll() {
   for (const slug of Object.keys(sessions)) {
     try {
@@ -126,6 +154,7 @@ async function removeAll() {
 
 try {
   if (process.argv.includes('--remove')) await removeAll();
+  else if (process.argv.includes('--photos')) await photosOnly(process.argv.slice(2).filter((a) => !a.startsWith('--')));
   else await seed();
 } catch (err) {
   console.error('Stopped:', err.message || err);
