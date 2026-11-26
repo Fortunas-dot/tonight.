@@ -1,7 +1,7 @@
 // Puts the app's masks on the demo people's photos, the way the Mask editor does on the phone:
 // find the face (scripts/find-faces.py, OpenCV), place the mask with the app's own fitMask (src/faceFit.js),
 // and burn the same mask art into the photo (1080 wide, cropped to the app's 342 by 430 frame).
-// Which mask: "- **Mask:**" in scripts/people-prompts.md (bunny, masq, kitten, frost).
+// Which mask: "- **Mask:**" in scripts/people-prompts.md (bunny, masq, kitten, devil, angel, lace, latex, bow, crystal, frost).
 //
 //   node scripts/mask-people.mjs [<slug> …]     (all people when none are named)
 // Writes assets/demo-raw/<slug>/masked-1.png …; scripts/seed-demo.mjs uploads those instead of the bare photos.
@@ -28,7 +28,8 @@ const OUT_H = Math.round((OUT_W * VH) / VW);
 const BODY = 'M72 194C98 196 136 188 171 205C206 188 244 196 270 194C266 234 246 264 212 265C193 266 182 255 171 248C160 255 149 266 130 265C96 264 76 234 72 194Z';
 const HOLES = 'M108 228C111 215 153 211 161 225C157 239 113 242 108 228Z M234 228C231 215 189 211 181 225C185 239 229 242 234 228Z';
 const EYES = `${BODY} ${HOLES}`;
-const BAND = 'M86 132Q171 58 256 132';
+// Follows the top of the head out to the hair at the sides (a shallow arch floated above the hair). Apex at y 95 (+16 → ART_BAND_Y).
+const BAND = 'M70 168C84 112 128 95 171 95C214 95 258 112 272 168';
 
 const DEFS = `
 <linearGradient id="satin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A1828"/><stop offset="0.55" stop-color="#14080F"/><stop offset="1" stop-color="#070306"/></linearGradient>
@@ -38,6 +39,14 @@ const DEFS = `
 <linearGradient id="earInner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9CC6"/><stop offset="1" stop-color="#E0246F"/></linearGradient>
 <linearGradient id="feather" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7B3CFF"/><stop offset="1" stop-color="#E3C8FF"/></linearGradient>
 <linearGradient id="lens" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9A3A8"/><stop offset="0.45" stop-color="#C9C4C8"/><stop offset="1" stop-color="#BDB8BC"/></linearGradient>
+<linearGradient id="redSatin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0384E"/><stop offset="0.5" stop-color="#B80F2A"/><stop offset="1" stop-color="#5E0412"/></linearGradient>
+<linearGradient id="horn" x1="0" y1="1" x2="0.3" y2="0"><stop offset="0" stop-color="#7A0616"/><stop offset="0.6" stop-color="#D3172F"/><stop offset="1" stop-color="#FF6B7D"/></linearGradient>
+<linearGradient id="latex" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A3A42"/><stop offset="0.35" stop-color="#0B0B0E"/><stop offset="1" stop-color="#020203"/></linearGradient>
+<linearGradient id="silver" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.5" stop-color="#C4C6CE"/><stop offset="1" stop-color="#7C7F8A"/></linearGradient>
+<linearGradient id="pearl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#F1ECEF"/><stop offset="1" stop-color="#D9D1D6"/></linearGradient>
+<radialGradient id="crystal" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.5" stop-color="#E9E6FF"/><stop offset="1" stop-color="#9890C0"/></radialGradient>
+<pattern id="lacePat" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><circle cx="5" cy="5" r="3.3" fill="none" stroke="#000" stroke-width="1.4"/><circle cx="0" cy="0" r="1.4" fill="#000"/><circle cx="10" cy="0" r="1.4" fill="#000"/><circle cx="0" cy="10" r="1.4" fill="#000"/><circle cx="10" cy="10" r="1.4" fill="#000"/></pattern>
+<clipPath id="maskBody"><path d="${EYES}" clip-rule="evenodd"/></clipPath>
 <clipPath id="eyeOpenings"><path d="${HOLES}"/></clipPath>
 <clipPath id="maskLeftHalf"><rect x="-800" y="-800" width="971.6" height="2000"/></clipPath>
 <clipPath id="maskRightHalf"><rect x="170.4" y="-800" width="1000" height="2000"/></clipPath>
@@ -92,6 +101,74 @@ ${eyeMask('url(#velvetViolet)', 'url(#gold)', 0.28)}
     face: `<g><ellipse cx="171" cy="258" rx="92" ry="128" fill="url(#frost)"/><ellipse cx="171" cy="258" rx="92" ry="128" fill="none" stroke="#6FA8FF" stroke-width="1.5" opacity="0.5"/></g>`,
   },
 };
+
+const bandIn = (c) => `<path d="${BAND}" fill="none" stroke="#120A10" stroke-width="9" stroke-linecap="round"/><path d="${BAND}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity="0.9"/>`;
+const crystals = (d, r = 3.4, gap = 7.5) => `<path d="${d}" fill="none" stroke="url(#crystal)" stroke-width="${r}" stroke-dasharray="0 ${gap}" stroke-linecap="round"/>`;
+const LOWER = 'M72 194C76 234 96 264 130 265C149 266 160 255 171 248C182 255 193 266 212 265C246 264 266 234 270 194';
+const TOPEDGE = 'M72 194C98 196 136 188 171 205C206 188 244 196 270 194';
+// The six from Nov 2026 (same art as MaskEditor.js: Devil, BlackLace, Latex, Bow, Angel, Crystal).
+const MORE = {
+  devil: {
+    ears: `<g transform="translate(0 16)">
+<path d="M126 104C112 86 108 62 120 40C124 62 136 80 152 94Z" fill="#000" opacity="0.25" transform="translate(2 4)"/>
+<path d="M126 104C112 86 108 62 120 40C124 62 136 80 152 94Z" fill="url(#horn)" stroke="#3A0008" stroke-width="2" stroke-linejoin="round"/>
+<path d="M216 104C230 86 234 62 222 40C218 62 206 80 190 94Z" fill="#000" opacity="0.25" transform="translate(2 4)"/>
+<path d="M216 104C230 86 234 62 222 40C218 62 206 80 190 94Z" fill="url(#horn)" stroke="#3A0008" stroke-width="2" stroke-linejoin="round"/>
+<path d="M122 76C122 64 124 54 120 46M220 76C220 64 218 54 222 46" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.35"/>
+${bandIn('#D3172F')}</g>`,
+    face: `<g>${eyeMask('url(#redSatin)', '#2A0006', 0.3)}<path d="M171 214l-5 -9h10z" fill="#2A0006"/></g>`,
+  },
+  lace: {
+    face: `<g>${shadow(EYES)}<path d="${EYES}" fill-rule="evenodd" fill="#0A0709" opacity="0.55"/>
+<g clip-path="url(#maskBody)"><rect x="60" y="180" width="230" height="100" fill="url(#lacePat)"/>
+<path d="${HOLES}" fill="none" stroke="#0A0709" stroke-width="12"/></g>
+<path d="${HOLES}" fill="url(#lens)"/><g clip-path="url(#eyeOpenings)"><path d="${HOLES}" fill="none" stroke="#000" stroke-width="6" opacity="0.22" transform="translate(0 2)"/></g>
+<path d="${HOLES}" fill="none" stroke="#0A0709" stroke-width="2.4"/>
+<path d="${LOWER}" fill="none" stroke="#0A0709" stroke-width="6.5" stroke-dasharray="0 8" stroke-linecap="round"/>
+<path d="${TOPEDGE}" fill="none" stroke="#0A0709" stroke-width="3"/>
+<path d="M171 205c-6-10-14-14-24-15M171 205c6-10 14-14 24-15" fill="none" stroke="#0A0709" stroke-width="2"/>
+<path d="M258 206c-2.5-6-11-5-10.5 1.8c.5 5 10.5 10.2 10.5 10.2s10-5.2 10.5-10.2c.5-6.8-8-7.8-10.5-1.8z" fill="#D3172F"/></g>`,
+  },
+  latex: {
+    face: `<g>${eyeMask('url(#latex)', '#55565E', 0.55)}
+<path d="M80 200C104 196 140 194 166 210" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.18"/>
+<path d="${LOWER}" fill="none" stroke="url(#silver)" stroke-width="5" stroke-dasharray="0 11" stroke-linecap="round" transform="translate(0 -6)"/>
+<circle cx="171" cy="214" r="7" fill="none" stroke="url(#silver)" stroke-width="2.6"/>
+<circle cx="80" cy="200" r="3.6" fill="url(#silver)"/><circle cx="262" cy="200" r="3.6" fill="url(#silver)"/></g>`,
+  },
+  bow: {
+    ears: `<g transform="translate(0 16)">${bandIn('#D3172F')}
+<g transform="translate(205 98) rotate(14)">
+<path d="M0 0C-12 -22 -44 -30 -48 -10C-52 8 -22 10 0 0Z" fill="#000" opacity="0.25" transform="translate(2 4)"/>
+<path d="M0 0C12 -22 44 -30 48 -10C52 8 22 10 0 0Z" fill="#000" opacity="0.25" transform="translate(2 4)"/>
+<path d="M0 0C-12 -22 -44 -30 -48 -10C-52 8 -22 10 0 0Z" fill="url(#redSatin)" stroke="#5E0412" stroke-width="1.5"/>
+<path d="M0 0C12 -22 44 -30 48 -10C52 8 22 10 0 0Z" fill="url(#redSatin)" stroke="#5E0412" stroke-width="1.5"/>
+<path d="M-3 2C-10 14 -16 26 -22 34L-12 32L-8 40C-4 28 0 14 0 4Z" fill="url(#redSatin)"/>
+<path d="M3 2C10 14 16 26 22 34L12 32L8 40C4 28 0 14 0 4Z" fill="url(#redSatin)"/>
+<ellipse cx="0" cy="-1" rx="7" ry="8" fill="#B80F2A" stroke="#5E0412" stroke-width="1.5"/>
+<path d="M-40 -14C-32 -20 -20 -18 -10 -8M40 -14C32 -20 20 -18 10 -8" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/></g></g>`,
+    face: `<g>${eyeMask('url(#redSatin)', '#5E0412', 0.32)}</g>`,
+  },
+  angel: {
+    ears: `<g transform="translate(0 16)">
+<ellipse cx="171" cy="62" rx="62" ry="13" fill="none" stroke="#FFE6A3" stroke-width="10" opacity="0.25"/>
+<ellipse cx="171" cy="62" rx="62" ry="13" fill="none" stroke="url(#gold)" stroke-width="5"/>
+<ellipse cx="171" cy="60" rx="58" ry="10" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.6"/></g>`,
+    face: `<g>${eyeMask('url(#pearl)', 'url(#gold)', 0.5)}
+<path d="M100 240q16 18 40 20M242 240q-16 18-40 20" fill="none" stroke="url(#gold)" stroke-width="1.6" opacity="0.9"/>
+<circle cx="171" cy="207" r="4.5" fill="url(#crystal)"/></g>`,
+  },
+  crystal: {
+    face: `<g>${eyeMask('url(#satin)', '#2B2230', 0.35)}
+${crystals(TOPEDGE, 4, 7.2)}
+${crystals(HOLES, 2.6, 5.4)}
+<path d="M96 246C110 268 130 276 150 270M246 246C232 268 212 276 192 270" fill="none" stroke="url(#crystal)" stroke-width="2.6" stroke-dasharray="0 6" stroke-linecap="round"/>
+<path d="M124 262v14M218 262v14" stroke="url(#crystal)" stroke-width="2.6" stroke-dasharray="0 5" stroke-linecap="round"/>
+<circle cx="124" cy="281" r="3.6" fill="url(#crystal)"/><circle cx="218" cy="281" r="3.6" fill="url(#crystal)"/>
+<circle cx="171" cy="206" r="5" fill="url(#crystal)"/></g>`,
+  },
+};
+Object.assign(ART, MORE);
 
 const half = (p, sx) => `translate(${p.x} ${p.y}) rotate(${p.r || 0}) scale(${sx} ${p.sy}) translate(${-ART_BRIDGE_X} ${-ART_EYE_Y})`;
 // Same as MaskEditor's earsTransform: the ears' own offset and scale from fitMask.

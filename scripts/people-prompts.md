@@ -27,7 +27,7 @@ node scripts/seed-demo.mjs                         # create / update the demo pr
 - A few metres away, the person a third to half of the frame, background in focus. Centred close-ups look AI.
 - Hands out of the frame, in pockets or in the lap. Held objects grow extra fingers.
 - Plain smooth fabrics; no knitwear, lace or small prints. Plain walls; no rows of identical things or crowds.
-- Masks: "- **Mask:**" picks the app mask (bunny, masq, kitten, frost) that scripts/mask-people.mjs burns into every photo.
+- Masks: "- **Mask:**" picks the app mask (bunny, masq, kitten, devil, angel, lace, latex, bow, crystal, frost) that scripts/mask-people.mjs burns into every photo.
 - Theme: Tonight is about going out. Dressed up for the evening, bars, rooftops, flash photos — flirty, never explicit.
 
 ## Settings

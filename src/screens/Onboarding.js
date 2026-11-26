@@ -553,7 +553,7 @@ export function Photos({ profile, setProfile, next, back }) {
           <View style={{ flex: 1 }}>
             <T style={{ fontFamily: F.semi }}>Hide my face</T>
             <T v="small" c={C.muted} style={{ marginTop: 2 }}>
-              A bunny, masquerade or kitten mask, placed on your face automatically.
+              Bunny, devil, lace, latex and more, placed on your face automatically.
             </T>
           </View>
           <Pressable

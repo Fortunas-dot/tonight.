@@ -2,8 +2,8 @@
 // (eyes, tilt and size). Drag or pinch only to fine-tune, or when no face is found.
 // The mask is burned into a new image on the phone, so the bare face is never uploaded.
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import Svg, { Circle, ClipPath, Defs, Ellipse, G, Image as SvgImage, LinearGradient as SvgLinear, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { ActivityIndicator, Dimensions, Image, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Svg, { Circle, ClipPath, Defs, Ellipse, G, Image as SvgImage, LinearGradient as SvgLinear, Path, Pattern, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { File, Paths } from 'expo-file-system';
 import { C, F } from '../theme';
@@ -23,8 +23,13 @@ const OUT_H = Math.round((OUT_W * VH) / VW);
 const BODY = 'M72 194C98 196 136 188 171 205C206 188 244 196 270 194C266 234 246 264 212 265C193 266 182 255 171 248C160 255 149 266 130 265C96 264 76 234 72 194Z';
 const HOLES = 'M108 228C111 215 153 211 161 225C157 239 113 242 108 228Z M234 228C231 215 189 211 181 225C185 239 229 242 234 228Z';
 const EYES = `${BODY} ${HOLES}`;
-// The band a headpiece sits on, following the top of the head.
-const BAND = 'M86 132Q171 58 256 132';
+// The band a headpiece sits on: follows the top of the head out to the hair at the sides (a shallow arch floated
+// above the hair). Apex at y 95 (+16 → ART_BAND_Y).
+const BAND = 'M70 168C84 112 128 95 171 95C214 95 258 112 272 168';
+// The mask's edges on their own, for beads, studs and crystals along them.
+const TOP_EDGE = 'M72 194C98 196 136 188 171 205C206 188 244 196 270 194';
+const LOWER_EDGE = 'M72 194C76 234 96 264 130 265C149 266 160 255 171 248C182 255 193 266 212 265C246 264 266 234 270 194';
+const HEART = 'M258 206c-2.5-6-11-5-10.5 1.8c.5 5 10.5 10.2 10.5 10.2s10-5.2 10.5-10.2c.5-6.8-8-7.8-10.5-1.8z';
 
 // Gradients shared by every mask; each Svg that draws a mask includes these in its Defs.
 function MaskDefs() {
@@ -62,6 +67,46 @@ function MaskDefs() {
         <Stop offset="0.45" stopColor="#C9C4C8" />
         <Stop offset="1" stopColor="#BDB8BC" />
       </SvgLinear>
+      <SvgLinear id="redSatin" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#F0384E" />
+        <Stop offset="0.5" stopColor="#B80F2A" />
+        <Stop offset="1" stopColor="#5E0412" />
+      </SvgLinear>
+      <SvgLinear id="horn" x1="0" y1="1" x2="0.3" y2="0">
+        <Stop offset="0" stopColor="#7A0616" />
+        <Stop offset="0.6" stopColor="#D3172F" />
+        <Stop offset="1" stopColor="#FF6B7D" />
+      </SvgLinear>
+      <SvgLinear id="latex" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#3A3A42" />
+        <Stop offset="0.35" stopColor="#0B0B0E" />
+        <Stop offset="1" stopColor="#020203" />
+      </SvgLinear>
+      <SvgLinear id="silver" x1="0" y1="0" x2="1" y2="1">
+        <Stop offset="0" stopColor="#FFFFFF" />
+        <Stop offset="0.5" stopColor="#C4C6CE" />
+        <Stop offset="1" stopColor="#7C7F8A" />
+      </SvgLinear>
+      <SvgLinear id="pearl" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#FFFFFF" />
+        <Stop offset="0.6" stopColor="#F1ECEF" />
+        <Stop offset="1" stopColor="#D9D1D6" />
+      </SvgLinear>
+      <RadialGradient id="crystal" cx="35%" cy="30%" r="70%">
+        <Stop offset="0" stopColor="#FFFFFF" />
+        <Stop offset="0.5" stopColor="#E9E6FF" />
+        <Stop offset="1" stopColor="#9890C0" />
+      </RadialGradient>
+      <Pattern id="lacePat" width={10} height={10} patternUnits="userSpaceOnUse" patternTransform="rotate(18)">
+        <Circle cx={5} cy={5} r={3.3} fill="none" stroke="#000000" strokeWidth={1.4} />
+        <Circle cx={0} cy={0} r={1.4} fill="#000000" />
+        <Circle cx={10} cy={0} r={1.4} fill="#000000" />
+        <Circle cx={0} cy={10} r={1.4} fill="#000000" />
+        <Circle cx={10} cy={10} r={1.4} fill="#000000" />
+      </Pattern>
+      <ClipPath id="maskBody">
+        <Path d={EYES} clipRule="evenodd" />
+      </ClipPath>
       <ClipPath id="eyeOpenings">
         <Path d={HOLES} />
       </ClipPath>
@@ -191,6 +236,151 @@ function Kitten({ part }) {
   );
 }
 
+// A headband in a given colour, for the headpieces below.
+function Band({ color }) {
+  return (
+    <>
+      <Path d={BAND} fill="none" stroke="#120A10" strokeWidth={9} strokeLinecap="round" />
+      <Path d={BAND} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" opacity={0.9} />
+    </>
+  );
+}
+
+// The light grey eyes on their own, for masks that don't use EyeMask.
+function GreyEyes({ rim }) {
+  return (
+    <>
+      <Path d={HOLES} fill="url(#lens)" />
+      <G clipPath="url(#eyeOpenings)">
+        <Path d={HOLES} fill="none" stroke="#000000" strokeWidth={6} opacity={0.22} transform="translate(0 2)" />
+      </G>
+      <Path d={HOLES} fill="none" stroke={rim} strokeWidth={2.4} />
+    </>
+  );
+}
+
+// Dots along a path (beads, studs, rhinestones): zero-length dashes with round caps.
+function Dots({ d, color, size, gap, ...rest }) {
+  return <Path d={d} fill="none" stroke={color} strokeWidth={size} strokeDasharray={`0 ${gap}`} strokeLinecap="round" {...rest} />;
+}
+
+// Red satin with horns on a headband.
+function Devil({ part }) {
+  const horns = 'M126 104C112 86 108 62 120 40C124 62 136 80 152 94Z M216 104C230 86 234 62 222 40C218 62 206 80 190 94Z';
+  return (
+    <G>
+      {part !== 'face' ? (
+        <G transform="translate(0 16)">
+          <Path d={horns} fill="#000000" opacity={0.25} transform="translate(2 4)" />
+          <Path d={horns} fill="url(#horn)" stroke="#3A0008" strokeWidth={2} strokeLinejoin="round" />
+          <Path d="M122 76C122 64 124 54 120 46M220 76C220 64 218 54 222 46" fill="none" stroke="#FFFFFF" strokeWidth={1.6} opacity={0.35} />
+          <Band color="#D3172F" />
+        </G>
+      ) : null}
+      {part !== 'ears' ? (
+        <G>
+          <EyeMask fill="url(#redSatin)" trim="#2A0006" shine={0.3} />
+          <Path d="M171 214l-5 -9h10z" fill="#2A0006" />
+        </G>
+      ) : null}
+    </G>
+  );
+}
+
+// See-through black lace with a beaded edge and a little red heart.
+function BlackLace() {
+  return (
+    <G>
+      <Shadow d={EYES} />
+      <Path d={EYES} fillRule="evenodd" fill="#0A0709" opacity={0.55} />
+      <G clipPath="url(#maskBody)">
+        <Rect x={60} y={180} width={230} height={100} fill="url(#lacePat)" />
+        <Path d={HOLES} fill="none" stroke="#0A0709" strokeWidth={12} />
+      </G>
+      <GreyEyes rim="#0A0709" />
+      <Dots d={LOWER_EDGE} color="#0A0709" size={6.5} gap={8} />
+      <Path d={TOP_EDGE} fill="none" stroke="#0A0709" strokeWidth={3} />
+      {/* an eyelash flick between the eyes */}
+      <Path d="M171 205c-6-10-14-14-24-15M171 205c6-10 14-14 24-15" fill="none" stroke="#0A0709" strokeWidth={2} />
+      <Path d={HEART} fill="#D3172F" />
+    </G>
+  );
+}
+
+// Shiny black latex with silver studs and a ring between the eyes.
+function Latex() {
+  return (
+    <G>
+      <EyeMask fill="url(#latex)" trim="#55565E" shine={0.55} />
+      <Path d="M80 200C104 196 140 194 166 210" fill="none" stroke="#FFFFFF" strokeWidth={4} strokeLinecap="round" opacity={0.18} />
+      <Dots d={LOWER_EDGE} color="url(#silver)" size={5} gap={11} transform="translate(0 -6)" />
+      <Circle cx={171} cy={214} r={7} fill="none" stroke="url(#silver)" strokeWidth={2.6} />
+      <Circle cx={80} cy={200} r={3.6} fill="url(#silver)" />
+      <Circle cx={262} cy={200} r={3.6} fill="url(#silver)" />
+    </G>
+  );
+}
+
+// Red satin with a red bow on the headband: you're the present.
+function Bow({ part }) {
+  const loops = 'M0 0C-12 -22 -44 -30 -48 -10C-52 8 -22 10 0 0Z M0 0C12 -22 44 -30 48 -10C52 8 22 10 0 0Z';
+  return (
+    <G>
+      {part !== 'face' ? (
+        <G transform="translate(0 16)">
+          <Band color="#D3172F" />
+          <G transform="translate(205 98) rotate(14)">
+            <Path d={loops} fill="#000000" opacity={0.25} transform="translate(2 4)" />
+            <Path d={loops} fill="url(#redSatin)" stroke="#5E0412" strokeWidth={1.5} />
+            <Path d="M-3 2C-10 14 -16 26 -22 34L-12 32L-8 40C-4 28 0 14 0 4Z M3 2C10 14 16 26 22 34L12 32L8 40C4 28 0 14 0 4Z" fill="url(#redSatin)" />
+            <Ellipse cx={0} cy={-1} rx={7} ry={8} fill="#B80F2A" stroke="#5E0412" strokeWidth={1.5} />
+            <Path d="M-40 -14C-32 -20 -20 -18 -10 -8M40 -14C32 -20 20 -18 10 -8" fill="none" stroke="#FFFFFF" strokeWidth={1.5} opacity={0.4} />
+          </G>
+        </G>
+      ) : null}
+      {part !== 'ears' ? <EyeMask fill="url(#redSatin)" trim="#5E0412" shine={0.32} /> : null}
+    </G>
+  );
+}
+
+// White pearl with gold trim and a gold halo (the Devil's other half).
+function Angel({ part }) {
+  return (
+    <G>
+      {part !== 'face' ? (
+        <G transform="translate(0 16)">
+          <Ellipse cx={171} cy={62} rx={62} ry={13} fill="none" stroke="#FFE6A3" strokeWidth={10} opacity={0.25} />
+          <Ellipse cx={171} cy={62} rx={62} ry={13} fill="none" stroke="url(#gold)" strokeWidth={5} />
+          <Ellipse cx={171} cy={60} rx={58} ry={10} fill="none" stroke="#FFFFFF" strokeWidth={1.2} opacity={0.6} />
+        </G>
+      ) : null}
+      {part !== 'ears' ? (
+        <G>
+          <EyeMask fill="url(#pearl)" trim="url(#gold)" shine={0.5} />
+          <Path d="M100 240q16 18 40 20M242 240q-16 18-40 20" fill="none" stroke="url(#gold)" strokeWidth={1.6} opacity={0.9} />
+          <Circle cx={171} cy={207} r={4.5} fill="url(#crystal)" />
+        </G>
+      ) : null}
+    </G>
+  );
+}
+
+// Dark plum satin with rhinestones along the top, around the eyes and in a little chain under each eye.
+function Crystal() {
+  return (
+    <G>
+      <EyeMask fill="url(#satin)" trim="#2B2230" shine={0.35} />
+      <Dots d={TOP_EDGE} color="url(#crystal)" size={4} gap={7.2} />
+      <Dots d={HOLES} color="url(#crystal)" size={2.6} gap={5.4} />
+      <Dots d="M96 246C110 268 130 276 150 270M246 246C232 268 212 276 192 270" color="url(#crystal)" size={2.6} gap={6} />
+      <Dots d="M124 262v14M218 262v14" color="url(#crystal)" size={2.6} gap={5} />
+      <Circle cx={124} cy={281} r={3.6} fill="url(#crystal)" />
+      <Circle cx={218} cy={281} r={3.6} fill="url(#crystal)" />
+      <Circle cx={171} cy={206} r={5} fill="url(#crystal)" />
+    </G>
+  );
+}
+
 // Covers the whole face with a frosted oval.
 function Frost() {
   return (
@@ -206,6 +396,12 @@ const MASKS = [
   { id: 'bunny', label: 'Bunny', Comp: Bunny, ears: true },
   { id: 'masq', label: 'Masquerade', Comp: Masquerade },
   { id: 'kitten', label: 'Kitten', Comp: Kitten, ears: true },
+  { id: 'devil', label: 'Devil', Comp: Devil, ears: true },
+  { id: 'angel', label: 'Angel', Comp: Angel, ears: true },
+  { id: 'lace', label: 'Lace', Comp: BlackLace },
+  { id: 'latex', label: 'Latex', Comp: Latex },
+  { id: 'bow', label: 'Bow', Comp: Bow, ears: true },
+  { id: 'crystal', label: 'Crystal', Comp: Crystal },
   { id: 'frost', label: 'Frost', Comp: Frost },
 ];
 
@@ -540,7 +736,8 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
         </View>
       ) : null}
 
-      <View style={styles.row}>
+      {/* Scrolls sideways: more masks than fit across the screen */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row} contentContainerStyle={{ gap: 4 }}>
         {MASKS.map((m) => {
           const on = mask === m.id;
           return (
@@ -582,7 +779,7 @@ export function MaskEditor({ photos, start = 0, onCancel, onDone }) {
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
 
       {photos.length > 1 ? (
         <View style={styles.applyCard}>
@@ -669,7 +866,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
+  row: { flexGrow: 0, marginTop: 16, marginHorizontal: -4 },
   ring: {
     width: 60,
     height: 60,
