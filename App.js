@@ -15,7 +15,7 @@ import * as api from './src/backend';
 import { applyNewestUpdate } from './src/version';
 
 import { Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
-import { Chat, Chats, CodeView, GuideView, Ideas, Match, Me, Plan, Support, Likes } from './src/screens/Main';
+import { Badges, Chat, Chats, CodeView, GuideView, Ideas, Match, Me, Plan, Support, Likes } from './src/screens/Main';
 import { Compose, Lounge, PostView } from './src/screens/Lounge';
 import { EditProfile } from './src/screens/ProfileFields';
 import { DEFAULT_FILTERS } from './src/screens/DiscoverFilters';
@@ -511,6 +511,9 @@ export default function App() {
               }}
             />
           );
+          break;
+        case 'badges':
+          screen = <Badges profile={profile} onBack={pop} />;
           break;
         case 'guide':
           screen = <GuideView guide={p.guide} onBack={pop} profile={profile} setProfile={setProfile} />;

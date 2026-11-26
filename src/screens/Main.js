@@ -927,6 +927,118 @@ function CompletenessCard({ profile, go }) {
   );
 }
 
+/* ---------- Badges ---------- */
+
+// Profile frames (PRODUCT_UX §3e): earned, never bought. Only what the app can really check counts as earned today;
+// the frames that need check-ins after a meet say so instead of showing a made-up score.
+const FRAMES = [
+  { id: 'verified', name: 'Verified', ring: ['#6FA8FF', '#6FA8FF'], how: 'Pass the selfie check: your selfie is matched against your profile photos.', has: (p) => !!p.verified },
+  { id: 'trusted', name: 'Trusted', ring: ['#F0287A', '#3B7BFF'], how: 'Verified, plus 3 positive check-ins from people you met.', needsCheckins: true },
+  { id: 'glowing', name: 'Glowing', ring: ['#F0287A', '#7B3CFF', '#3B7BFF'], how: 'Trusted, plus you showed up to your last 5 plans, and to at least 90% of all your plans.', needsCheckins: true },
+  { id: 'fire', name: 'On fire', ring: ['#FFD27A', '#FF8A3D', '#F0287A'], how: 'Glowing, plus 3 “great communicator” badges from matches and no reports in 90 days.', needsCheckins: true },
+];
+
+function RingPreview({ colors, uri, size = 56, dim }) {
+  return (
+    <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', opacity: dim ? 0.45 : 1 }}>
+      <View style={{ width: size - 5, height: size - 5, borderRadius: (size - 5) / 2, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
+        {uri ? <Image source={{ uri }} style={{ width: size - 10, height: size - 10, borderRadius: (size - 10) / 2 }} /> : <Photo style={{ width: size - 10, height: size - 10, borderRadius: (size - 10) / 2 }} />}
+      </View>
+    </LinearGradient>
+  );
+}
+
+function StatusPill({ kind }) {
+  const look = {
+    have: { text: 'You have this', fg: C.green, bg: 'rgba(43,196,138,0.14)' },
+    notYet: { text: 'Not yet', fg: C.muted, bg: C.surf2 },
+    soon: { text: 'Check-ins coming soon', fg: '#FFB36B', bg: 'rgba(255,138,61,0.12)' },
+    team: { text: 'Given by our team', fg: C.blueL, bg: C.blueBg },
+  }[kind];
+  return (
+    <View style={{ alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, height: 24, borderRadius: 12, justifyContent: 'center', backgroundColor: look.bg }}>
+      <T v="small" c={look.fg} style={{ fontFamily: F.semi, fontSize: 11 }}>
+        {look.text}
+      </T>
+    </View>
+  );
+}
+
+export function Badges({ profile, onBack }) {
+  const uri = profile.photos?.[0];
+  const earned = FRAMES.filter((f) => f.has?.(profile));
+  const top = earned[earned.length - 1];
+  const [nowMs] = useState(() => Date.now());
+  const live = !!profile.liveUntil && Date.parse(profile.liveUntil) > nowMs;
+  return (
+    <Screen scroll>
+      <Header title="Your badges" onBack={onBack} />
+      <Card style={{ alignItems: 'center', paddingVertical: 22, marginTop: 6 }}>
+        <RingPreview colors={top ? top.ring : [C.line2, C.line2]} uri={uri} size={96} />
+        <T style={{ fontFamily: F.display, fontSize: 20, marginTop: 12 }}>{top ? `${top.name} frame` : 'No frame yet'}</T>
+        <T v="meta" c={C.muted} style={{ textAlign: 'center', marginTop: 4, maxWidth: 280 }}>
+          {top ? 'This frame shows around your photo everywhere in Tonight.' : 'Pass the selfie check to get your first frame.'}
+        </T>
+      </Card>
+
+      <T v="label" c={C.muted} style={{ marginTop: 22, marginBottom: 4 }}>
+        Profile frames
+      </T>
+      <T v="small" c={C.muted} style={{ marginBottom: 10 }}>
+        Earned, never bought. Each one builds on the one before.
+      </T>
+      <View style={{ gap: 10 }}>
+        {FRAMES.map((f) => {
+          const has = !!f.has?.(profile);
+          return (
+            <Card key={f.id} style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+              <RingPreview colors={f.ring} uri={uri} dim={!has} />
+              <View style={{ flex: 1 }}>
+                <T style={{ fontFamily: F.semi, fontSize: 16 }}>{f.name}</T>
+                <T v="small" c={C.ink2} style={{ marginTop: 2, lineHeight: 17 }}>
+                  {f.how}
+                </T>
+                <StatusPill kind={has ? 'have' : f.needsCheckins ? 'soon' : 'notYet'} />
+              </View>
+            </Card>
+          );
+        })}
+      </View>
+
+      <T v="label" c={C.muted} style={{ marginTop: 22, marginBottom: 10 }}>
+        Other badges
+      </T>
+      <View style={{ gap: 10 }}>
+        <Card style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(43,196,138,0.14)', alignItems: 'center', justifyContent: 'center' }}>
+            <LiveDot size={10} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.semi, fontSize: 16 }}>Here tonight</T>
+            <T v="small" c={C.ink2} style={{ marginTop: 2, lineHeight: 17 }}>
+              Tap “Go live tonight” on Discover. For 6 hours you show first, with a green badge, to people looking for tonight.
+            </T>
+            <StatusPill kind={live ? 'have' : 'notYet'} />
+          </View>
+        </Card>
+        <Card style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.blueBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="shieldCheck" size={24} color={C.blueL} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: F.semi, fontSize: 16 }}>Sex educator</T>
+            <T v="small" c={C.ink2} style={{ marginTop: 2, lineHeight: 17 }}>
+              Shown on Lounge replies from certified educators who answer questions and review our guides.
+            </T>
+            <StatusPill kind="team" />
+          </View>
+        </Card>
+      </View>
+      <View style={{ height: 24 }} />
+    </Screen>
+  );
+}
+
 export function Me({ profile, go, onRestart }) {
   const { percent } = completeness(profile);
   return (
@@ -983,6 +1095,7 @@ export function Me({ profile, go, onRestart }) {
       ) : null}
       <Card style={{ paddingVertical: 0 }}>
         <Row icon="pin" iconColor={C.pinkL} iconBg={C.pinkBg} title="Edit profile" onPress={() => go('editProfile')} />
+        <Row icon="star" iconColor="#FFD27A" iconBg="rgba(255,210,122,0.12)" title="Your badges" sub={profile.verified ? 'Verified frame · see what’s next' : 'What each badge means'} onPress={() => go('badges')} />
         <Row icon="gear" iconColor={C.ink2} iconBg={C.surf2} title="Settings" sub="Notifications, privacy, account" onPress={() => go('settings')} />
         <Row icon="lock" iconColor={C.blueL} iconBg={C.blueBg} title="Privacy & discretion" onPress={() => go('privacy')} />
         <Row icon="flame" iconColor={C.violetL} iconBg={C.violetBg} title="The Tonight Code" onPress={() => go('code')} last />
