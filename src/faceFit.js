@@ -1,13 +1,14 @@
 // Fits the mask to a detected face, like a camera filter. Pure geometry, no React Native, so it can be tested on its own.
 //
-// The mask art is drawn around a frontal face: eye holes centred on (171, 225), 72 units apart, the mask body
-// running from x 72 to 270 (99 units each side of the nose bridge at x 171); its height keeps those proportions.
-// Each half of the mask is stretched on its own, from the nose bridge to that side of the face, so on a turned
-// head the far half narrows the way a real mask would.
+// The mask art is drawn around a frontal face: eye holes centred on (127, 228) and (215, 228), 44 units either side of
+// the nose bridge at x 171, the mask body running from x 72 to 270 (99 units each side); its height keeps those
+// proportions. Each half is sized so its eye hole lands on that eye (the face edges only keep it sensible), so on a
+// turned head the far half narrows the way a real mask would.
 
 export const ART_BRIDGE_X = 171;
 export const ART_EYE_Y = 225;
 const ART_HALF_W = 99; // nose bridge to the mask's outer edge
+const ART_EYE_DX = 44; // nose bridge to the middle of an eye hole
 // The headband's apex in the art (ears drawn around it), and how high it sits above the eyes at art size.
 export const ART_BAND_Y = 111;
 const ART_BAND_LIFT = ART_EYE_Y - ART_BAND_Y;
@@ -112,11 +113,17 @@ export function fitMask(face) {
   if (face.bridge && face.bridge.length) bridge = up(face.bridge[0]).x;
   bridge = clamp(bridge, left + unit * 0.15, right - unit * 0.15);
 
-  const sl = clamp((bridge - left) / ART_HALF_W, 0.06, 4);
-  const sr = clamp((right - bridge) / ART_HALF_W, 0.06, 4);
-  // Height keeps the art's proportions to the mask's full width (both halves, so a turned head doesn't flatten it):
+  // Each half: its eye hole on that eye. Sized from the face edges alone, the holes landed between the eyes and the
+  // mask looked squeezed onto them; the edges now only stop a misread eye from making a half far too big or small.
+  const byEyeL = (bridge - up(eyeL).x) / ART_EYE_DX;
+  const byEyeR = (up(eyeR).x - bridge) / ART_EYE_DX;
+  const byEdgeL = (bridge - left) / ART_HALF_W;
+  const byEdgeR = (right - bridge) / ART_HALF_W;
+  const sl = clamp(clamp(byEyeL, byEdgeL * 0.75, byEdgeL * 1.35), 0.06, 4);
+  const sr = clamp(clamp(byEyeR, byEdgeR * 0.75, byEdgeR * 1.35), 0.06, 4);
+  // Height keeps the art's proportions (both halves together, so a turned head doesn't flatten it):
   // following the face's height instead made a tall, narrow, squashed mask.
-  const sy = clamp((right - left) / (2 * ART_HALF_W), 0.1, 4);
+  const sy = clamp((sl + sr) / 2, 0.1, 4);
 
   // Ears: centred on the head (not the nose, which moves off-centre when the head turns), the band just above
   // the top of the face, about as wide as the head.

@@ -16,12 +16,12 @@ import { ART_BAND_Y, ART_BRIDGE_X, ART_EYE_Y, earsOf, rotatePlacement, scalePlac
 const OUT_W = 1080;
 const OUT_H = Math.round((OUT_W * VH) / VW);
 
-// The masks, drawn around the wearer's eyes: the eye holes sit 72 units apart, centred on (171, 225).
+// The masks, drawn around the wearer's eyes: eye holes centred 44 units either side of the nose bridge (171, 228).
 // A real face is about 2.4 eye-gaps wide and the top of the head about 1.7 eye-gaps above the eyes.
 
 // Eye mask with soft almond eye openings, filled light grey so the eyes stay hidden.
 const BODY = 'M72 194C98 196 136 188 171 205C206 188 244 196 270 194C266 234 246 264 212 265C193 266 182 255 171 248C160 255 149 266 130 265C96 264 76 234 72 194Z';
-const HOLES = 'M108 228C111 215 153 211 161 225C157 239 113 242 108 228Z M234 228C231 215 189 211 181 225C185 239 229 242 234 228Z';
+const HOLES = 'M100.5 228C103.5 215 145.5 211 153.5 225C149.5 239 105.5 242 100.5 228Z M241.5 228C238.5 215 196.5 211 188.5 225C192.5 239 236.5 242 241.5 228Z';
 const EYES = `${BODY} ${HOLES}`;
 // The band a headpiece sits on: follows the top of the head out to the hair at the sides (a shallow arch floated
 // above the hair). Apex at y 95 (+16 → ART_BAND_Y).
