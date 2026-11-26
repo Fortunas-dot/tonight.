@@ -10,7 +10,10 @@ export const VOWS = [
   { n: 'VII', text: 'I look after the people I meet' },
 ];
 
-export const INTENTS = ['Tonight', 'This week', 'Regular FWB', 'Open to more'];
+// What people are after, in two parts: when, and what kind. Stored together in profiles.intents.
+export const WHEN_INTENTS = ['Tonight', 'This week', 'Whenever'];
+export const KIND_INTENTS = ['One night', 'Regular FWB', 'Threesomes', 'Group & orgies', 'Kink & play', 'Open to more'];
+export const INTENTS = [...WHEN_INTENTS, ...KIND_INTENTS];
 
 export const BOUNDARIES = ['Meet for a drink first', 'Host at my place', 'Go to theirs', 'Stay the night', 'Couples & threesomes', 'Kink-friendly', 'Protection, always'];
 

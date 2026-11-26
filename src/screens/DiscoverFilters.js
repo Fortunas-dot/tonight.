@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { C, F, GRAD } from '../theme';
 import { Icon } from '../icons';
-import { DETAILS, INTENTS } from '../data';
+import { DETAILS, KIND_INTENTS, WHEN_INTENTS } from '../data';
 import { GradientButton, T, Toggle, tap } from '../ui';
 import { Grabber, useSwipeDown } from '../sheet';
 
@@ -219,11 +219,21 @@ export function FilterSheet({ visible, filters, show, hasCity, hasCountry, onClo
           <T v="label" c={C.muted} style={styles.h}>
             Looking for
           </T>
-          <View style={styles.wrap}>
-            {INTENTS.map((i) => (
-              <Chip key={i} label={i} on={f.intents.includes(i)} onPress={() => setF({ ...f, intents: toggle(f.intents, i) })} />
-            ))}
-          </View>
+          {[
+            ['When', WHEN_INTENTS],
+            ['What', KIND_INTENTS],
+          ].map(([title, list]) => (
+            <View key={title} style={{ marginBottom: 10 }}>
+              <T v="small" c={C.faint} style={{ marginBottom: 6 }}>
+                {title}
+              </T>
+              <View style={styles.wrap}>
+                {list.map((i) => (
+                  <Chip key={i} label={i} on={f.intents.includes(i)} onPress={() => setF({ ...f, intents: toggle(f.intents, i) })} />
+                ))}
+              </View>
+            </View>
+          ))}
 
           <T v="label" c={C.muted} style={styles.h}>
             Speaks

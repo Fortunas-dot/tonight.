@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Svg, { Circle, Defs, LinearGradient as SvgGrad, Path, Stop } from 'react-native-svg';
 import { C, F, FIRE, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
-import { BOUNDARIES, INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS } from '../data';
+import { BOUNDARIES, KIND_INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS, WHEN_INTENTS } from '../data';
 import { MaskEditor } from './MaskEditor';
 import { FireBurst } from './FireBurst';
 import { BIO_MAX, SearchSelect } from './ProfileFields';
@@ -965,11 +965,13 @@ function Answer({ a, on, onPress, label }) {
   );
 }
 
-// "What are you after?": what each intent means, shown under it on its tile.
+// "What are you after?": what each kind means, shown under it on its tile.
 const INTENT_INFO = {
-  Tonight: { icon: 'flame', sub: 'In the next few hours' },
-  'This week': { icon: 'clock', sub: 'Plan something soon' },
+  'One night': { icon: 'flame', sub: 'Fun, no strings' },
   'Regular FWB': { icon: 'heart', sub: 'Someone to see again' },
+  Threesomes: { icon: 'couple', sub: 'Make it three' },
+  'Group & orgies': { icon: 'group', sub: 'The more the merrier' },
+  'Kink & play': { icon: 'link', sub: 'Explore together' },
   'Open to more': { icon: 'spark', sub: 'See where it goes' },
 };
 
@@ -1020,14 +1022,45 @@ export function Boundaries({ profile, setProfile, next, back }) {
       <StepArt name="boundaries" height={150} />
       <View style={styles.capsRow}>
         <T v="small" c={C.faint} style={[styles.capsLabel, { marginTop: 0 }]}>
-          I’M AFTER
+          WHEN
         </T>
         <T v="small" c={C.faint}>
           Pick one or more
         </T>
       </View>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {WHEN_INTENTS.map((w) => {
+          const on = intents.includes(w);
+          return (
+            <Pressable
+              key={w}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }}
+              accessibilityLabel={`When: ${w}`}
+              onPress={() => {
+                tap();
+                tog(intents, setIntents, w);
+              }}
+              style={[styles.seg, { width: undefined, flex: 1 }, on && styles.segOnPink]}
+            >
+              {on ? <Icon name="check" size={13} color={C.pinkL} stroke={3.2} /> : null}
+              <T numberOfLines={1} c={on ? C.ink : C.ink2} style={{ fontFamily: on ? F.semi : F.medium, fontSize: 14 }}>
+                {w}
+              </T>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={styles.capsRow}>
+        <T v="small" c={C.faint} style={[styles.capsLabel, { marginTop: 0 }]}>
+          WHAT YOU’RE INTO
+        </T>
+        <T v="small" c={C.faint}>
+          Pick any
+        </T>
+      </View>
       <View style={styles.tileGrid}>
-        {INTENTS.map((i) => (
+        {KIND_INTENTS.map((i) => (
           <IntentTile
             key={i}
             label={i}
@@ -1389,6 +1422,7 @@ const styles = StyleSheet.create({
   segGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   seg: { width: '48%', flexGrow: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.surf, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 4 },
   segOn: { backgroundColor: C.blueBg, borderColor: C.blue },
+  segOnPink: { backgroundColor: C.pinkBg, borderColor: C.pink },
   aboutCard: { marginTop: 28, padding: 18, borderRadius: 22, backgroundColor: C.surf, borderWidth: 1, borderColor: C.line, gap: 12 },
   aboutInput: { minHeight: 92, borderRadius: 14, borderWidth: 1, borderColor: C.line2, backgroundColor: C.bg, color: C.ink, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12, fontFamily: F.body, fontSize: 15, lineHeight: 21, textAlignVertical: 'top' },
   dashChip: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 12, borderRadius: 17, borderWidth: 1, borderStyle: 'dashed', borderColor: C.line2 },
@@ -1474,7 +1508,7 @@ const styles = StyleSheet.create({
   // Yes / Maybe / No as one connected switch
   ansRow: { flexDirection: 'row', height: 40, borderRadius: 12, borderWidth: 1, borderColor: C.line2, backgroundColor: C.bg, overflow: 'hidden', padding: 3, gap: 3 },
   ans: { flex: 1, borderRadius: 9, borderWidth: 1, borderColor: 'transparent', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
-  intentTile: { height: 108 },
+  intentTile: { height: 100 },
   slotX: { position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
   mainTag: { position: 'absolute', left: 6, bottom: 6, backgroundColor: C.pink, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
   bRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.line },
