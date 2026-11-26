@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
 import { GUIDES, POSTS } from '../data';
-import { Card, GradientButton, Header, LiquidBg, Rise, Screen, Segmented, T, Toggle, success, tap } from '../ui';
+import { Card, GradientButton, LiquidBg, Rise, Screen, Segmented, T, Toggle, success, tap } from '../ui';
 import { GROUP_COVERS } from '../art';
 import { MaskEditor } from './MaskEditor';
 import { Grabber, useSwipeDown } from '../sheet';
@@ -883,9 +883,11 @@ export function GroupView({ group: start, onBack, onOpenPost, onCompose, refresh
         },
       },
     ]);
+  const insets = useSafeAreaInsets();
   return (
     <Screen scroll pad={0}>
-      <View style={{ height: 230, marginTop: -60, overflow: 'hidden' }}>
+      {/* The cover runs behind the status bar; the back button sits below it. */}
+      <View style={{ height: 230 + insets.top, marginTop: -(insets.top + 8), overflow: 'hidden' }}>
         <GroupCover group={group} style={StyleSheet.absoluteFill} />
         <LinearGradient colors={['rgba(14,12,16,0.35)', 'rgba(14,12,16,0)', C.bg]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
         <View style={{ position: 'absolute', left: 20, right: 20, bottom: 10 }}>
@@ -895,9 +897,15 @@ export function GroupView({ group: start, onBack, onOpenPost, onCompose, refresh
           </T>
         </View>
       </View>
-      <View style={{ position: 'absolute', top: 0, left: 8 }}>
-        <Header title="" onBack={onBack} />
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        onPress={onBack}
+        hitSlop={8}
+        style={{ position: 'absolute', top: insets.top + 6, left: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(14,12,16,0.6)', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Icon name="back" size={20} color="#FFFFFF" />
+      </Pressable>
       <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Pressable accessibilityRole="button" onPress={toggleJoin} disabled={busy} style={[styles.groupBtn, group.joined ? styles.groupBtnGhost : styles.groupBtnJoin, busy && { opacity: 0.5 }]}>
