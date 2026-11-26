@@ -8,100 +8,129 @@ import { GUIDES, VOWS } from '../data';
 import { versionLabel } from '../version';
 import { completeness } from '../completeness';
 import * as api from '../backend';
-import Svg, { Circle as SvgCircle, Defs as SvgDefs, LinearGradient as SvgGrad, Stop as SvgStop } from 'react-native-svg';
+import Svg, { Circle as SvgCircle, Defs as SvgDefs, LinearGradient as SvgGrad, Path as SvgPath, Stop as SvgStop } from 'react-native-svg';
 import { Avatar, Card, GhostButton, GradientButton, Header, IconButton, LiquidBg, LiveDot, Photo, Rise, Row, Screen, Segmented, T, success, tap } from '../ui';
 
 /* ---------- Match ---------- */
 
-function Bubble({ delay, left, size }) {
-  const [y] = useState(() => new Animated.Value(0));
-  useEffect(() => {
-    const loop = Animated.loop(Animated.timing(y, { toValue: 1, duration: 7000, delay, easing: Easing.linear, useNativeDriver: true }));
-    loop.start();
-    return () => loop.stop();
-  }, [y, delay]);
+// "It's mutual": dark and warm. Your photo and theirs lean in towards each other, an ember glows where they meet.
+function MatchFlame({ size = 26 }) {
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        bottom: -40,
-        left,
-        width: size,
-        height: size,
-        borderRadius: size,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.4)',
-        backgroundColor: 'rgba(255,255,255,0.08)',
-        opacity: y.interpolate({ inputRange: [0, 0.1, 0.8, 1], outputRange: [0, 0.9, 0.6, 0] }),
-        transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [0, -900] }) }],
-      }}
-    />
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <SvgDefs>
+        <SvgGrad id="matchFlame" x1="0.5" y1="1" x2="0.5" y2="0">
+          <SvgStop offset="0" stopColor="#F0287A" />
+          <SvgStop offset="0.55" stopColor="#FF8C3C" />
+          <SvgStop offset="1" stopColor="#FFD27A" />
+        </SvgGrad>
+      </SvgDefs>
+      <SvgPath d="M12 2c1.2 4.5 6 6.2 6 11.2A6 6 0 0 1 6 13.2c0-2.8 1.7-4.5 2.9-5.6.3 2.2 1.5 3.4 2.9 3.4-1.1-3.4 0-6.7.2-9z" fill="url(#matchFlame)" />
+    </Svg>
   );
 }
 
 export function Match({ person, me, onChat, onClose }) {
   const insets = useSafeAreaInsets();
   const [pop] = useState(() => new Animated.Value(0));
+  const [ember] = useState(() => new Animated.Value(0));
   useEffect(() => {
     success();
-    Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 8, bounciness: 12 }).start();
-  }, [pop]);
+    Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 7, bounciness: 10 }).start();
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ember, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(ember, { toValue: 0, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pop, ember]);
+  const both = (person.both || []).slice(0, 3);
+  const openers = ['Drink at Bar Mona, 21:30?', 'That smile. Tonight?'];
+  const lean = (dir) => ({
+    transform: [
+      { translateX: pop.interpolate({ inputRange: [0, 1], outputRange: [dir * 60, 0] }) },
+      { rotate: pop.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${dir * 9}deg`] }) },
+    ],
+    opacity: pop,
+  });
   return (
-    <LinearGradient
-      colors={[C.pink, C.violet, C.blue]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{ flex: 1, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 20, paddingHorizontal: 24 }}
-    >
-      {[
-        [30, 14, 0],
-        [90, 22, 1500],
-        [170, 10, 3000],
-        [250, 18, 900],
-        [320, 12, 2400],
-        [200, 26, 4200],
-      ].map(([l, s, d]) => (
-        <Bubble key={l} left={l} size={s} delay={d} />
-      ))}
-      <View style={{ alignItems: 'flex-end' }}>
+    <View style={{ flex: 1, backgroundColor: '#08070A', paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }}>
+      <View pointerEvents="none" style={styles.matchGlow} />
+      <LinearGradient pointerEvents="none" colors={['rgba(8,7,10,0)', 'rgba(59,123,255,0.16)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 340 }} />
+      <View style={{ alignItems: 'flex-end', paddingHorizontal: 16 }}>
         <IconButton name="close" label="Close" onPress={onClose} color="#FFFFFF" />
       </View>
-      <Animated.View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 30, transform: [{ scale: pop }] }}>
-        <View style={styles.matchPhoto}>
+
+      <View style={{ height: 250, marginTop: 6 }}>
+        <Animated.View style={[styles.matchCard, { left: '13%', borderColor: 'rgba(255,127,181,0.6)' }, lean(-1)]}>
           <Photo seed={5} uri={me?.photos?.[0]} style={{ flex: 1 }} />
-        </View>
-        <View style={[styles.matchPhoto, { marginLeft: -36 }]}>
+        </Animated.View>
+        <Animated.View style={[styles.matchCard, { right: '13%', borderColor: 'rgba(111,168,255,0.65)' }, lean(1)]}>
           <Photo seed={person.seed} uri={person.photo} style={{ flex: 1 }} />
-        </View>
-      </Animated.View>
-      <T style={{ fontFamily: F.displayX, fontSize: 52, letterSpacing: -1.6, textAlign: 'center', marginTop: 28 }} c="#FFFFFF">
-        It’s mutual.
-      </T>
-      <T c="#FFFFFF" style={{ textAlign: 'center', fontSize: 16, marginTop: 10 }}>
-        You and {person.name} like each other{'\n'}and share {(person.both || []).length} boundaries.
-      </T>
-      <View style={styles.matchNote}>
-        <Icon name="clock" size={20} color="#FFFFFF" />
-        <T c="#FFFFFF" style={{ flex: 1, fontSize: 14 }}>
-          Open for 48 hours. Make a plan together and it stays.
-        </T>
+        </Animated.View>
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.matchEmber, { opacity: ember.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.95] }), transform: [{ scale: ember.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1.12] }) }] }]}
+        />
+        <Animated.View style={[styles.matchSeal, { transform: [{ scale: pop }] }]}>
+          <MatchFlame />
+        </Animated.View>
       </View>
+
+      <View style={{ alignItems: 'center', paddingHorizontal: 24, marginTop: 8 }}>
+        <T style={{ fontFamily: F.semi, fontSize: 11, letterSpacing: 4 }} c="#FFB37A">
+          THE FEELING IS
+        </T>
+        <T style={{ fontFamily: F.displayX, fontSize: 56, lineHeight: 60, letterSpacing: -1.6, textShadowColor: 'rgba(240,40,122,0.7)', textShadowRadius: 22 }} c="#FF5FA2">
+          mutual.
+        </T>
+        <T c="#D9D2D6" style={{ textAlign: 'center', fontSize: 15, lineHeight: 21, marginTop: 6 }}>
+          You and {person.name} want the same night.
+        </T>
+        {both.length ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 12 }}>
+            {both.map((b) => (
+              <View key={b} style={styles.matchChip}>
+                <T v="small" c="#F4EFEA" style={{ fontFamily: F.semi }}>
+                  {b}
+                </T>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
+
       <View style={{ flex: 1 }} />
-      <Pressable accessibilityRole="button" onPress={() => onChat(person, 'Drink at Bar Mona, 21:30?')} style={styles.matchOpt}>
-        <T c="#FFFFFF">Drink at Bar Mona, 21:30?</T>
-      </Pressable>
-      <Pressable accessibilityRole="button" onPress={() => onChat(person)} style={[styles.matchCta]}>
-        <T v="label" c="#5B2BD9" style={{ fontSize: 16 }}>
-          Write my own message
+      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+        <T v="small" c={C.muted} style={{ fontFamily: F.semi, letterSpacing: 2, fontSize: 11 }}>
+          BREAK THE ICE
         </T>
-      </Pressable>
-      <Pressable onPress={onClose} style={{ alignItems: 'center', paddingVertical: 14 }}>
-        <T v="label" c="#FFFFFF">
-          Keep browsing
-        </T>
-      </Pressable>
-    </LinearGradient>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {openers.map((o) => (
+            <Pressable key={o} accessibilityRole="button" onPress={() => onChat(person, o)} style={styles.matchOpener}>
+              <T c="#F4EFEA" style={{ fontSize: 13 }}>
+                {o}
+              </T>
+            </Pressable>
+          ))}
+        </View>
+        <GradientButton title={`Say something to ${person.name}`} onPress={() => onChat(person)} style={{ marginTop: 4 }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon name="clock" size={14} color="#FFB37A" />
+            <T v="small" c={C.muted}>
+              48h to make a plan
+            </T>
+          </View>
+          <Pressable accessibilityRole="button" onPress={onClose} hitSlop={10} style={{ paddingVertical: 10 }}>
+            <T v="label" c="#F4EFEA">
+              Keep browsing
+            </T>
+          </Pressable>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -1412,10 +1441,12 @@ const styles = StyleSheet.create({
   closeWrap: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
   glass: { backgroundColor: 'rgba(20,17,22,0.6)', borderRadius: 22 },
   stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 30, paddingHorizontal: 24, flexDirection: 'row', gap: 12, alignItems: 'center' },
-  matchPhoto: { width: 150, height: 150, borderRadius: 75, borderWidth: 4, borderColor: '#FFFFFF', overflow: 'hidden' },
-  matchNote: { flexDirection: 'row', gap: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 18, padding: 14, marginTop: 26 },
-  matchOpt: { height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)', justifyContent: 'center', paddingHorizontal: 16, marginBottom: 10 },
-  matchCta: { height: 56, borderRadius: 28, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  matchGlow: { position: 'absolute', left: -120, top: 40, width: 630, height: 520, borderRadius: 315, backgroundColor: 'rgba(240,40,122,0.22)', transform: [{ scaleY: 0.82 }] },
+  matchCard: { position: 'absolute', top: 14, width: 150, height: 214, borderRadius: 26, overflow: 'hidden', borderWidth: 2, shadowColor: '#000', shadowOpacity: 0.6, shadowRadius: 24, shadowOffset: { width: 0, height: 18 } },
+  matchEmber: { position: 'absolute', left: '50%', top: 82, width: 84, height: 84, marginLeft: -42, borderRadius: 42, backgroundColor: 'rgba(255,120,60,0.55)', shadowColor: '#FF6A3D', shadowOpacity: 1, shadowRadius: 26 },
+  matchSeal: { position: 'absolute', left: '50%', top: 96, width: 56, height: 56, marginLeft: -28, borderRadius: 28, backgroundColor: '#0E0C10', borderWidth: 2, borderColor: '#FF8C3C', alignItems: 'center', justifyContent: 'center' },
+  matchChip: { height: 28, paddingHorizontal: 12, borderRadius: 14, justifyContent: 'center', backgroundColor: 'rgba(240,40,122,0.16)', borderWidth: 1, borderColor: 'rgba(240,40,122,0.45)' },
+  matchOpener: { height: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: '#17131A', borderWidth: 1, borderColor: '#3A3439' },
   planCard: { marginTop: 18, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24, borderWidth: 1, borderColor: '#4A1A33' },
   turnDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.pink },
   chatRow: { flexDirection: 'row', alignItems: 'center', gap: 14, height: 76, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
