@@ -1436,7 +1436,7 @@ const styles = StyleSheet.create({
   tipPlus: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.pinkBg, alignItems: 'center', justifyContent: 'center' },
   emailSignIn: { height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: '#3A3439', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   // The crew takes whatever height is left on the screen (more on tall phones, less on small ones).
-  welcomeArt: { flex: 1, minHeight: 0, maxHeight: 300, marginTop: 6, marginBottom: 4, overflow: 'hidden' },
+  welcomeArt: { flex: 1, minHeight: 0, maxHeight: 290, marginTop: 16, marginBottom: 6, overflow: 'hidden' },
   memberPill: {
     flexDirection: 'row',
     alignItems: 'center',
