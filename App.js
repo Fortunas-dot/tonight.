@@ -377,6 +377,10 @@ export default function App() {
       setStep(0);
       setStack([]);
       setTab('discover');
+    } else if (remote?.profile) {
+      // Signed up part of the way before: carry on from your own details, past the Code and saving the account.
+      setProfile(remote.profile);
+      setStep(FLOW.indexOf('basics'));
     } else {
       Alert.alert('Welcome', `There’s no profile on this ${what} yet. Set one up now; it stays tied to it.`);
       setStep(1);

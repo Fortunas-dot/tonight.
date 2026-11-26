@@ -947,24 +947,61 @@ const B_ICONS = {
   'Protection, always': 'shieldCheck',
 };
 
+// One part of the Yes / Maybe / No switch; the chosen part fills in its colour.
 function Answer({ a, on, onPress, label }) {
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole="radio"
       accessibilityLabel={label}
       accessibilityState={{ selected: on }}
       onPress={onPress}
       style={[styles.ans, on && { backgroundColor: a.bg, borderColor: a.border }]}
     >
-      {on && a.icon ? <Icon name={a.icon} size={14} color={a.ink} stroke={2.6} /> : null}
-      {on && !a.icon ? (
-        <T c={a.ink} style={{ fontFamily: F.bold, fontSize: 14 }}>
-          ?
-        </T>
-      ) : null}
+      {on && a.icon ? <Icon name={a.icon} size={13} color={a.ink} stroke={2.6} /> : null}
       <T c={on ? a.ink : C.muted} style={{ fontFamily: on ? F.semi : F.medium, fontSize: 14 }}>
         {a.v}
       </T>
+    </Pressable>
+  );
+}
+
+// "What are you after?": what each intent means, shown under it on its tile.
+const INTENT_INFO = {
+  Tonight: { icon: 'flame', sub: 'In the next few hours' },
+  'This week': { icon: 'clock', sub: 'Plan something soon' },
+  'Regular FWB': { icon: 'heart', sub: 'Someone to see again' },
+  'Open to more': { icon: 'spark', sub: 'See where it goes' },
+};
+
+function IntentTile({ label, on, onPress }) {
+  const info = INTENT_INFO[label] || { icon: 'check', sub: '' };
+  const inner = (
+    <View style={[styles.tile, styles.intentTile, on && styles.tileOn]}>
+      <Icon name={info.icon} size={22} color={on ? C.pinkL : C.muted} />
+      <View>
+        <T c={on ? C.ink : C.ink2} style={{ fontFamily: F.semi, fontSize: 15 }}>
+          {label}
+        </T>
+        <T v="small" c={on ? C.ink2 : C.faint} style={{ marginTop: 2 }}>
+          {info.sub}
+        </T>
+      </View>
+      {on ? (
+        <View style={styles.tileTick}>
+          <Icon name="check" size={11} color="#FFFFFF" stroke={3.4} />
+        </View>
+      ) : null}
+    </View>
+  );
+  return (
+    <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={`${label}: ${info.sub}`} onPress={onPress} style={styles.tileCell}>
+      {on ? (
+        <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tileRing}>
+          {inner}
+        </LinearGradient>
+      ) : (
+        <View style={styles.tileRing}>{inner}</View>
+      )}
     </Pressable>
   );
 }
@@ -981,9 +1018,25 @@ export function Boundaries({ profile, setProfile, next, back }) {
         What are you after?
       </T>
       <StepArt name="boundaries" height={150} />
-      <View style={[styles.wrap, { marginTop: 14 }]}>
+      <View style={styles.capsRow}>
+        <T v="small" c={C.faint} style={[styles.capsLabel, { marginTop: 0 }]}>
+          I’M AFTER
+        </T>
+        <T v="small" c={C.faint}>
+          Pick one or more
+        </T>
+      </View>
+      <View style={styles.tileGrid}>
         {INTENTS.map((i) => (
-          <Chip key={i} label={i} on={intents.includes(i)} onPress={() => tog(intents, setIntents, i)} />
+          <IntentTile
+            key={i}
+            label={i}
+            on={intents.includes(i)}
+            onPress={() => {
+              tap();
+              tog(intents, setIntents, i);
+            }}
+          />
         ))}
       </View>
       <T v="h" style={{ marginTop: 28 }}>
@@ -1416,10 +1469,12 @@ const styles = StyleSheet.create({
   maskCard: { backgroundColor: C.surf, borderRadius: 17.5, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
   maskCta: { height: 38, paddingHorizontal: 14, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   noteSafe: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 8, padding: 12, backgroundColor: '#141A2B', borderRadius: 14 },
-  bCard: { backgroundColor: C.surf, borderRadius: 18, padding: 12, gap: 10, borderWidth: 1, borderColor: C.line },
+  bCard: { backgroundColor: C.surf, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 12, gap: 10, borderWidth: 1, borderColor: C.line },
   bIcon: { width: 30, height: 30, borderRadius: 10, backgroundColor: C.surf2, alignItems: 'center', justifyContent: 'center' },
-  ansRow: { flexDirection: 'row', gap: 8 },
-  ans: { flex: 1, height: 42, borderRadius: 12, borderWidth: 1.5, borderColor: '#2E2830', backgroundColor: C.surf3, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  // Yes / Maybe / No as one connected switch
+  ansRow: { flexDirection: 'row', height: 40, borderRadius: 12, borderWidth: 1, borderColor: C.line2, backgroundColor: C.bg, overflow: 'hidden', padding: 3, gap: 3 },
+  ans: { flex: 1, borderRadius: 9, borderWidth: 1, borderColor: 'transparent', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
+  intentTile: { height: 108 },
   slotX: { position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.75)', alignItems: 'center', justifyContent: 'center' },
   mainTag: { position: 'absolute', left: 6, bottom: 6, backgroundColor: C.pink, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
   bRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.line },

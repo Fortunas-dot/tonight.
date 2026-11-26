@@ -319,10 +319,12 @@ async function saveProfileNow(profile, onboarded) {
     blur_face: !!profile.blurFace,
     verified: !!profile.verified,
     discretion: profile.discretion ?? {},
-    onboarded: !!onboarded,
     // "Go live tonight" is your choice (Discover top bar); it ends by itself.
     live_until: onboarded && profile.liveUntil && Date.parse(profile.liveUntil) > Date.now() ? profile.liveUntil : null,
   };
+  // Only ever switched on: going through sign-up again (or a sign-in mid-way) must never turn a member's profile
+  // back into an unfinished one, which locked members out (Nov 2026). A new row starts unfinished by default.
+  if (onboarded) row.onboarded = true;
   const { error } = await supabase.from('profiles').upsert(row);
   if (!error) {
     await supabase
