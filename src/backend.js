@@ -760,7 +760,46 @@ export async function createPost({ topic, title, body, photos = [], spicy, poll,
   return data.id;
 }
 
+/* ---------- Check-ins (after a meet) ---------- */
+
+/** My check-in about this match, or null if I haven't done one. */
+export async function myCheckin(matchId) {
+  if (!uid || !matchId) return null;
+  const { data } = await supabase.from('checkins').select('showed_up, positive, great_communicator').eq('match_id', matchId).eq('from_user', uid).maybeSingle();
+  return data || null;
+}
+
+/** Private: the other person never sees who said what, only their own totals. */
+export async function submitCheckin(matchId, toUser, { showedUp, positive, communicator }) {
+  if (!uid || !matchId || !toUser) return false;
+  const { error } = await supabase
+    .from('checkins')
+    .upsert({ match_id: matchId, from_user: uid, to_user: toUser, showed_up: !!showedUp, positive: !!positive, great_communicator: !!communicator });
+  if (error) console.warn('[backend] check-in failed', error.message);
+  return !error;
+}
+
+/** My totals for the badges page: { checkins, positive, shows, last5, last5_all, communicator, reports90 }. */
+export async function myBadgeStats() {
+  if (!uid) return null;
+  const { data, error } = await supabase.rpc('my_badge_stats');
+  if (error) return null;
+  return data;
+}
+
 /* ---------- Lounge groups ---------- */
+
+/** Starts a group (members can start up to 3); you become its first member. Returns the new group's id. */
+export async function createGroup(name, about) {
+  if (!uid) return null;
+  const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)}-${Math.random().toString(36).slice(2, 6)}`;
+  const { data, error } = await supabase.from('groups').insert({ slug, name, about, created_by: uid, sort: 100 }).select('id').single();
+  if (error) {
+    console.warn('[backend] create group failed', error.message);
+    return { error: /groups_started_by|policy/.test(error.message) ? 'limit' : 'failed' };
+  }
+  return { id: data.id };
+}
 
 /** All groups with member counts and whether I joined. */
 export async function loadGroups() {

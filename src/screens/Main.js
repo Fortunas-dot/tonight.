@@ -572,6 +572,118 @@ const QUICK = [
   { icon: 'close', label: 'Cancel kindly', cancel: true, text: 'Hey, I can’t make it tonight after all. Sorry for the short notice, hope you have a good night.' },
 ];
 
+// After you met: a private check-in about the other person. It powers their Trusted / Glowing / On fire frames;
+// they only ever see their own totals, never who said what.
+function YesNo({ value, onChange, label }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      {[
+        [true, 'Yes'],
+        [false, 'No'],
+      ].map(([v, t]) => (
+        <Pressable
+          key={t}
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: ${t}`}
+          accessibilityState={{ selected: value === v }}
+          onPress={() => {
+            tap();
+            onChange(v);
+          }}
+          style={[styles.planChip, { flex: 1 }, value === v && (v ? styles.yesOn : styles.noOn)]}
+        >
+          <T v="small" c={value === v ? '#FFFFFF' : C.ink} style={{ fontFamily: F.semi }}>
+            {t}
+          </T>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function CheckinCard({ chat, name }) {
+  const [done, setDone] = useState(null); // null loading, false not yet, object = my check-in
+  const [open, setOpen] = useState(false);
+  const [showedUp, setShowedUp] = useState(null);
+  const [positive, setPositive] = useState(null);
+  const [communicator, setCommunicator] = useState(false);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    api.myCheckin(chat.matchId).then((c) => alive && setDone(c || false));
+    return () => {
+      alive = false;
+    };
+  }, [chat.matchId]);
+  if (done === null) return null;
+  const ready = showedUp !== null && (showedUp === false || positive !== null) && !saving;
+  const submit = async () => {
+    setSaving(true);
+    const ok = await api.submitCheckin(chat.matchId, chat.id, { showedUp, positive: showedUp ? positive : false, communicator: showedUp && communicator });
+    setSaving(false);
+    if (!ok) {
+      Alert.alert('Couldn’t save your check-in', 'Check your connection and try again.');
+      return;
+    }
+    success();
+    setDone({ showed_up: showedUp });
+    setOpen(false);
+  };
+  return (
+    <Card style={{ marginTop: 16, gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Icon name="star" size={18} color="#FFD27A" />
+        <T style={{ fontFamily: F.semi, flex: 1 }}>{done ? `You checked in about ${name}` : `Met ${name}? Check in`}</T>
+        {!open ? (
+          <Pressable accessibilityRole="button" onPress={() => setOpen(true)} hitSlop={8}>
+            <T v="label" c={C.pinkL}>
+              {done ? 'Change' : 'Start'}
+            </T>
+          </Pressable>
+        ) : null}
+      </View>
+      {!open ? (
+        <T v="small" c={C.muted} style={{ lineHeight: 17 }}>
+          {done ? 'Thanks. It stays private and helps the community earn its frames.' : 'Private, takes 10 seconds. It helps good members earn their Trusted, Glowing and On fire frames.'}
+        </T>
+      ) : (
+        <View style={{ gap: 10 }}>
+          <T v="small" c={C.ink2}>
+            Did {name} show up?
+          </T>
+          <YesNo value={showedUp} onChange={setShowedUp} label="Showed up" />
+          {showedUp ? (
+            <>
+              <T v="small" c={C.ink2}>
+                Did it feel safe and respectful?
+              </T>
+              <YesNo value={positive} onChange={setPositive} label="Safe and respectful" />
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: communicator }}
+                onPress={() => {
+                  tap();
+                  setCommunicator((v) => !v);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+              >
+                <View style={[styles.checkBox, communicator && styles.checkBoxOn]}>{communicator ? <Icon name="check" size={13} color="#FFFFFF" stroke={2.6} /> : null}</View>
+                <T v="small" c={C.ink2} style={{ flex: 1 }}>
+                  {name} was a great communicator
+                </T>
+              </Pressable>
+            </>
+          ) : null}
+          <GradientButton title={saving ? 'Saving…' : 'Save check-in'} disabled={!ready} onPress={submit} />
+          <T v="small" c={C.muted} style={{ textAlign: 'center' }}>
+            Something felt unsafe? Use Report below. Ward reviews it.
+          </T>
+        </View>
+      )}
+    </Card>
+  );
+}
+
 // The time wheel: every quarter from 17:00 to 03:00. Days: tonight, tomorrow and the next few weekdays.
 const WHEEL_TIMES = Array.from({ length: 41 }, (_, i) => {
   const m = 17 * 60 + i * 15;
@@ -764,6 +876,7 @@ export function Plan({ chat, onBack, onSend, onSavePlan, onCancelPlan, onFakeCal
           </Pressable>
         ))}
       </View>
+      {chat.real ? <CheckinCard chat={chat} name={p.name} /> : null}
       <T v="label" c={C.muted} style={{ marginTop: 26, marginBottom: 6 }}>
         Safety
       </T>
@@ -1015,22 +1128,77 @@ function CompletenessCard({ profile, go }) {
 
 /* ---------- Badges ---------- */
 
-// Profile frames (PRODUCT_UX §3e): earned, never bought. Only what the app can really check counts as earned today;
-// the frames that need check-ins after a meet say so instead of showing a made-up score.
+// Profile frames (PRODUCT_UX §3e): earned, never bought. Each builds on the one before; the numbers come from
+// private check-ins after a meet (my_badge_stats). Each frame looks clearly different: thin blue, thin pink→blue,
+// thick violet with a slow-turning glow, thick fire with an orange glow.
 const FRAMES = [
-  { id: 'verified', name: 'Verified', ring: ['#6FA8FF', '#6FA8FF'], how: 'Pass the selfie check: your selfie is matched against your profile photos.', has: (p) => !!p.verified },
-  { id: 'trusted', name: 'Trusted', ring: ['#F0287A', '#3B7BFF'], how: 'Verified, plus 3 positive check-ins from people you met.', needsCheckins: true },
-  { id: 'glowing', name: 'Glowing', ring: ['#F0287A', '#7B3CFF', '#3B7BFF'], how: 'Trusted, plus you showed up to your last 5 plans, and to at least 90% of all your plans.', needsCheckins: true },
-  { id: 'fire', name: 'On fire', ring: ['#FFD27A', '#FF8A3D', '#F0287A'], how: 'Glowing, plus 3 “great communicator” badges from matches and no reports in 90 days.', needsCheckins: true },
+  {
+    id: 'verified',
+    name: 'Verified',
+    ring: ['#6FA8FF', '#6FA8FF'],
+    look: { width: 2.5 },
+    how: 'Pass the selfie check: your selfie is matched against your profile photos.',
+    has: (p) => !!p.verified,
+  },
+  {
+    id: 'trusted',
+    name: 'Trusted',
+    ring: ['#F0287A', '#3B7BFF'],
+    look: { width: 3 },
+    how: 'Verified, plus 3 positive check-ins from people you met.',
+    has: (p, s) => !!p.verified && s.positive >= 3,
+    progress: (s) => `${Math.min(3, s.positive)} of 3 positive check-ins`,
+  },
+  {
+    id: 'glowing',
+    name: 'Glowing',
+    ring: ['#A35BFF', '#F0287A', '#3B7BFF', '#A35BFF'],
+    look: { width: 5, glow: '#A35BFF', spin: true },
+    how: 'Trusted, plus you showed up to your last 5 plans, and to at least 90% of all your plans.',
+    has: (p, s) => FRAMES[1].has(p, s) && s.last5 >= 5 && s.last5_all && s.checkins > 0 && s.shows / s.checkins >= 0.9,
+    progress: (s) => `Showed up ${s.shows} of ${s.checkins} · last ${Math.min(5, s.last5)} of 5 in a row${s.last5_all ? '' : ' (reset)'}`,
+  },
+  {
+    id: 'fire',
+    name: 'On fire',
+    ring: ['#FFD27A', '#FF8A3D', '#F0287A', '#FFD27A'],
+    look: { width: 6, glow: '#FF8A3D', spin: true },
+    how: 'Glowing, plus 3 “great communicator” badges from matches and no reports in 90 days.',
+    has: (p, s) => FRAMES[2].has(p, s) && s.communicator >= 3 && s.reports90 === 0,
+    progress: (s) => `${Math.min(3, s.communicator)} of 3 “great communicator”${s.reports90 ? ' · a report in the last 90 days' : ''}`,
+  },
 ];
+const NO_STATS = { checkins: 0, positive: 0, shows: 0, last5: 0, last5_all: false, communicator: 0, reports90: 0 };
 
-function RingPreview({ colors, uri, size = 56, dim }) {
+function RingPreview({ colors, uri, size = 56, dim, look = {} }) {
+  const w = look.width || 2.5;
+  const [turn] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (!look.spin || dim) return undefined;
+    const loop = Animated.loop(Animated.timing(turn, { toValue: 1, duration: 6000, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [turn, look.spin, dim]);
+  const inner = size - w * 2;
   return (
-    <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', opacity: dim ? 0.45 : 1 }}>
-      <View style={{ width: size - 5, height: size - 5, borderRadius: (size - 5) / 2, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
-        {uri ? <Image source={{ uri }} style={{ width: size - 10, height: size - 10, borderRadius: (size - 10) / 2 }} /> : <Photo style={{ width: size - 10, height: size - 10, borderRadius: (size - 10) / 2 }} />}
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: dim ? 0.45 : 1,
+        ...(look.glow && !dim ? { shadowColor: look.glow, shadowOpacity: 0.9, shadowRadius: size / 6, shadowOffset: { width: 0, height: 0 } } : null),
+      }}
+    >
+      <Animated.View style={{ position: 'absolute', width: size, height: size, borderRadius: size / 2, overflow: 'hidden', transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+        <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }} />
+      </Animated.View>
+      <View style={{ width: inner, height: inner, borderRadius: inner / 2, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
+        {uri ? <Image source={{ uri }} style={{ width: inner - 4, height: inner - 4, borderRadius: (inner - 4) / 2 }} /> : <Photo style={{ width: inner - 4, height: inner - 4, borderRadius: (inner - 4) / 2 }} />}
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -1040,7 +1208,7 @@ function StatusPill({ kind, text }) {
     live: { text: text || 'Live now', fg: C.green, bg: 'rgba(43,196,138,0.14)' },
     off: { text: 'Off right now · go live on Discover', fg: C.muted, bg: C.surf2 },
     notYet: { text: 'Not yet', fg: C.muted, bg: C.surf2 },
-    soon: { text: 'Check-ins coming soon', fg: '#FFB36B', bg: 'rgba(255,138,61,0.12)' },
+    progress: { text, fg: '#FFB36B', bg: 'rgba(255,138,61,0.12)' },
     team: { text: 'Given by our team', fg: C.blueL, bg: C.blueBg },
   }[kind];
   return (
@@ -1054,7 +1222,15 @@ function StatusPill({ kind, text }) {
 
 export function Badges({ profile, onBack }) {
   const uri = profile.photos?.[0];
-  const earned = FRAMES.filter((f) => f.has?.(profile));
+  const [stats, setStats] = useState(NO_STATS);
+  useEffect(() => {
+    let alive = true;
+    api.myBadgeStats().then((s) => alive && s && setStats({ ...NO_STATS, ...s }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const earned = FRAMES.filter((f) => f.has(profile, stats));
   const top = earned[earned.length - 1];
   const [nowMs] = useState(() => Date.now());
   const live = !!profile.liveUntil && Date.parse(profile.liveUntil) > nowMs;
@@ -1062,7 +1238,7 @@ export function Badges({ profile, onBack }) {
     <Screen scroll>
       <Header title="Your badges" onBack={onBack} />
       <Card style={{ alignItems: 'center', paddingVertical: 22, marginTop: 6 }}>
-        <RingPreview colors={top ? top.ring : [C.line2, C.line2]} uri={uri} size={96} />
+        <RingPreview colors={top ? top.ring : [C.line2, C.line2]} look={top?.look} uri={uri} size={96} />
         <T style={{ fontFamily: F.display, fontSize: 20, marginTop: 12 }}>{top ? `${top.name} frame` : 'No frame yet'}</T>
         <T v="meta" c={C.muted} style={{ textAlign: 'center', marginTop: 4, maxWidth: 280 }}>
           {top ? 'This frame shows around your photo everywhere in Tonight.' : 'Pass the selfie check to get your first frame.'}
@@ -1077,16 +1253,16 @@ export function Badges({ profile, onBack }) {
       </T>
       <View style={{ gap: 10 }}>
         {FRAMES.map((f) => {
-          const has = !!f.has?.(profile);
+          const has = f.has(profile, stats);
           return (
             <Card key={f.id} style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-              <RingPreview colors={f.ring} uri={uri} dim={!has} />
+              <RingPreview colors={f.ring} look={f.look} uri={uri} dim={!has} />
               <View style={{ flex: 1 }}>
                 <T style={{ fontFamily: F.semi, fontSize: 16 }}>{f.name}</T>
                 <T v="small" c={C.ink2} style={{ marginTop: 2, lineHeight: 17 }}>
                   {f.how}
                 </T>
-                <StatusPill kind={has ? 'have' : f.needsCheckins ? 'soon' : 'notYet'} />
+                <StatusPill kind={has ? 'have' : f.progress ? 'progress' : 'notYet'} text={!has && f.progress ? f.progress(stats) : undefined} />
               </View>
             </Card>
           );
@@ -1536,6 +1712,10 @@ const styles = StyleSheet.create({
   planInput: { height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, paddingHorizontal: 14, color: C.ink, fontFamily: F.body, fontSize: 15 },
   planChip: { height: 36, paddingHorizontal: 14, borderRadius: 18, borderWidth: 1.5, borderColor: C.line2, alignItems: 'center', justifyContent: 'center' },
   planChipOn: { backgroundColor: C.ink, borderColor: C.ink },
+  yesOn: { backgroundColor: '#1E8F66', borderColor: '#1E8F66' },
+  noOn: { backgroundColor: '#B23A48', borderColor: '#B23A48' },
+  checkBox: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: C.line2, alignItems: 'center', justifyContent: 'center' },
+  checkBoxOn: { backgroundColor: C.pink, borderColor: C.pink },
   wheel: { height: WHEEL_ROW * 5, borderRadius: 16, backgroundColor: C.surf3, overflow: 'hidden' },
   wheelBand: { position: 'absolute', left: 12, right: 12, top: WHEEL_ROW * 2, height: WHEEL_ROW, borderRadius: 12, backgroundColor: 'rgba(240,40,122,0.14)', borderWidth: 1, borderColor: 'rgba(240,40,122,0.4)' },
   planPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 14, borderRadius: 17, backgroundColor: 'rgba(240,40,122,0.14)', borderWidth: 1, borderColor: 'rgba(240,40,122,0.4)', marginBottom: 8 },

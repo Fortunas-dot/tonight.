@@ -751,6 +751,79 @@ function GroupCover({ group, style }) {
 
 const membersLabel = (n) => `${n} ${n === 1 ? 'member' : 'members'}`;
 
+// Any member can start a group (up to 3) and becomes its first member.
+function StartGroup({ onCreated }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [about, setAbout] = useState('');
+  const [busy, setBusy] = useState(false);
+  const ok = name.trim().length >= 3 && about.trim().length >= 5 && !busy;
+  const create = async () => {
+    if (!ok) return;
+    setBusy(true);
+    const r = await api.createGroup(name.trim(), about.trim());
+    setBusy(false);
+    if (!r?.id) {
+      Alert.alert('Couldn’t start the group', r?.error === 'limit' ? 'You can start up to 3 groups.' : 'Check your connection and try again.');
+      return;
+    }
+    success();
+    setOpen(false);
+    setName('');
+    setAbout('');
+    onCreated?.(r.id);
+  };
+  if (!open) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          tap();
+          setOpen(true);
+        }}
+        style={styles.startGroup}
+      >
+        <Icon name="plus" size={18} color={C.pinkL} stroke={2.4} />
+        <T style={{ fontFamily: F.semi, flex: 1 }}>Start a group</T>
+        <Icon name="chev" size={16} color={C.muted} />
+      </Pressable>
+    );
+  }
+  return (
+    <Card style={{ gap: 10, marginBottom: 18 }}>
+      <T style={{ fontFamily: F.semi, fontSize: 16 }}>Start a group</T>
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        placeholder="Name, e.g. Rotterdam After Dark"
+        placeholderTextColor={C.faint}
+        maxLength={40}
+        autoCapitalize="words"
+        style={styles.groupInput}
+        accessibilityLabel="Group name"
+      />
+      <TextInput
+        value={about}
+        onChangeText={setAbout}
+        placeholder="What it’s about (one line)"
+        placeholderTextColor={C.faint}
+        maxLength={140}
+        style={styles.groupInput}
+        accessibilityLabel="What the group is about"
+      />
+      <T v="small" c={C.muted} style={{ lineHeight: 16 }}>
+        Open to every member. The Tonight Code applies, and Ward can close groups that break it.
+      </T>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Pressable accessibilityRole="button" onPress={() => setOpen(false)} style={[styles.groupBtn, styles.groupBtnGhost]}>
+          <T style={{ fontFamily: F.semi, fontSize: 14 }}>Cancel</T>
+        </Pressable>
+        <GradientButton title={busy ? 'Starting…' : 'Start group'} height={44} disabled={!ok} onPress={create} style={{ flex: 1 }} />
+      </View>
+    </Card>
+  );
+}
+
 function GroupsTab({ onGroup, refreshKey }) {
   const [groups, setGroups] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -778,6 +851,14 @@ function GroupsTab({ onGroup, refreshKey }) {
   const rest = groups.filter((g) => !g.joined);
   return (
     <View style={{ marginTop: 16 }}>
+      <StartGroup
+        onCreated={async (id) => {
+          const list = await api.loadGroups();
+          setGroups(list || []);
+          const made = (list || []).find((g) => g.id === id);
+          if (made) onGroup?.(made);
+        }}
+      />
       {mine.length ? (
         <>
           <T v="small" c={C.muted} style={{ fontFamily: F.semi, letterSpacing: 2, fontSize: 11 }}>
@@ -1543,6 +1624,8 @@ const styles = StyleSheet.create({
   groupBtn: { flex: 1, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   groupBtnJoin: { backgroundColor: C.pink },
   groupBtnGhost: { borderWidth: 1.5, borderColor: C.line2 },
+  startGroup: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingHorizontal: 16, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(240,40,122,0.5)', marginBottom: 18 },
+  groupInput: { height: 46, borderRadius: 12, borderWidth: 1.5, borderColor: C.line2, backgroundColor: C.surf3, paddingHorizontal: 12, color: C.ink, fontFamily: F.body, fontSize: 15 },
   guideThumb: { width: 76, height: 50, borderRadius: 10, overflow: 'hidden', backgroundColor: C.surf2 },
   sheet: { backgroundColor: '#141116', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 10, borderWidth: 1, borderColor: C.line },
   grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#3A3439', marginBottom: 12 },
