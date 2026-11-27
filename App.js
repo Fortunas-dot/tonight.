@@ -13,6 +13,7 @@ import { IDEAS } from './src/data';
 import { TabBar } from './src/ui';
 import * as api from './src/backend';
 import { applyNewestUpdate } from './src/version';
+import { setErrorScreen } from './src/errorLog';
 
 import { Account, Basics, Boundaries, Code, Discretion, Photos, Preview, Verify, Welcome } from './src/screens/Onboarding';
 import { Badges, Chat, Chats, CodeView, GuideView, Ideas, Match, Me, Plan, Support, Likes } from './src/screens/Main';
@@ -158,6 +159,11 @@ export default function App() {
   }, [tab, loungeActivity, loungeSeen]);
   // An open chat is read: keep the badge in step while you're in it.
   const openChatId = stack.length && stack[stack.length - 1].name === 'chat' ? stack[stack.length - 1].params?.id : null;
+  // The screen that's open goes along with any error the app logs (dashboard › Errors).
+  const topScreen = stack.length ? stack[stack.length - 1].name : null;
+  useEffect(() => {
+    setErrorScreen(!onboarded ? `onboarding ${step}` : topScreen ? `${tab} › ${topScreen}` : tab);
+  }, [onboarded, step, tab, topScreen]);
   const openChatObj = openChatId ? chats.find((c) => c.id === openChatId) : null;
   const openChatCount = openChatObj ? openChatObj.messages.length : 0;
   useEffect(() => {

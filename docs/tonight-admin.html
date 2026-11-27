@@ -120,6 +120,18 @@
   button.ok { background:var(--ok); color:#06150d; font-weight:600; }
   #supList { width:300px; }
   #supChat { flex:1; display:flex; flex-direction:column; min-width:0; }
+  /* Errors */
+  #errors { flex:1; display:flex; flex-direction:column; min-width:0; }
+  #errBody { flex:1; overflow:auto; }
+  .eg { border-bottom:1px solid var(--line); }
+  .eg > .head { display:flex; gap:12px; padding:12px 16px; cursor:pointer; align-items:flex-start; }
+  .eg > .head:hover { background:var(--panel); }
+  .eg .cnt { min-width:44px; text-align:center; font-weight:700; font-size:18px; }
+  .eg .msg { font-family:ui-monospace, Consolas, monospace; font-size:13px; white-space:pre-wrap; word-break:break-word; }
+  .eg .one { padding:10px 16px 10px 72px; border-top:1px dashed var(--line); font-size:13px; display:flex; flex-direction:column; gap:4px; }
+  .eg pre { margin:0; font-size:12px; color:var(--mute); white-space:pre-wrap; word-break:break-word; max-height:220px; overflow:auto; background:var(--bg); padding:8px; border-radius:8px; }
+  .tag.crash { color:#ff7a8a; border-color:#6b2430; } .tag.warning { color:#e8b45a; border-color:#5c4620; }
+  .who { cursor:pointer; text-decoration:underline dotted; }
   @media (max-width: 900px) { #likes { display:none; } }
   @media (min-width: 721px) { #back { display:none !important; } }
   @media (max-width: 720px) {
@@ -138,6 +150,7 @@
     <button data-tab="swipe">Swipe</button>
     <button data-tab="users">Users <span id="nUsers"></span></button>
     <button data-tab="mod">Moderation <span id="nMod"></span></button>
+    <button data-tab="errors">Errors <span id="nErr"></span></button>
   </nav>
   <select id="filter" hidden><option value="">All AI profiles</option></select>
   <span class="sp"></span>
@@ -196,8 +209,8 @@ function bindLogin() {
   };
 }
 
-// #overview, #chats, #chats/<matchId>, #swipe, #swipe/<demoId>, #users, #mod
-const TABS = ['overview', 'chats', 'swipe', 'users', 'mod'];
+// #overview, #chats, #chats/<matchId>, #swipe, #swipe/<demoId>, #users, #mod, #errors, #errors/<userId>
+const TABS = ['overview', 'chats', 'swipe', 'users', 'mod', 'errors'];
 async function start() {
   await Promise.all([loadList(), loadUsers()]);
   loadModCounts().catch(() => {});
@@ -224,6 +237,9 @@ async function show(t, id) {
   } else if (t === 'users') {
     $('#app').innerHTML = `<section id="users"></section>`;
     renderUsers();
+  } else if (t === 'errors') {
+    $('#app').innerHTML = `<section id="errors"></section>`;
+    errMember = id || null; renderErrors();
   } else if (t === 'overview') {
     $('#app').innerHTML = `<section id="overview"><div class="empty">Loading…</div></section>`;
     renderOverview();
@@ -572,6 +588,7 @@ async function openProfile(id, opts = {}) {
         <div><span class="k">Liked</span>${p.liked}</div>
         <div><span class="k">Matches</span>${p.matches}</div>
         <div><span class="k">ID</span><span style="font-size:12px;word-break:break-all">${esc(p.id)}</span></div>
+        <div><span class="k">App errors</span><a href="#errors/${esc(p.id)}" id="pvErr" style="color:var(--accent)">see their errors</a></div>
       </div>
       <div class="sec" style="padding:8px 0 0">Activity</div>
       <div id="pvAct"><div class="l">Loading…</div></div>
@@ -580,6 +597,7 @@ async function openProfile(id, opts = {}) {
   const pics = wrap.querySelector('.pics');
   if (pics) pics.onclick = (e) => { if (e.target.tagName === 'IMG') { pics.classList.toggle('big'); e.target.scrollIntoView({ inline: 'center', block: 'nearest' }); } };
   $('#pvClose').onclick = closeProfile;
+  $('#pvErr').onclick = (e) => { e.preventDefault(); closeProfile(); show('errors', p.id); };
   if ($('#pvChat')) $('#pvChat').onclick = async () => { closeProfile(); await loadList(); show('chats', opts.matchId); };
   if ($('#pvSwipe')) $('#pvSwipe').onclick = () => { closeProfile(); if (tab !== 'swipe') show('swipe', p.id); else if (demoId !== p.id) pickDemo(p.id, true); };
   renderActivity(id);
@@ -631,6 +649,7 @@ async function renderOverview() {
       ${card(s.pendingReview, 'profiles waiting for review', { cls: s.pendingReview ? 'alert' : '', go: 'mod/reviews' })}
       ${card(s.openReports, 'open reports', { cls: s.openReports ? 'alert' : '', go: 'mod/reports' })}
       ${card(s.supportWaiting, 'support messages waiting', { cls: s.supportWaiting ? 'alert' : '', go: 'mod/support' })}
+      ${card(s.errors24h ?? 0, 'app errors, last 24 hours', { cls: s.errors24h ? 'alert' : '', go: 'errors' })}
     </div>
     <h3 class="sec2">Today</h3>
     <div class="cards">
@@ -653,6 +672,7 @@ async function renderOverview() {
   el.querySelectorAll('[data-go]').forEach((c) => (c.onclick = () => {
     const [t, sub] = c.dataset.go.split('/');
     if (t === 'users' && sub === 'online') { userRange = 'online'; }
+    if (t === 'errors') { show('errors'); return; }
     if (t === 'chats' && sub) { show('chats').then(() => { $('#filter').value = sub; renderList(); }); return; }
     show(t, t === 'mod' ? sub : undefined);
   }));
@@ -666,6 +686,7 @@ async function loadModCounts() {
   const { stats: s } = await call('stats');
   const n = s.pendingReview + s.openReports + s.supportWaiting;
   $('#nMod').innerHTML = n ? `<span class="badge">${n}</span>` : '';
+  $('#nErr').innerHTML = s.errors24h ? `<span class="badge">${s.errors24h}</span>` : '';
   return s;
 }
 
@@ -767,10 +788,11 @@ async function renderSupport() {
   const t = supportThreads.find((x) => x.userId === supportOpen);
   if (!t) return;
   $('#supChat').innerHTML = `
-    <div id="chatHead">Support chat with <b>${esc(t.name || 'member')}</b>${t.city ? ' · ' + esc(t.city) : ''} · you reply as Tonight support</div>
+    <div id="chatHead">Support chat with <b>${esc(t.name || 'member')}</b>${t.city ? ' · ' + esc(t.city) : ''} · you reply as Tonight support · <a href="#errors/${esc(t.userId)}" id="supErr" style="color:var(--accent)">their app errors</a></div>
     <div id="msgs">${t.messages.map((m) => `<div class="m ${m.fromTeam ? 'd' : 'u'}">${esc(m.text)}</div>`).join('')}</div>
     <form id="send"><textarea id="text" placeholder="Reply as Tonight support… (Enter sends)"></textarea><button class="primary">Send</button></form>`;
   $('#msgs').scrollTop = $('#msgs').scrollHeight;
+  $('#supErr').onclick = (e) => { e.preventDefault(); show('errors', t.userId); };
   $('#text').onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#send').requestSubmit(); } };
   $('#send').onsubmit = async (e) => {
     e.preventDefault();
@@ -779,6 +801,63 @@ async function renderSupport() {
     catch (err) { alert('Not sent: ' + err.message); }
   };
   $('#text').focus();
+}
+
+/* ---------- Errors ---------- */
+
+// What went wrong in the app: grouped by message (how often, how many members, last seen); open a group for each
+// time it happened with who, screen, app version, phone and the stack. #errors/<userId> shows one member's errors.
+let errHours = Number(localStorage.getItem('tonight-console-errhours')) || 24, errMember = null, errKind = '';
+const errOpen = new Set();
+async function renderErrors() {
+  const el = $('#errors'); if (!el) return;
+  history.replaceState(null, '', '#errors' + (errMember ? '/' + errMember : ''));
+  if (!el.innerHTML) el.innerHTML = `<div class="empty">Loading…</div>`;
+  let errors;
+  try { ({ errors } = await call('errors', { hours: errHours, targetId: errMember })); }
+  catch (err) { el.innerHTML = `<div class="empty">Could not load errors: ${esc(err.message)}</div>`; return; }
+  if (tab !== 'errors' || !$('#errors')) return;
+  const list = errors.filter((e) => !errKind || e.kind === errKind);
+  const groups = [...list.reduce((m, e) => {
+    const k = `${e.source}|${e.message}`;
+    if (!m.has(k)) m.set(k, { key: k, source: e.source, message: e.message, kind: e.kind, items: [] });
+    const g = m.get(k); g.items.push(e); if (e.kind === 'crash') g.kind = 'crash';
+    return m;
+  }, new Map()).values()].sort((a, b) => new Date(b.items[0].created_at) - new Date(a.items[0].created_at));
+  const memberName = (e) => e.member ? `${esc(e.member.name || '@' + (e.member.alias || 'member'))}${e.member.demo ? '<span class="tag">AI</span>' : ''}` : e.user_id ? 'deleted member' : 'not signed in';
+  const who1 = errMember ? errors.find((e) => e.member)?.member || users.find((u) => u.id === errMember) : null;
+  const range = [[1, 'Last hour'], [24, '24 hours'], [168, '7 days'], [720, '30 days']];
+  el.innerHTML = `
+    <div class="bar">
+      <div class="seg">${range.map(([h, l]) => `<button data-h="${h}" class="${h === errHours ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <div class="seg">${[['', 'All'], ['crash', 'Crashes'], ['error', 'Errors'], ['warning', 'Warnings']].map(([k, l]) => `<button data-k="${k}" class="${k === errKind ? 'on' : ''}">${l}</button>`).join('')}</div>
+      ${errMember ? `<span class="tag hot">Only ${esc(who1?.name || 'this member')} <a href="#errors" id="errAll" style="color:inherit">✕</a></span>` : ''}
+      <span class="l">${list.length} logged, ${groups.length} different, ${new Set(list.map((e) => e.user_id).filter(Boolean)).size} members</span>
+      <span style="flex:1"></span><button id="errReload">Refresh</button>
+    </div>
+    <div id="errBody">${groups.length ? groups.map((g) => {
+      const members = new Set(g.items.map((e) => e.user_id || 'anon')).size;
+      const open = errOpen.has(g.key);
+      return `<div class="eg" data-k="${esc(g.key)}">
+        <div class="head"><div class="cnt">${g.items.length}</div>
+          <div class="t"><div class="msg">${esc(g.message)}</div>
+            <div class="l" style="white-space:normal">${g.kind !== 'error' ? `<span class="tag ${g.kind}">${g.kind}</span> ` : ''}<span class="tag">${esc(g.source || '?')}</span> · ${members} member${members === 1 ? '' : 's'} · last ${ago(g.items[0].created_at)} ago · first ${ago(g.items.at(-1).created_at)} ago</div></div>
+          <div class="l">${open ? '▾' : '▸'}</div></div>
+        ${open ? g.items.slice(0, 50).map((e) => `<div class="one">
+          <div>${esc(day(e.created_at))} · ${e.user_id ? `<span class="who" data-u="${esc(e.user_id)}">${memberName(e)}</span>` : memberName(e)} · ${esc(e.screen || 'screen unknown')}</div>
+          <div class="l" style="white-space:normal">${[e.app_version, e.platform, e.device].filter(Boolean).map(esc).join(' · ')}</div>
+          ${e.context ? `<pre>${esc(JSON.stringify(e.context, null, 1))}</pre>` : ''}
+          ${e.stack ? `<pre>${esc(e.stack)}</pre>` : ''}
+        </div>`).join('') + (g.items.length > 50 ? `<div class="one l">…and ${g.items.length - 50} more</div>` : '') : ''}
+      </div>`;
+    }).join('') : `<div class="empty">No errors ${errMember ? 'for this member ' : ''}in this period. 🎉</div>`}</div>
+    <div class="l" style="padding:8px 16px;white-space:normal">Sent by the app from the 27 Nov update on: failed requests, crashes and screens that broke. Kept 60 days. Repeats within a minute are skipped; at most 60 an hour per member.</div>`;
+  el.querySelectorAll('[data-h]').forEach((b) => (b.onclick = () => { errHours = Number(b.dataset.h); localStorage.setItem('tonight-console-errhours', errHours); renderErrors(); }));
+  el.querySelectorAll('.seg [data-k]').forEach((b) => (b.onclick = () => { errKind = b.dataset.k; renderErrors(); }));
+  el.querySelectorAll('.eg > .head').forEach((h) => (h.onclick = () => { const k = h.parentElement.dataset.k; if (errOpen.has(k)) errOpen.delete(k); else errOpen.add(k); renderErrors(); }));
+  el.querySelectorAll('.who').forEach((w) => (w.onclick = (ev) => { ev.stopPropagation(); openProfile(w.dataset.u); }));
+  if ($('#errAll')) $('#errAll').onclick = (ev) => { ev.preventDefault(); errMember = null; renderErrors(); };
+  $('#errReload').onclick = renderErrors;
 }
 
 /* ---------- Wiring ---------- */

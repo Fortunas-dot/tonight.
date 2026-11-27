@@ -423,13 +423,39 @@ async function handle(req: Request): Promise<Response> {
     return json({ activity: data });
   }
 
+  /* ---------- Errors ---------- */
+
+  // What went wrong in the app (public.app_errors), newest first: the last `hours` (default a day, at most 60
+  // days), optionally for one member, with each member's name and photo.
+  if (action === "errors") {
+    const hours = Math.min(Math.max(Number(reqBody.hours) || 24, 1), 24 * 60);
+    let q = admin.from("app_errors")
+      .select("id, user_id, kind, source, message, stack, context, screen, app_version, platform, device, created_at")
+      .gte("created_at", new Date(Date.now() - hours * 3600 * 1000).toISOString())
+      .order("created_at", { ascending: false }).limit(1000);
+    if (targetId) q = q.eq("user_id", targetId);
+    const { data, error } = await q;
+    if (error) return json({ error: error.message }, 500);
+    const userIds = [...new Set((data || []).map((e) => e.user_id).filter(Boolean))];
+    const { data: people } = userIds.length
+      ? await admin.from("profiles").select("id, name, alias, age, photos, is_demo").in("id", userIds)
+      : { data: [] };
+    const url = await sign(people || [], 1);
+    const who = Object.fromEntries((people || []).map((p) => [p.id, { name: p.name, alias: p.alias, age: p.age, demo: !!p.is_demo, photo: photosOf(p, url, 1)[0] || null }]));
+    return json({ errors: (data || []).map((e) => ({ ...e, member: e.user_id ? who[e.user_id] || null : null })) });
+  }
+
   /* ---------- Overview ---------- */
 
-  // Today's numbers and the last 14 days of sign-ups (real members only; see console_stats in the migrations).
+  // Today's numbers and the last 14 days of sign-ups (real members only; see console_stats in the migrations),
+  // plus how many errors the app logged in the last 24 hours.
   if (action === "stats") {
-    const { data, error } = await admin.rpc("console_stats");
+    const [{ data, error }, { count: errors24h }] = await Promise.all([
+      admin.rpc("console_stats"),
+      admin.from("app_errors").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 86400 * 1000).toISOString()),
+    ]);
     if (error) return json({ error: error.message }, 500);
-    return json({ stats: data });
+    return json({ stats: { ...data, errors24h: errors24h || 0 } });
   }
 
   /* ---------- Moderation ---------- */
