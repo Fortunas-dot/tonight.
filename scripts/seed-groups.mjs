@@ -114,11 +114,19 @@ const POSTS = [
   },
 ];
 
-// Each demo account needs its Lounge alias before posting: without one the server signs posts and replies as "member".
-for (const [slug, { client }] of Object.entries(who)) {
-  const { data, error } = await client.rpc('my_alias');
+// Each demo account gets a hand-picked Lounge alias before posting: without one the server signs posts and replies
+// as "member", and the generated ones (soft_wolf99) read as obviously fake.
+const ALIASES = {
+  lotte: 'ropeandroses',
+  ines: 'latebloomer.xx',
+  maya: 'brat_in_heels',
+  sofie: 'curious_kitten',
+  daan: 'gentledom_ams',
+};
+for (const [slug, { client, id }] of Object.entries(who)) {
+  const { error } = await client.from('profiles').update({ alias: ALIASES[slug] }).eq('id', id);
   if (error) console.warn(`${slug} alias: ${error.message}`);
-  else console.log(`${slug} posts as ${data}`);
+  else console.log(`${slug} posts as ${ALIASES[slug]}`);
 }
 
 for (const [group, slugs] of Object.entries(MEMBERS)) {
