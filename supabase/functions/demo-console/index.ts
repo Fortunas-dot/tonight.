@@ -409,7 +409,18 @@ async function handle(req: Request): Promise<Response> {
       });
     }
     users.sort((x, y) => new Date(y.joined).getTime() - new Date(x.joined).getTime());
-    return json({ users });
+    // Minutes in the app and app opens over the last 7 days (counted from the app's minute ping).
+    const { data: week } = await admin.rpc("console_week_minutes");
+    const weekBy = Object.fromEntries((week || []).map((w: { user_id: string; minutes: number; opens: number }) => [w.user_id, w]));
+    return json({ users: users.map((u) => ({ ...u, weekMinutes: Number(weekBy[u.id]?.minutes || 0), weekOpens: Number(weekBy[u.id]?.opens || 0) })) });
+  }
+
+  // One member's activity: minutes and opens per day (14 days), totals, and a timeline of what they did.
+  if (action === "activity") {
+    if (!targetId) return json({ error: "no member" }, 400);
+    const { data, error } = await admin.rpc("console_user_activity", { member: targetId });
+    if (error) return json({ error: error.message }, 500);
+    return json({ activity: data });
   }
 
   /* ---------- Overview ---------- */
