@@ -114,6 +114,13 @@ const POSTS = [
   },
 ];
 
+// Each demo account needs its Lounge alias before posting: without one the server signs posts and replies as "member".
+for (const [slug, { client }] of Object.entries(who)) {
+  const { data, error } = await client.rpc('my_alias');
+  if (error) console.warn(`${slug} alias: ${error.message}`);
+  else console.log(`${slug} posts as ${data}`);
+}
+
 for (const [group, slugs] of Object.entries(MEMBERS)) {
   for (const slug of slugs) {
     const { error } = await who[slug].client.from('group_members').upsert({ group_id: bySlug[group], user_id: who[slug].id });
