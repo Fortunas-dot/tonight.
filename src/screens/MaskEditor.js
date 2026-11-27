@@ -429,6 +429,19 @@ function Thumb({ id, size = 62 }) {
   );
 }
 
+/** Just the eye mask of one of the masks (no ears or feathers), cropped wide: the LIKE stamp and Like buttons wear it. */
+export function MaskIcon({ id = 'bunny', width = 44 }) {
+  const M = MASKS.find((x) => x.id === id).Comp;
+  return (
+    <Svg width={width} height={(width * 84) / 212} viewBox="65 188 212 84">
+      <Defs>
+        <MaskDefs />
+      </Defs>
+      <M part="face" />
+    </Svg>
+  );
+}
+
 // One mask in the picker: a card with the mask large, its name under it; the chosen one gets the gradient edge.
 function MaskCard({ m, on, onPress }) {
   const inner = (

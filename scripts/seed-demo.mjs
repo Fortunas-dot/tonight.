@@ -49,7 +49,9 @@ function rowFor(p, id, photos) {
     const [q, a] = qa.split('=');
     return { q: q.trim().replace("'", '’'), a: a.trim() };
   });
-  const boundaries = { ...Object.fromEntries(list(p.Yes).map((b) => [b, 'Yes'])), ...Object.fromEntries(list(p.Maybe).map((b) => [b, 'Maybe'])) };
+  // "Protection, always" has a comma of its own, so it is joined back after the split.
+  const bList = (v) => list(v).reduce((acc, b) => (b === 'always' && acc.at(-1) === 'Protection' ? [...acc.slice(0, -1), 'Protection, always'] : [...acc, b]), []);
+  const boundaries = { ...Object.fromEntries(bList(p.Yes).map((b) => [b, 'Yes'])), ...Object.fromEntries(bList(p.Maybe).map((b) => [b, 'Maybe'])) };
   return {
     id,
     name: p.name,

@@ -83,7 +83,7 @@ async function makePerson(key, settings, person, { portraitsOnly, force, tries, 
   const saveMeta = () => writeFile(join(dir, 'meta.json'), JSON.stringify(meta, null, 2));
   const prompt = (scene) => `${settings.prefix} ${person.Who}, ${scene}`;
   const boreal = { loras: [{ path: BOREAL, scale: settings.strength }], num_inference_steps: 28, guidance_scale: 3.5, output_format: 'jpeg', enable_safety_checker: true };
-  const pronoun = person.Gender === 'Man' ? 'man' : 'woman';
+  const pronoun = { Man: 'man', Woman: 'woman' }[person.Gender] || 'person';
   // The edit endpoint takes data URIs, so the local portrait is the face reference.
   const reference = async () => `data:image/jpeg;base64,${(await readFile(join(dir, '1.jpg'))).toString('base64')}`;
   const sameFace = async (p, ref, keepAs) => {

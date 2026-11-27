@@ -1,0 +1,16 @@
+{
+  "name": "tonight-ad",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vo": "node scripts/make-vo.mjs",
+    "build:artsy": "node scripts/build-v2-artsy.mjs",
+    "build:clear": "node scripts/build-v3-clear.mjs",
+    "build:uup": "python scripts/build-v4-uup.py",
+    "build:body": "python scripts/build-v5-body.py",
+    "build:climax": "python scripts/build-v6-climax.py",
+    "build:split": "python scripts/build-v7-split.py",
+    "build:images": "python scripts/build-images.py"
+  },
+  "dependencies": { "ffmpeg-static": "^5.2.0", "ffprobe-static": "^3.1.0" }
+}

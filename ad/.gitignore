@@ -1,0 +1,10 @@
+node_modules/
+.venv/
+clips/
+out/
+flow-upload/
+vo-*/
+parts*/
+*.mp4
+*.wav
+*.mp3

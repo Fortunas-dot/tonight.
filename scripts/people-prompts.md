@@ -159,3 +159,171 @@ A person's own **Show** line replaces this list for them (Lotte: the café Candi
 - **Maybe:** Stay the night
 - **Details:** orientation=Straight; relationship=Single; pronouns=he/him; height=180–189 cm; hosting=I can host; when=Late nights, Weekends; drinking=Socially; smoking=Never; languages=Dutch, English; sign=Gemini
 - **Prompts:** Ask me about=The record I'd put on first. | A secret talent=Breakfast the morning after.
+
+## Youssef (youssef)
+
+- **Mask:** devil
+- **Gender:** Man
+- **Age:** 29
+- **Who:** a handsome 29-year-old Moroccan-Dutch man with short black curly hair, a neat short beard and warm brown eyes
+- **Portrait:** waist-up photo of him sitting on a sofa at a friend's place in the evening against a plain off-white wall, a floor lamp beside him, in a plain dark navy t-shirt, his hands out of the frame, photo with flash, a confident half smile
+- **Night out:** standing a few metres away on a rooftop bar terrace in Amsterdam at night in a fitted black shirt with the top two buttons open, a thin silver chain, hands in his pockets, city lights behind him, laughing
+- **Daytime:** sitting a few metres away on the steps outside a brick building in Amsterdam on a sunny afternoon in a plain white t-shirt and black jeans, sunglasses on his head, squinting in the sun
+- **Mirror:** mirror photo he took of himself in his bedroom wardrobe mirror before going out, his phone held at chest height, in a black shirt and dark trousers, an unmade bed and a chair with clothes behind him, warm bedside light
+- **Selfie:** photo he took of himself at arm's length in the driver's seat of a parked car at night, lit by a street light, grainy, his arm out of the frame, a lopsided grin
+- **Party:** blurry flash photo at a friend's birthday in a small bar at night, he laughs with his head thrown back, friends cut off at the edges, string lights behind him, slightly tilted
+- **Candid:** photo taken by a friend on a busy terrace in summer, he is mid-sentence looking to the side, in a plain olive shirt, harsh sun and hard shadows, someone's arm at the edge of the frame
+- **City:** Amsterdam
+- **Country:** Netherlands
+- **Bio:** Mint tea by day, rooftop bars by night. I'll make you laugh before I make a move.
+- **Prompt:** A rooftop drink, then wherever the night takes us.
+- **Intents:** Tonight, Open to more
+- **Turn-ons:** Eye contact, Teasing, Good scent, Kissing, Taking charge
+- **Yes:** Meet for a drink first, Protection, always, Go to theirs
+- **Maybe:** Stay the night
+- **Details:** orientation=Straight; relationship=Single; pronouns=he/him; height=180–189 cm; hosting=Sometimes; when=Late nights, Weekends; drinking=Rarely; smoking=Never; languages=Dutch, Arabic, English, French; sign=Aries
+- **Prompts:** The way to win me over=Laugh at my worst joke like it was my best. | Green flags=Says what she wants, no guessing games.
+
+## Lucas (lucas)
+
+- **Mask:** masq
+- **Gender:** Man
+- **Age:** 27
+- **Who:** a handsome 27-year-old Brazilian man with tanned skin, short dark brown hair with a fade and stubble
+- **Portrait:** waist-up photo of him standing on a small apartment balcony at dusk, a plain concrete wall and a metal railing behind him, in a plain white linen shirt, his hands out of the frame, warm last sunlight on his face, a wide easy smile
+- **Night out:** standing a few metres away outside a club in Rotterdam at night in a fitted black t-shirt and dark jeans, hands in his pockets, neon light from the door behind him, laughing
+- **Daytime:** walking a few metres away along the river in Rotterdam on a sunny day in a light blue shirt with rolled sleeves, a big bridge far behind him, squinting in the sun
+- **Mirror:** mirror photo he took of himself in a small bathroom mirror after a shower, his phone held at chest height, in a plain white t-shirt with a towel around his neck, wet hair, tiles and a shelf with bottles behind him, a bit of steam on the mirror, harsh overhead light
+- **Selfie:** photo he took of himself at arm's length on a beach at sunset, wet hair, orange light, grainy, his arm out of the frame, smiling with his eyes half closed
+- **Party:** blurry flash photo on a crowded dance floor at night, red and blue club lights, other people cut off at the edges, his face overexposed by the flash, he is mid-laugh
+- **Candid:** photo taken by a friend at a barbecue in a small garden in summer, he stands by the grill in a plain grey t-shirt laughing, smoke in the air, someone's shoulder at the edge of the frame, harsh sun
+- **City:** Rotterdam
+- **Country:** Netherlands
+- **Bio:** From Rio, living in Rotterdam. Samba, sunsets and someone who isn't afraid to dance badly with me.
+- **Prompt:** Dancing until two, then food from the night shop.
+- **Intents:** Tonight, One night
+- **Turn-ons:** Dancing close, Humour, Spontaneous, Shower together, All night long
+- **Yes:** Meet for a drink first, Host at my place, Protection, always
+- **Maybe:** Couples & threesomes, Stay the night
+- **Details:** orientation=Bisexual; relationship=Single; pronouns=he/him; height=170–179 cm; hosting=I can host; when=Late nights, Spontaneous; drinking=Socially; smoking=Socially; languages=Portuguese, English, Spanish; sign=Sagittarius
+- **Prompts:** My most spontaneous moment=Flew to Lisbon for a concert, booked it at midnight. | A secret talent=I can teach anyone to samba in five minutes.
+
+## Thomas (thomas)
+
+- **Mask:** frost
+- **Gender:** Man
+- **Age:** 35
+- **Who:** a handsome 35-year-old Belgian man with short light brown hair going slightly grey at the sides and a clean-shaven face
+- **Portrait:** waist-up photo of him standing in a narrow cobbled street in Antwerp on an overcast afternoon, an old brick wall behind him, in a plain navy coat over a grey t-shirt, his hands in his pockets, flat grey daylight, a calm smile
+- **Night out:** sitting a few metres away at the counter of a dim cocktail bar in Antwerp at night in a dark blue shirt with the sleeves rolled up, one whisky glass on the counter, his hands in his lap, a plain dark wall behind him, a slight smile
+- **Daytime:** sitting a few metres away at an outdoor café table on a square in Antwerp in a light grey shirt, one coffee cup on the table, hands in his lap, relaxed
+- **Mirror:** mirror photo he took of himself in a hotel room mirror, his phone held at chest height, in a white shirt and dark trousers, a made bed and a suitcase behind him, warm lamp light
+- **Selfie:** photo he took of himself at arm's length on a train by the window, grey sky outside, flat light, a bit grainy, his arm out of the frame, a tired smile
+- **Party:** flash photo at a friend's dinner party at night, he sits at a long table with wine glasses and plates, friends cut off at the edges, red eyes from the flash, laughing
+- **Candid:** photo taken by a friend on a cycling path in the countryside, he stands next to his bike in a plain navy jacket, squinting into the sun, the horizon a bit crooked
+- **City:** Antwerp
+- **Country:** Belgium
+- **Bio:** Divorced, happy about it, and honest about what I want. Good wine, slow evenings, no drama.
+- **Prompt:** Dinner, a long walk, then a hotel with a view.
+- **Intents:** This week, Regular FWB
+- **Turn-ons:** Slow build-up, Hotel nights, Massage, Well dressed, Morning after
+- **Yes:** Meet for a drink first, Protection, always, Stay the night
+- **Maybe:** Host at my place, Kink-friendly
+- **Details:** orientation=Straight; relationship=Single; pronouns=he/him; height=180–189 cm; hosting=Hotel person; when=Weeknights, Weekends; drinking=Wine o'clock; smoking=Never; languages=Dutch, French, English; sign=Capricorn
+- **Prompts:** After a date, I like to=Send a message before you get home. | I'll know it's a match when=We close the restaurant.
+
+## Emre (emre)
+
+- **Mask:** latex
+- **Gender:** Man
+- **Age:** 32
+- **Who:** a handsome 32-year-old Turkish-German man with short dark hair, a full trimmed dark beard and broad shoulders
+- **Portrait:** waist-up photo of him standing in a park at dusk, dark trees out of focus behind him, in a plain black t-shirt, his hands in his pockets, the last blue light of the evening, a serious look with a hint of a smile
+- **Night out:** standing a few metres away outside a bar in Eindhoven at night in a black leather jacket over a plain white t-shirt, hands in his jacket pockets, the bar's lit sign behind him, a slight smile
+- **Daytime:** sitting a few metres away on a bench in a park in Eindhoven on a cloudy afternoon in a grey hoodie and jeans, hands in his pockets, relaxed
+- **Mirror:** mirror photo he took of himself in a gym changing room mirror, his phone held at chest height, in a black tank top, lockers and a bench behind him, flat fluorescent light, a bit sweaty
+- **Selfie:** photo he took of himself at arm's length lying on a sofa in the evening, dim light from a television, grainy, his arm out of the frame, a lazy smile
+- **Party:** blurry flash photo in a crowded bar at night, friends cut off at the edges, he is laughing with his eyes half closed, slightly tilted
+- **Candid:** photo taken by a friend at a lake in summer, he sits on a wooden jetty in black swim shorts, shirtless, his feet in the water, harsh sun, squinting
+- **City:** Eindhoven
+- **Country:** Netherlands
+- **Bio:** Engineer by day, a little bit of trouble at night. I like clear rules and breaking them together.
+- **Prompt:** One drink, then my place. I'll put on the right music.
+- **Intents:** Tonight, Kink & play
+- **Turn-ons:** Taking charge, Dirty talk, Blindfolds, Light bondage, A deep voice
+- **Yes:** Meet for a drink first, Host at my place, Kink-friendly, Protection, always
+- **Maybe:** Stay the night
+- **Details:** orientation=Straight; relationship=Single; pronouns=he/him; height=180–189 cm; hosting=I can host; when=Weeknights, Late nights; drinking=Socially; smoking=Never; languages=Turkish, German, English, Dutch; sign=Scorpio
+- **Prompts:** Ask me about=The safe word I always suggest. | Green flags=Tells me her limits before I have to ask.
+
+## Noor (noor)
+
+- **Mask:** angel
+- **Gender:** Woman
+- **Age:** 24
+- **Who:** a pretty 24-year-old Dutch woman with long light brown hair in loose waves and light blue eyes
+- **Portrait:** waist-up photo of her standing in front of the dark green front door of a student house in Groningen in the evening, in a plain white satin top with thin straps under an open denim jacket, her hands out of the frame, photo with flash, a playful smile
+- **Night out:** standing a few metres away outside a bar in Groningen at night in a short silver skirt and a black top with thin straps, her hands out of the frame, bikes parked behind her, laughing
+- **Daytime:** sitting a few metres away on the edge of a canal in Groningen on a sunny afternoon in a plain light blue t-shirt and denim shorts, her bike behind her, squinting in the sun
+- **Mirror:** mirror photo she took of herself in a full-length mirror on her bedroom door before going out, her phone held at chest height, in a short black dress, clothes all over the bed behind her, warm ceiling light
+- **Selfie:** photo she took of herself at arm's length in bed late at night, lit only by a small lamp, messy hair, grainy, her arm out of the frame, a sleepy grin
+- **Party:** blurry flash photo at a student party at night, she dances with her eyes closed, other people cut off at the edges, purple light, her face overexposed by the flash
+- **Candid:** photo taken by a friend at an outdoor festival in summer, she sits on the grass in a white crop top and shorts, glitter on her cheeks, harsh sun, someone's leg at the edge of the frame
+- **City:** Groningen
+- **Country:** Netherlands
+- **Bio:** Final year, no plans for the weekend yet. Make me a good offer.
+- **Prompt:** Shots, dancing, and a little bit of trouble.
+- **Intents:** Tonight, One night
+- **Turn-ons:** Flirty texting, Dancing close, Kissing, Spontaneous, Confidence
+- **Yes:** Meet for a drink first, Protection, always
+- **Maybe:** Go to theirs, Couples & threesomes
+- **Details:** orientation=Bisexual; relationship=Single; pronouns=she/her; height=170–179 cm; hosting=I can't host; when=Weekends, Spontaneous; drinking=Socially; smoking=Socially; languages=Dutch, English, German; sign=Gemini
+- **Prompts:** A turn-off for me=Asking for my number before saying hi. | My most spontaneous moment=Went home with a DJ. Best breakfast ever.
+
+## Giulia (giulia)
+
+- **Mask:** lace
+- **Gender:** Woman
+- **Age:** 29
+- **Who:** a pretty 29-year-old Italian woman with olive skin, dark brown hair in a low bun with loose strands and brown eyes
+- **Portrait:** waist-up photo of her sitting at an outdoor restaurant table on a dark street at night, warm lit windows out of focus behind her, one glass of red wine on the table, in a plain black top with thin straps, her hands in her lap, photo with flash, a warm smile
+- **Night out:** standing a few metres away outside a wine bar in Amsterdam at night in a fitted red satin dress with thin straps, her hands out of the frame, the bar's lit window behind her, laughing
+- **Daytime:** walking a few metres away down a quiet street in Amsterdam on a sunny morning in a white linen shirt and jeans, sunglasses on, a tote bag on her shoulder, smiling
+- **Mirror:** mirror photo she took of herself in a narrow hallway mirror before going out, her phone held at chest height, in a short black dress, a coat rack and shoes behind her, harsh ceiling light, fingerprints on the mirror
+- **Selfie:** photo she took of herself at arm's length on a balcony in the morning in an oversized white shirt, messy hair, soft grey light, grainy, her arm out of the frame, a small smile
+- **Party:** flash photo at a friend's dinner party at night, she laughs at the table with wine glasses and candles in front of her, friends cut off at the edges, red eyes from the flash
+- **Candid:** photo taken by a friend on a boat on an Amsterdam canal in summer, she sits at the edge in a yellow sundress with sunglasses on her head, laughing, harsh sun, the horizon a bit crooked
+- **City:** Amsterdam
+- **Country:** Netherlands
+- **Bio:** I cook, you bring the wine. If the pasta is good, maybe dessert too.
+- **Prompt:** Dinner at my place, candles, and no rush to leave.
+- **Intents:** This week, Regular FWB
+- **Turn-ons:** Candles & music, Good scent, Nice hands, Being spoiled, Morning after
+- **Yes:** Meet for a drink first, Host at my place, Protection, always, Stay the night
+- **Maybe:** Kink-friendly
+- **Details:** orientation=Straight; relationship=Single; pronouns=she/her; height=160–169 cm; hosting=I can host; when=Weeknights, Weekends; drinking=Wine o'clock; smoking=Never; languages=Italian, English, Spanish; sign=Cancer
+- **Prompts:** The way to win me over=Eat seconds and mean it. | After a date, I like to=Stay in bed until noon.
+
+## Robin (robin)
+
+- **Mask:** crystal
+- **Gender:** Non-binary
+- **Age:** 27
+- **Who:** an attractive 27-year-old Dutch person with an androgynous look, short bleached platinum hair and a small silver nose ring
+- **Portrait:** waist-up photo of them standing on a flat rooftop in the late afternoon, a pale open sky behind them, in a plain black tank top, their hands out of the frame, low golden sun from the side, a cool half smile
+- **Night out:** standing a few metres away outside a bar in Utrecht at night in a black sleeveless top and black trousers with a silver chain, their hands out of the frame, pink neon light from the bar behind them, laughing
+- **Daytime:** sitting a few metres away on a canal wharf in Utrecht on a sunny afternoon in an oversized plain white shirt and black jeans, sunglasses on, relaxed
+- **Mirror:** mirror photo they took of themselves in a bathroom mirror at a club, their phone held at chest height, in a black top with a silver chain, stickers on the mirror, harsh red light
+- **Selfie:** photo they took of themselves at arm's length in a tram at night, lit by the tram lights, grainy, their arm out of the frame, a lazy smile
+- **Party:** blurry flash photo on a crowded dance floor at a queer party at night, they dance with their eyes closed, pink and blue lights, other people cut off at the edges, slightly tilted
+- **Candid:** photo taken by a friend at a street party in summer, they stand in the sun with glitter on their cheeks in a plain white tank top, someone's shoulder at the edge of the frame, harsh sun
+- **City:** Utrecht
+- **Country:** Netherlands
+- **Bio:** Queer, curious and very good at slow dancing. All genders welcome, good energy required.
+- **Prompt:** A dark bar, a good DJ, and someone who leans in.
+- **Intents:** Tonight, Open to more
+- **Turn-ons:** Being led, Teasing, Tattoos, Dancing close, Role play
+- **Yes:** Meet for a drink first, Protection, always, Couples & threesomes
+- **Maybe:** Host at my place, Kink-friendly
+- **Details:** orientation=Queer; relationship=Single; pronouns=they/them; height=170–179 cm; hosting=Sometimes; when=Late nights, Weekends; drinking=Socially; smoking=420 friendly; languages=Dutch, English; sign=Aquarius
+- **Prompts:** Green flags=Asks for my pronouns and then just gets on with it. | Ask me about=The best queer night in Utrecht.

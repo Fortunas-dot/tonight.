@@ -184,8 +184,20 @@ function fitted(place, mask) {
 <g transform="${half(place, place.sr)}"><g clip-path="url(#maskRightHalf)">${art.face}</g></g>`;
 }
 
+// The two eyes in photo pixels, left of the picture first; from the face box when the eyes weren't found.
+function eyesOf(face) {
+  let [a, b] = face.eyes || [];
+  const { box } = face;
+  if (!a || !b || Math.hypot(a.x - b.x, a.y - b.y) < box.w * 0.15) {
+    // OpenCV's face box is tighter than ML Kit's: the eyes sit at about 40% of its height.
+    a = { x: box.x + box.w * 0.31, y: box.y + box.h * 0.4 };
+    b = { x: box.x + box.w * 0.69, y: box.y + box.h * 0.4 };
+  }
+  return a.x <= b.x ? [a, b] : [b, a];
+}
+
 // Photo pixels → frame units (the photo fills the frame like "cover"), then the same fallbacks as facePartsFromMlKit.
-function placeFor(face) {
+function placeFor(face, head) {
   if (!face.box) return null;
   const f = Math.max(VW / face.w, VH / face.h);
   const ox = (VW - face.w * f) / 2;
@@ -193,13 +205,43 @@ function placeFor(face) {
   const toFrame = (p) => ({ x: ox + p.x * f, y: oy + p.y * f });
   const tl = toFrame(face.box);
   const box = { x: tl.x, y: tl.y, w: face.box.w * f, h: face.box.h * f };
-  let [eyeL, eyeR] = face.eyes.map(toFrame);
-  if (!eyeL || !eyeR || Math.hypot(eyeL.x - eyeR.x, eyeL.y - eyeR.y) < box.w * 0.15) {
-    // OpenCV's face box is tighter than ML Kit's: the eyes sit at about 40% of its height.
-    eyeL = { x: box.x + box.w * 0.31, y: box.y + box.h * 0.4 };
-    eyeR = { x: box.x + box.w * 0.69, y: box.y + box.h * 0.4 };
+  const [eyeL, eyeR] = eyesOf(face).map(toFrame);
+  const place = fitMask({ eyeL, eyeR, box, oval: face.edges ? outline(eyeL, eyeR, face.edges) : [], bridge: [] });
+  return onHead(place, eyeL, eyeR, head);
+}
+
+// The headband in the ear art: its ends 101 units either side of its apex and 73 below it.
+const ART_BAND_HALF = 101;
+const ART_BAND_DROP = 73;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// Puts the headband, and the ears, horns, halo or bow on it, on the hair: the apex just inside the top of the head and
+// the ends on the head's sides. fitMask only knows the face, so it guessed a fixed height above the eyes and a width
+// from the face box, and the band floated over short hair or sat on big hair (Youssef, Nov 2026).
+// head: find-heads.py's cut-out ({top, rows}), or a hand-measured "head": {top, half, cx} in mask-overrides.json;
+// all in eye gaps from the middle between the eyes.
+function onHead(place, eyeL, eyeR, head) {
+  if (!head || head.error || typeof head.top !== 'number') return place;
+  const gap = Math.hypot(eyeR.x - eyeL.x, eyeR.y - eyeL.y);
+  const roll = Math.atan2(eyeR.y - eyeL.y, eyeR.x - eyeL.x);
+  const mid = { x: (eyeL.x + eyeR.x) / 2, y: (eyeL.y + eyeR.y) / 2 };
+  // The head's half width and centre d gaps below its top.
+  const at = (d) => {
+    if (typeof head.half === 'number') return { half: head.half, c: head.cx || 0 };
+    const r = head.rows.reduce((a, b) => (Math.abs(b[0] - d) < Math.abs(a[0] - d) ? b : a));
+    return { half: clamp((r[2] - r[1]) / 2, 0.9, 1.9), c: (r[1] + r[2]) / 2 };
+  };
+  // The band's size sets how far down its ends reach, which sets how wide the head is there: settle it in a few steps.
+  let es = place.es;
+  let row = at(0.5);
+  for (let i = 0; i < 6; i++) {
+    row = at((ART_BAND_DROP * es) / gap);
+    es = (0.97 * row.half * gap) / ART_BAND_HALF;
   }
-  return fitMask({ eyeL, eyeR, box, oval: face.edges ? outline(eyeL, eyeR, face.edges) : [], bridge: [] });
+  const u = clamp(row.c, -0.6, 0.6) * gap;
+  const v = -(head.top - 0.06) * gap; // a little into the hair, so it rests on it
+  const apex = { x: mid.x + u * Math.cos(roll) - v * Math.sin(roll), y: mid.y + u * Math.sin(roll) + v * Math.cos(roll) };
+  return { ...place, ex: apex.x - place.x, ey: apex.y - place.y, es };
 }
 
 // A face outline like ML Kit's, from hand-measured edges: where the face's edge crosses the eye line, in eye gaps
@@ -241,11 +283,17 @@ for (const j of jobs) {
   if (o) faces[j.file] = { ...faces[j.file], ...o };
 }
 
+// The top and sides of each head (GrabCut, scripts/find-heads.py), for the headbands; a hand-measured "head" wins.
+const needHeads = jobs.filter((j) => faces[j.file].box && ART[j.p.Mask || 'masq']?.ears && !faces[j.file].head);
+const heads = needHeads.length
+  ? JSON.parse(execFileSync('python', ['-I', join(root, 'scripts', 'find-heads.py')], { input: JSON.stringify(needHeads.map((j) => ({ path: j.file, eyes: eyesOf(faces[j.file]) }))), encoding: 'utf8', maxBuffer: 1 << 24 }))
+  : {};
+
 for (const p of todo) {
   const mask = p.Mask || 'masq';
   if (!ART[mask]) { console.log(`${p.name}: unknown mask "${mask}"`); continue; }
   for (const { n, file } of jobs.filter((j) => j.p === p)) {
-    const place = placeFor(faces[file]);
+    const place = placeFor(faces[file], faces[file].head || heads[file]);
     if (!place) { console.log(`${p.name} ${n}.jpg: no face found — left bare`); continue; }
     const photo = `data:image/jpeg;base64,${(await readFile(file)).toString('base64')}`;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${OUT_W}" height="${OUT_H}" viewBox="0 0 ${VW} ${VH}"><defs>${DEFS}</defs>

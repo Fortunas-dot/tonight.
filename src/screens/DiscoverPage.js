@@ -9,6 +9,7 @@ import { Icon, Verified } from '../icons';
 import { GradientButton, LiquidBg, Photo, T, prefetchPhotos, success, tap, thud } from '../ui';
 import { FilterSheet, activeCount, applyFilters, filterChips, isLive } from './DiscoverFilters';
 import { DETAILS } from '../data';
+import { MaskIcon } from './MaskEditor';
 
 function Label({ children, color = C.pinkL, icon }) {
   return (
@@ -441,7 +442,8 @@ export function DiscoverPage({ deck: all, profile, filters, onFilters, onLike, o
           style={{ flex: 1, opacity: fade, transform: [{ translateX: swipe }, { rotate: tilt }, { translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}
         >
           <Animated.View pointerEvents="none" style={[styles.stamp, styles.stampLike, { opacity: likeOpacity }]}>
-            <T style={{ fontFamily: F.displayX, fontSize: 30, color: C.green, letterSpacing: 2 }}>LIKE</T>
+            <MaskIcon width={58} />
+            <T style={{ fontFamily: F.displayX, fontSize: 30, color: C.pink, letterSpacing: 2 }}>LIKE</T>
           </Animated.View>
           <Animated.View pointerEvents="none" style={[styles.stamp, styles.stampPass, { opacity: passOpacity }]}>
             <T style={{ fontFamily: F.displayX, fontSize: 30, color: C.red, letterSpacing: 2 }}>PASS</T>
@@ -539,7 +541,7 @@ const styles = StyleSheet.create({
   liveBtnOn: { borderColor: '#2BC48A', backgroundColor: 'rgba(43,196,138,0.12)' },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.muted },
   stamp: { position: 'absolute', top: 40, zIndex: 5, paddingHorizontal: 14, paddingVertical: 4, borderWidth: 4, borderRadius: 12, backgroundColor: 'rgba(14,12,16,0.55)' },
-  stampLike: { left: 32, borderColor: C.green, transform: [{ rotate: '-14deg' }] },
+  stampLike: { left: 32, borderColor: C.pink, flexDirection: 'row', alignItems: 'center', gap: 8, transform: [{ rotate: '-14deg' }] },
   stampPass: { right: 32, borderColor: C.red, transform: [{ rotate: '14deg' }] },
   liveOut: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line2 },
   filterBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.surf2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },

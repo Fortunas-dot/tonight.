@@ -15,3 +15,6 @@ android/
 assets/demo-raw/
 assets/cartoons-raw/
 scripts/.demo-sessions.json
+
+# Supabase CLI cache
+supabase/.temp/
