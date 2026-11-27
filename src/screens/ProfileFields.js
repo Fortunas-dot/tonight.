@@ -10,7 +10,8 @@ import { C, F } from '../theme';
 import { Icon, Verified } from '../icons';
 import { GradientButton, LiquidBg, Photo, T, Toggle, success, tap } from '../ui';
 import { countryCode, searchCities, searchCountries } from '../countries';
-import { DETAILS, PROMPTS } from '../data';
+import { DETAILS, MAX_TURN_ONS, PROMPTS } from '../data';
+import { BoundaryPicker, IntentPicker, TurnOnPicker } from './Pickers';
 
 export const BIO_MAX = 300;
 const STARTERS = ['Looking for ', 'My ideal night: ', 'Green flags: ', 'You should know: '];
@@ -598,6 +599,9 @@ export function EditProfile({ profile, setProfile, onBack }) {
   const [masked, setMasked] = useState(profile.masked || {});
   const [blur, setBlur] = useState(!!profile.blurFace);
   const [masking, setMasking] = useState(null);
+  const [intents, setIntents] = useState(profile.intents || []);
+  const [answers, setAnswers] = useState(profile.boundaries || {});
+  const [turnOns, setTurnOns] = useState(profile.turnOns || []);
   const ageNum = parseInt(age, 10);
   const valid = name.trim().length > 0 && ageNum >= 18 && ageNum < 100;
   const dirty =
@@ -610,11 +614,14 @@ export function EditProfile({ profile, setProfile, onBack }) {
     JSON.stringify(details) !== JSON.stringify(profile.details || {}) ||
     JSON.stringify(prompts) !== JSON.stringify(profile.prompts || []) ||
     country.trim() !== (profile.country || '') ||
-    city.trim() !== (profile.city || '');
+    city.trim() !== (profile.city || '') ||
+    intents.join('|') !== (profile.intents || []).join('|') ||
+    JSON.stringify(answers) !== JSON.stringify(profile.boundaries || {}) ||
+    turnOns.join('|') !== (profile.turnOns || []).join('|');
   const save = () => {
     if (!valid || !dirty) return;
     success();
-    setProfile((p) => ({ ...p, name: name.trim(), age: ageNum, bio: bio.trim(), prompt: prompt.trim(), country: country.trim(), city: city.trim(), photos, masked, blurFace: blur, details, prompts: prompts.filter((x) => x.a?.trim()) }));
+    setProfile((p) => ({ ...p, name: name.trim(), age: ageNum, bio: bio.trim(), prompt: prompt.trim(), country: country.trim(), city: city.trim(), photos, masked, blurFace: blur, details, prompts: prompts.filter((x) => x.a?.trim()), intents, boundaries: answers, turnOns }));
     onBack();
   };
 
@@ -677,6 +684,15 @@ export function EditProfile({ profile, setProfile, onBack }) {
             maxLength={2}
             hint={age.length === 2 && ageNum < 18 ? 'Tonight is 18+ only' : null}
           />
+        </Section>
+        <Section icon="flame" title="What you’re after" caption="Shown on your profile and used in Discover filters.">
+          <IntentPicker intents={intents} setIntents={setIntents} first />
+        </Section>
+        <Section icon="lock" title="Your boundaries" caption="Yes, maybe or no for each.">
+          <BoundaryPicker answers={answers} setAnswers={setAnswers} />
+        </Section>
+        <Section icon="heart" title="What turns you on" caption={`${turnOns.length} of ${MAX_TURN_ONS} · shared ones light up for matches.`}>
+          <TurnOnPicker turnOns={turnOns} setTurnOns={setTurnOns} />
         </Section>
         <ProfileFields bio={bio} setBio={setBio} prompt={prompt} setPrompt={setPrompt} country={country} setCountry={setCountry} city={city} setCity={setCity} />
         <PromptsSection prompts={prompts} setPrompts={setPrompts} />

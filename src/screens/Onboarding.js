@@ -5,10 +5,11 @@ import * as ImagePicker from 'expo-image-picker';
 import Svg, { Circle, Defs, LinearGradient as SvgGrad, Path, Stop } from 'react-native-svg';
 import { C, F, FIRE, GRAD } from '../theme';
 import { Icon, Verified } from '../icons';
-import { BOUNDARIES, KIND_INTENTS, MAX_TURN_ONS, TURN_ON_GROUPS, VOWS, WHEN_INTENTS } from '../data';
+import { MAX_TURN_ONS, VOWS } from '../data';
 import { MaskEditor } from './MaskEditor';
 import { FireBurst } from './FireBurst';
 import { BIO_MAX, SearchSelect } from './ProfileFields';
+import { BoundaryPicker, IntentPicker, TurnOnPicker } from './Pickers';
 import { countryCode, searchCities, searchCountries } from '../countries';
 import * as api from '../backend';
 import { versionLabel } from '../version';
@@ -16,7 +17,7 @@ import { completeness, missingSteps } from '../completeness';
 import { AppleButton, appleToken, lastAppleCode, useAppleAvailable } from '../appleAuth';
 import { KeepWithEmail } from './EmailAuth';
 import { ART, StepArt } from '../art';
-import { Card, Chip, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
+import { Card, GhostButton, GradientButton, Header, Photo, Rise, Row, Screen, T, Toggle, success, tap, thud } from '../ui';
 
 const STEPS = 7; // Save your account, then the six profile steps
 
@@ -932,87 +933,10 @@ export function Photos({ profile, setProfile, next, back }) {
   );
 }
 
-const ANSWERS = [
-  { v: 'Yes', icon: 'check', bg: '#1E4D3A', border: '#2BC48A', ink: '#E7FFF3' },
-  { v: 'Maybe', icon: null, bg: '#4A3C17', border: '#E8B64C', ink: '#FFF3D1' },
-  { v: 'No', icon: 'close', bg: '#4A1F26', border: '#FF6F7F', ink: '#FFE1E4' },
-];
-const B_ICONS = {
-  'Meet for a drink first': 'pin',
-  'Host at my place': 'lock',
-  'Go to theirs': 'send',
-  'Stay the night': 'clock',
-  'Couples & threesomes': 'heart',
-  'Kink-friendly': 'flame',
-  'Protection, always': 'shieldCheck',
-};
-
-// One part of the Yes / Maybe / No switch; the chosen part fills in its colour.
-function Answer({ a, on, onPress, label }) {
-  return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: on }}
-      onPress={onPress}
-      style={[styles.ans, on && { backgroundColor: a.bg, borderColor: a.border }]}
-    >
-      {on && a.icon ? <Icon name={a.icon} size={13} color={a.ink} stroke={2.6} /> : null}
-      <T c={on ? a.ink : C.muted} style={{ fontFamily: on ? F.semi : F.medium, fontSize: 14 }}>
-        {a.v}
-      </T>
-    </Pressable>
-  );
-}
-
-// "What are you after?": what each kind means, shown under it on its tile.
-const INTENT_INFO = {
-  'One night': { icon: 'flame', sub: 'Fun, no strings' },
-  'Regular FWB': { icon: 'heart', sub: 'Someone to see again' },
-  Threesomes: { icon: 'couple', sub: 'Make it three' },
-  'Group & orgies': { icon: 'group', sub: 'The more the merrier' },
-  'Kink & play': { icon: 'link', sub: 'Explore together' },
-  'Open to more': { icon: 'spark', sub: 'See where it goes' },
-};
-
-function IntentTile({ label, on, onPress }) {
-  const info = INTENT_INFO[label] || { icon: 'check', sub: '' };
-  const inner = (
-    <View style={[styles.tile, styles.intentTile, on && styles.tileOn]}>
-      <Icon name={info.icon} size={22} color={on ? C.pinkL : C.muted} />
-      <View>
-        <T c={on ? C.ink : C.ink2} style={{ fontFamily: F.semi, fontSize: 15 }}>
-          {label}
-        </T>
-        <T v="small" c={on ? C.ink2 : C.faint} style={{ marginTop: 2 }}>
-          {info.sub}
-        </T>
-      </View>
-      {on ? (
-        <View style={styles.tileTick}>
-          <Icon name="check" size={11} color="#FFFFFF" stroke={3.4} />
-        </View>
-      ) : null}
-    </View>
-  );
-  return (
-    <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={`${label}: ${info.sub}`} onPress={onPress} style={styles.tileCell}>
-      {on ? (
-        <LinearGradient colors={GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tileRing}>
-          {inner}
-        </LinearGradient>
-      ) : (
-        <View style={styles.tileRing}>{inner}</View>
-      )}
-    </Pressable>
-  );
-}
-
 export function Boundaries({ profile, setProfile, next, back }) {
   const [intents, setIntents] = useState(profile.intents || ['Tonight']);
   const [answers, setAnswers] = useState(profile.boundaries || { 'Meet for a drink first': 'Yes', 'Protection, always': 'Yes' });
   const [turnOns, setTurnOns] = useState(profile.turnOns || []);
-  const tog = (arr, set, v, max) => set(arr.includes(v) ? arr.filter((x) => x !== v) : max && arr.length >= max ? arr : [...arr, v]);
   return (
     <Screen scroll>
       <Header onBack={back} step={4} total={STEPS} />
@@ -1020,93 +944,11 @@ export function Boundaries({ profile, setProfile, next, back }) {
         What are you after?
       </T>
       <StepArt name="boundaries" height={150} />
-      <View style={styles.capsRow}>
-        <T v="small" c={C.faint} style={[styles.capsLabel, { marginTop: 0 }]}>
-          WHEN
-        </T>
-        <T v="small" c={C.faint}>
-          Pick one or more
-        </T>
-      </View>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {WHEN_INTENTS.map((w) => {
-          const on = intents.includes(w);
-          return (
-            <Pressable
-              key={w}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: on }}
-              accessibilityLabel={`When: ${w}`}
-              onPress={() => {
-                tap();
-                tog(intents, setIntents, w);
-              }}
-              style={[styles.seg, { width: undefined, flex: 1 }, on && styles.segOnPink]}
-            >
-              {on ? <Icon name="check" size={13} color={C.pinkL} stroke={3.2} /> : null}
-              <T numberOfLines={1} c={on ? C.ink : C.ink2} style={{ fontFamily: on ? F.semi : F.medium, fontSize: 14 }}>
-                {w}
-              </T>
-            </Pressable>
-          );
-        })}
-      </View>
-      <View style={styles.capsRow}>
-        <T v="small" c={C.faint} style={[styles.capsLabel, { marginTop: 0 }]}>
-          WHAT YOU’RE INTO
-        </T>
-        <T v="small" c={C.faint}>
-          Pick any
-        </T>
-      </View>
-      <View style={styles.tileGrid}>
-        {KIND_INTENTS.map((i) => (
-          <IntentTile
-            key={i}
-            label={i}
-            on={intents.includes(i)}
-            onPress={() => {
-              tap();
-              tog(intents, setIntents, i);
-            }}
-          />
-        ))}
-      </View>
+      <IntentPicker intents={intents} setIntents={setIntents} />
       <T v="h" style={{ marginTop: 28 }}>
         Your boundaries
       </T>
-      <View style={styles.noteSafe}>
-        <Icon name="lock" size={16} color={C.blueL} />
-        <T v="small" c={C.safeInk} style={{ flex: 1 }}>
-          Your no’s are never shown. They quietly filter out anyone who needs them.
-        </T>
-      </View>
-      <View style={{ gap: 10, marginTop: 12 }}>
-        {BOUNDARIES.map((b) => (
-          <View key={b} style={styles.bCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={styles.bIcon}>
-                <Icon name={B_ICONS[b] || 'check'} size={16} color={C.ink2} />
-              </View>
-              <T style={{ fontFamily: F.medium, fontSize: 15, flex: 1 }}>{b}</T>
-            </View>
-            <View style={styles.ansRow}>
-              {ANSWERS.map((a) => (
-                <Answer
-                  key={a.v}
-                  a={a}
-                  on={answers[b] === a.v}
-                  label={`${b}: ${a.v}`}
-                  onPress={() => {
-                    tap();
-                    setAnswers({ ...answers, [b]: a.v });
-                  }}
-                />
-              ))}
-            </View>
-          </View>
-        ))}
-      </View>
+      <BoundaryPicker answers={answers} setAnswers={setAnswers} />
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28 }}>
         <T v="h">What turns you on</T>
         <T v="small" c={turnOns.length >= MAX_TURN_ONS ? C.pinkL : C.muted}>
@@ -1116,18 +958,7 @@ export function Boundaries({ profile, setProfile, next, back }) {
       <T v="small" c={C.muted} style={{ marginTop: 2 }}>
         Shared ones light up for matches.
       </T>
-      {TURN_ON_GROUPS.map((g) => (
-        <View key={g.title} style={{ marginTop: 14 }}>
-          <T v="label" c={C.faint} style={{ marginBottom: 8 }}>
-            {g.title}
-          </T>
-          <View style={styles.wrap}>
-            {g.items.map((t) => (
-              <Chip key={t} small label={t} on={turnOns.includes(t)} onPress={() => tog(turnOns, setTurnOns, t, MAX_TURN_ONS)} />
-            ))}
-          </View>
-        </View>
-      ))}
+      <TurnOnPicker turnOns={turnOns} setTurnOns={setTurnOns} />
       <View style={{ height: 28 }} />
       <Next
         onPress={() => {
