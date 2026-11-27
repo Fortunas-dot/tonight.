@@ -197,6 +197,18 @@ export default function App() {
     });
   }, [online, onboarded]);
 
+  // Presence for the team's dashboard: once on start, on coming back to the app, and every minute while it's open.
+  useEffect(() => {
+    if (!online) return undefined;
+    api.ping();
+    const timer = setInterval(() => AppState.currentState === 'active' && api.ping(), 60000);
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && api.ping());
+    return () => {
+      clearInterval(timer);
+      sub.remove();
+    };
+  }, [online]);
+
   useEffect(() => {
     if (!online) return;
     let alive = true;

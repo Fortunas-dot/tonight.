@@ -9,6 +9,11 @@ const URL_TTL = 60 * 60 * 24; // signed photo links last a day
 let uid = null;
 export const myId = () => uid;
 
+/** "I'm here" for the team's testing dashboard (who's online). Members can't read it. Failures don't matter. */
+export function ping() {
+  if (uid) supabase.rpc('app_ping').then(() => {}, () => {});
+}
+
 /** Signs in (anonymously, kept on the device) and returns the user id, or null when offline. */
 export async function ensureSession() {
   try {

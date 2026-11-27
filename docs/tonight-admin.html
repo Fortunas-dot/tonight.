@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tonight</title>
+<!-- Testing dashboard, live at fortunas.nl/tonight/admin (FortunasWeb: public/tonight/admin.html).
+     Chats: answer as the AI profiles. Swipe: like people as an AI profile, see who liked it. Users: every account.
+     Talks only to the demo-console function; the password lives there. -->
+<style>
+  :root { --bg:#0f0d12; --panel:#18151d; --line:#2a2531; --text:#efeaf3; --mute:#9a92a3; --accent:#e2457a; --ok:#3fbf7f; }
+  * { box-sizing: border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; font:15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+  header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0 8px 0 0; font-weight:600; }
+  header .sp { flex:1; }
+  nav { display:flex; gap:4px; }
+  nav button { background:transparent; color:var(--mute); }
+  nav button.on { background:var(--panel); color:var(--text); }
+  button { font:inherit; color:inherit; background:var(--line); border:0; border-radius:8px; padding:8px 12px; cursor:pointer; }
+  button.primary { background:var(--accent); color:#fff; }
+  button:disabled { opacity:.5; cursor:default; }
+  select, input, textarea { font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+  main { flex:1; display:flex; min-height:0; }
+  .col { border-right:1px solid var(--line); overflow:auto; }
+  #list { width:340px; }
+  .row { display:flex; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line); cursor:pointer; align-items:center; }
+  .row:hover, .row.on { background:var(--panel); }
+  .av { width:40px; height:40px; border-radius:50%; object-fit:cover; background:var(--line); flex:none; display:block; }
+  .pics { position:relative; width:52px; height:44px; flex:none; }
+  .pics .av { position:absolute; width:36px; height:36px; border:2px solid var(--bg); }
+  .pics .a { left:0; top:0; } .pics .b { left:16px; top:8px; }
+  .t { flex:1; min-width:0; }
+  .n { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .l { color:var(--mute); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .badge { background:var(--accent); color:#fff; border-radius:10px; font-size:12px; padding:1px 7px; font-weight:600; }
+  .tag { font-size:11px; color:var(--mute); border:1px solid var(--line); border-radius:6px; padding:0 5px; margin-left:4px; font-weight:400; white-space:nowrap; }
+  .tag.ok { color:var(--ok); border-color:#235c40; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--ok); margin-left:6px; vertical-align:middle; }
+  .badge.ok { background:var(--ok); } .tag.hot { color:var(--accent); border-color:#6b2440; }
+  #chat { flex:1; display:flex; flex-direction:column; min-width:0; }
+  #chatHead { padding:12px 16px; border-bottom:1px solid var(--line); color:var(--mute); }
+  #chatHead b { color:var(--text); }
+  #msgs { flex:1; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:6px; }
+  .m { max-width:70%; padding:8px 12px; border-radius:16px; white-space:pre-wrap; word-wrap:break-word; }
+  .m.d { align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:4px; }
+  .m.u { align-self:flex-start; background:var(--line); border-bottom-left-radius:4px; }
+  .when { font-size:11px; color:var(--mute); align-self:center; margin:8px 0 2px; }
+  .status { font-size:12px; color:var(--mute); align-self:flex-end; }
+  form#send { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--line); }
+  form#send textarea { flex:1; resize:vertical; height:44px; min-height:44px; }
+  .empty { margin:auto; color:var(--mute); text-align:center; padding:24px; }
+  #login { margin:auto; display:flex; flex-direction:column; gap:10px; width:300px; }
+  #err { color:#ff7a8a; font-size:13px; min-height:18px; }
+  /* Swipe */
+  #demos { width:240px; }
+  #deckCol { flex:1; overflow:auto; display:flex; flex-direction:column; align-items:center; padding:20px; gap:14px; min-width:0; }
+  .card { width:min(380px, 100%); background:var(--panel); border-radius:18px; overflow:hidden; border:1px solid var(--line); }
+  .card .photo { position:relative; aspect-ratio:3/4; background:var(--line); cursor:pointer; }
+  .card .photo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .card .dots { position:absolute; top:8px; left:8px; right:8px; display:flex; gap:4px; }
+  .card .dots i { flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.35); }
+  .card .dots i.on { background:#fff; }
+  .card .info { padding:14px 16px; display:flex; flex-direction:column; gap:6px; }
+  .card .info h2 { margin:0; font-size:20px; }
+  .card .info .qa b { display:block; font-size:12px; color:var(--mute); font-weight:500; }
+  .swipeBtns { display:flex; gap:12px; }
+  .swipeBtns button { width:120px; padding:12px; font-weight:600; }
+  #likes { width:320px; border-left:1px solid var(--line); overflow:auto; }
+  .sec { padding:12px 14px 6px; font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.05em; }
+  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; padding:10px 16px; border-radius:10px; font-weight:600; display:none; z-index:5; }
+  #toast a { color:#fff; margin-left:8px; }
+  /* Users */
+  #users { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .bar { display:flex; gap:8px; padding:12px 16px; border-bottom:1px solid var(--line); align-items:center; flex-wrap:wrap; }
+  .seg { display:flex; background:var(--panel); border-radius:8px; padding:2px; }
+  .seg button { background:transparent; color:var(--mute); padding:6px 10px; }
+  .seg button.on { background:var(--line); color:var(--text); }
+  .bar label { color:var(--mute); font-size:14px; display:flex; gap:6px; align-items:center; }
+  .tbl { flex:1; overflow:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; color:var(--mute); font-weight:500; font-size:12px; padding:8px 10px; position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line); }
+  td { padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  td .l { white-space:normal; }
+  tr.fresh td:first-child { box-shadow: inset 3px 0 var(--accent); }
+  tr[data-u] { cursor:pointer; } tr[data-u]:hover td { background:var(--panel); }
+  /* Profile view */
+  #pv { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:32px 16px; z-index:6; }
+  #pv .box { width:min(560px, 100%); background:var(--panel); border:1px solid var(--line); border-radius:18px; overflow:hidden; }
+  #pv .pics { display:flex; gap:6px; overflow-x:auto; padding:12px; background:var(--bg); }
+  #pv .pics img { height:300px; aspect-ratio:3/4; object-fit:cover; border-radius:12px; flex:none; cursor:zoom-in; }
+  #pv .pics.big img { height:min(75vh, 640px); cursor:zoom-out; }
+  #pv .body { padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; }
+  #pv h2 { margin:0; font-size:22px; }
+  #pv .qa b, #pv .k { display:block; font-size:12px; color:var(--mute); font-weight:500; }
+  #pv .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px 14px; font-size:14px; }
+  #pv .acts { display:flex; gap:8px; justify-content:flex-end; padding-top:6px; flex-wrap:wrap; }
+  /* Overview */
+  #overview { flex:1; overflow:auto; padding:20px; display:flex; flex-direction:column; gap:20px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:12px; }
+  .stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .stat[data-go] { cursor:pointer; } .stat[data-go]:hover { border-color:var(--mute); }
+  .stat .v { font-size:28px; font-weight:700; line-height:1.1; } .stat .k { color:var(--mute); font-size:13px; margin-top:4px; }
+  .stat.alert .v { color:var(--accent); } .stat.good .v { color:var(--ok); }
+  .bars { display:flex; align-items:flex-end; gap:6px; height:120px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px 0; }
+  .bars div { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px; font-size:11px; color:var(--mute); }
+  .bars i { display:block; width:100%; max-width:28px; background:var(--accent); border-radius:4px 4px 0 0; min-height:2px; }
+  .bars span { padding-bottom:6px; }
+  h3.sec2 { margin:0; font-size:14px; color:var(--mute); font-weight:500; }
+  /* Moderation */
+  #mod { flex:1; display:flex; flex-direction:column; min-width:0; }
+  #modBody { flex:1; overflow:auto; display:flex; min-height:0; }
+  .rv { display:flex; gap:16px; padding:16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .rv .shots { display:flex; gap:6px; flex-wrap:wrap; }
+  .rv .shots img { width:96px; height:128px; object-fit:cover; border-radius:8px; background:var(--line); cursor:zoom-in; }
+  .rv .info { flex:1; min-width:240px; display:flex; flex-direction:column; gap:6px; }
+  .rv .acts { display:flex; gap:8px; margin-top:6px; }
+  button.ok { background:var(--ok); color:#06150d; font-weight:600; }
+  #supList { width:300px; }
+  #supChat { flex:1; display:flex; flex-direction:column; min-width:0; }
+  @media (max-width: 900px) { #likes { display:none; } }
+  @media (min-width: 721px) { #back { display:none !important; } }
+  @media (max-width: 720px) {
+    #list, #demos { width:100%; } #chat, #deckCol { display:none; }
+    body.open #list, body.open #demos { display:none; } body.open #chat, body.open #deckCol { display:flex; }
+    .hideS { display:none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Tonight</h1>
+  <nav id="tabs" hidden>
+    <button data-tab="overview">Overview</button>
+    <button data-tab="chats">Chats <span id="nChats"></span></button>
+    <button data-tab="swipe">Swipe</button>
+    <button data-tab="users">Users <span id="nUsers"></span></button>
+    <button data-tab="mod">Moderation <span id="nMod"></span></button>
+  </nav>
+  <select id="filter" hidden><option value="">All AI profiles</option></select>
+  <span class="sp"></span>
+  <button id="bell" hidden title="Get a browser notification when someone messages an AI profile">🔔 Notify me</button>
+  <button id="back" hidden>‹ Back</button>
+  <button id="logout" hidden>Log out</button>
+</header>
+<main id="app">
+  <form id="login">
+    <b>Testing dashboard</b>
+    <input id="pw" type="password" placeholder="Password" autocomplete="current-password" autofocus>
+    <button class="primary">Open</button>
+    <div id="err"></div>
+  </form>
+</main>
+<div id="toast"></div>
+<script>
+const FN = 'https://pcumepnylbeezpoxlqqz.supabase.co/functions/v1/demo-console';
+const $ = (s) => document.querySelector(s);
+let key = localStorage.getItem('tonight-console-key') || '';
+let tab = 'chats', matches = [], openId = null, lastSig = '', typingSent = 0;
+let demos = [], demoId = localStorage.getItem('tonight-console-demo') || '', deck = [], photoIx = 0, likeLists = { likedBy: [], liked: [] };
+let users = [], userRange = localStorage.getItem('tonight-console-range') || 'day', showAI = false, showBlank = false, userQuery = '';
+const LOGIN = $('#app').innerHTML;
+
+async function call(action, extra = {}) {
+  const r = await fetch(FN, { method: 'POST', headers: { 'content-type': 'application/json', 'x-console-key': key }, body: JSON.stringify({ action, ...extra }) });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401) { logout('Wrong password'); throw new Error('wrong_password'); }
+  if (!r.ok) throw new Error(data.error || r.status);
+  return data;
+}
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const ago = (t) => { if (!t) return '–'; const s = (Date.now() - new Date(t)) / 1000; return s < 60 ? 'now' : s < 3600 ? `${Math.floor(s/60)}m` : s < 86400 ? `${Math.floor(s/3600)}h` : `${Math.floor(s/86400)}d`; };
+const day = (t) => t ? new Date(t).toLocaleString([], { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '–';
+const pic = (p, cls = '') => p?.photo ? `<img class="av ${cls}" src="${esc(p.photo)}" alt="">` : `<span class="av ${cls}"></span>`;
+// Green dot: online now (app open in the last 2 minutes, or active in the last 5).
+const onlineDot = (p) => p?.online ? '<span class="dot" title="Online now"></span>' : '';
+const memberLabel = (m) => `${esc(m.member.name)}${m.member.age ? ', ' + m.member.age : ''}${onlineDot(m.member)}${m.memberIsDemo ? '<span class="tag">AI</span>' : ''}`;
+function toast(html) { const t = $('#toast'); t.innerHTML = html; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => (t.style.display = 'none'), 4000); }
+
+function logout(msg) {
+  key = ''; localStorage.removeItem('tonight-console-key'); openId = null;
+  history.replaceState(null, '', location.pathname);
+  document.body.classList.remove('open');
+  $('#app').innerHTML = LOGIN;
+  ['#tabs', '#filter', '#logout', '#back', '#bell'].forEach((s) => ($(s).hidden = true));
+  bindLogin(); if (msg) $('#err').textContent = msg;
+}
+
+function bindLogin() {
+  $('#login').onsubmit = async (e) => {
+    e.preventDefault(); key = $('#pw').value.trim(); $('#err').textContent = '';
+    try { await start(); localStorage.setItem('tonight-console-key', key); } catch (err) { if (err.message !== 'wrong_password') $('#err').textContent = 'Could not load: ' + err.message; }
+  };
+}
+
+// #overview, #chats, #chats/<matchId>, #swipe, #swipe/<demoId>, #users, #mod
+const TABS = ['overview', 'chats', 'swipe', 'users', 'mod'];
+async function start() {
+  await Promise.all([loadList(), loadUsers()]);
+  loadModCounts().catch(() => {});
+  $('#tabs').hidden = false; $('#logout').hidden = false;
+  $('#bell').hidden = !('Notification' in window) || Notification.permission === 'granted';
+  const [t, id] = location.hash.slice(1).split('/');
+  await show(TABS.includes(t) ? t : 'overview', id);
+}
+
+async function show(t, id) {
+  tab = t; openId = null; closeProfile(); document.body.classList.remove('open'); $('#back').hidden = true;
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
+  $('#filter').hidden = t !== 'chats';
+  history.replaceState(null, '', '#' + t);
+  if (t === 'chats') {
+    $('#app').innerHTML = `<div id="list" class="col"></div><section id="chat"><div class="empty">Pick a match on the left.</div></section>`;
+    renderList();
+    if (id && matches.some((m) => m.id === id)) openChat(id);
+  } else if (t === 'swipe') {
+    $('#app').innerHTML = `<div id="demos" class="col"><div class="empty">Loading…</div></div><section id="deckCol"><div class="empty">Pick an AI profile to swipe as.</div></section><aside id="likes"></aside>`;
+    await loadDemos();
+    const pick = (id && demos.some((d) => d.id === id)) ? id : demos.some((d) => d.id === demoId) ? demoId : null;
+    if (pick) pickDemo(pick, !!id);
+  } else if (t === 'users') {
+    $('#app').innerHTML = `<section id="users"></section>`;
+    renderUsers();
+  } else if (t === 'overview') {
+    $('#app').innerHTML = `<section id="overview"><div class="empty">Loading…</div></section>`;
+    renderOverview();
+  } else {
+    $('#app').innerHTML = `<section id="mod"></section>`;
+    renderMod(['reviews', 'reports', 'support'].includes(id) ? id : modTab);
+  }
+}
+
+/* ---------- Chats ---------- */
+
+async function loadList() {
+  ({ matches } = await call('list'));
+  const ds = [...new Map(matches.map((m) => [m.demo.id, m.demo.name])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const cur = $('#filter').value;
+  $('#filter').innerHTML = `<option value="">All AI profiles (${matches.length} matches)</option>` +
+    `<option value="__reply">Needs reply (${matches.filter(needsReply).length})</option>` +
+    ds.map(([id, n]) => `<option value="${id}">${esc(n)} (${matches.filter((m) => m.demo.id === id).length})</option>`).join('');
+  $('#filter').value = cur;
+  const unread = matches.reduce((n, m) => n + (m.id === openId ? 0 : m.unread), 0);
+  $('#nChats').innerHTML = unread ? `<span class="badge">${unread}</span>` : '';
+  document.title = unread ? `(${unread}) Tonight` : 'Tonight';
+  notifyNew();
+}
+
+// The member wrote last, so the AI profile owes them an answer.
+const needsReply = (m) => !!m.last && !m.last.fromDemo && !m.memberIsDemo;
+
+// Browser notification for each new member message to an AI profile since the last check (not on first load).
+let seenLast = null;
+function notifyNew() {
+  const sig = Object.fromEntries(matches.map((m) => [m.id, m.last?.at || '']));
+  if (seenLast) {
+    for (const m of matches) {
+      if (!needsReply(m) || sig[m.id] === seenLast[m.id] || (m.id === openId && !document.hidden)) continue;
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const n = new Notification(`${m.member.name} → ${m.demo.name}`, { body: m.last.text, icon: m.member.photo || undefined, tag: m.id });
+        n.onclick = () => { window.focus(); show('chats', m.id); n.close(); };
+      } else if (tab !== 'chats' || openId !== m.id) toast(`New message from ${esc(m.member.name)} to ${esc(m.demo.name)}`);
+    }
+  }
+  seenLast = sig;
+}
+
+function renderList() {
+  const el = $('#list'); if (!el) return;
+  const f = $('#filter').value;
+  const rows = matches.filter((m) => !f || (f === '__reply' ? needsReply(m) : m.demo.id === f))
+    .sort((a, b) => new Date(b.last?.at || b.matchedAt) - new Date(a.last?.at || a.matchedAt));
+  el.innerHTML = rows.length ? rows.map((m) => `
+    <div class="row ${m.id === openId ? 'on' : ''}" data-id="${m.id}">
+      <div class="pics">${pic(m.demo, 'a')}${pic(m.member, 'b')}</div>
+      <div class="t">
+        <div class="n">${esc(m.demo.name)} ↔ ${memberLabel(m)}</div>
+        <div class="l">${m.last ? (m.last.fromDemo ? 'You: ' : '') + esc(m.last.text) : 'New match · say hi'}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="l">${ago(m.last?.at || m.matchedAt)}</div>
+        ${m.unread && m.id !== openId ? `<span class="badge">${m.unread}</span>` : ''}
+      </div>
+    </div>`).join('') : `<div class="empty">No matches with AI profiles yet.<br>Like one in the app (they like back), or like someone from the Swipe tab.</div>`;
+  el.querySelectorAll('.row').forEach((r) => (r.onclick = () => openChat(r.dataset.id)));
+}
+
+async function openChat(id) {
+  openId = id; lastSig = ''; history.replaceState(null, '', '#chats/' + id);
+  document.body.classList.add('open'); $('#back').hidden = false;
+  const m = matches.find((x) => x.id === id); m.unread = 0; renderList();
+  $('#chat').innerHTML = `
+    <div id="chatHead">Replying as <b>${esc(m.demo.name)}</b> (AI) to <b>${memberLabel(m)}</b>${m.member.alias ? ' · @' + esc(m.member.alias) : ''}${m.member.city ? ' · ' + esc(m.member.city) : ''} · ${m.member.online ? '<span style="color:var(--ok)">online now</span>' : m.member.lastActive ? 'active ' + ago(m.member.lastActive) + ' ago' : 'not seen yet'} · matched ${ago(m.matchedAt)} ago</div>
+    <div id="msgs"><div class="empty">Loading…</div></div>
+    <form id="send"><textarea id="text" placeholder="Message as ${esc(m.demo.name)}… (Enter sends, Shift+Enter new line)"></textarea><button type="button" id="draft" title="Let AI write the next message. Text in the box is used as a direction.">✨ AI reply</button><button class="primary">Send</button></form>`;
+  $('#text').focus();
+  $('#text').onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#send').requestSubmit(); } };
+  $('#text').oninput = () => { if (Date.now() - typingSent > 3000) { typingSent = Date.now(); call('typing', { matchId: id }).catch(() => {}); } };
+  // AI writes the next message into the box; what's already in the box is passed along as a direction.
+  $('#draft').onclick = async () => {
+    const btn = $('#draft'), box = $('#text'), hint = box.value.trim();
+    btn.disabled = true; btn.textContent = '✨ Writing…';
+    try { const { text } = await call('draft', { matchId: id, body: hint }); if (openId === id) { box.value = text; box.focus(); } }
+    catch (err) { alert('AI reply failed: ' + err.message); }
+    finally { btn.disabled = false; btn.textContent = '✨ AI reply'; }
+  };
+  $('#send').onsubmit = async (e) => {
+    e.preventDefault();
+    const text = $('#text').value.trim(); if (!text) return;
+    const btn = $('#send button'); btn.disabled = true;
+    try { await call('send', { matchId: id, body: text }); $('#text').value = ''; await loadChat(); }
+    catch (err) { alert('Not sent: ' + err.message); }
+    finally { btn.disabled = false; $('#text').focus(); }
+  };
+  await loadChat();
+}
+
+async function loadChat() {
+  const id = openId; if (!id || tab !== 'chats') return;
+  const { messages, memberRead, memberTyping } = await call('messages', { matchId: id });
+  if (id !== openId) return;
+  const typing = memberTyping && Date.now() - new Date(memberTyping) < 8000;
+  const sig = JSON.stringify([messages.length, messages.at(-1)?.id, memberRead, typing]);
+  if (sig === lastSig) return; lastSig = sig;
+  const box = $('#msgs'); const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  let prev = 0;
+  const lastMine = messages.filter((x) => x.fromDemo).at(-1);
+  box.innerHTML = messages.length ? messages.map((x) => {
+    const t = new Date(x.at); const gap = t - prev > 30 * 60000; prev = t;
+    return (gap ? `<div class="when">${t.toLocaleString([], { weekday:'short', hour:'2-digit', minute:'2-digit' })}</div>` : '') +
+      `<div class="m ${x.fromDemo ? 'd' : 'u'}">${esc(x.text)}</div>` +
+      (x === lastMine ? `<div class="status">${memberRead && memberRead >= x.at ? 'Read' : 'Sent'}</div>` : '');
+  }).join('') + (typing ? `<div class="m u" style="color:var(--mute)">typing…</div>` : '')
+    : `<div class="empty">No messages yet. Write the first one as the AI profile.</div>`;
+  if (atBottom || !box.dataset.seen) box.scrollTop = box.scrollHeight;
+  box.dataset.seen = '1';
+}
+
+/* ---------- Swipe ---------- */
+
+// Passes aren't stored on the server (the app keeps them on the phone too), so they live in this browser.
+const passKey = (id) => 'tonight-console-passes-' + id;
+const passes = (id) => new Set(JSON.parse(localStorage.getItem(passKey(id)) || '[]'));
+
+async function loadDemos() {
+  ({ demos } = await call('demos'));
+  const el = $('#demos'); if (!el) return;
+  el.innerHTML = demos.map((d) => `
+    <div class="row ${d.id === demoId ? 'on' : ''}" data-id="${d.id}">
+      ${pic(d)}
+      <div class="t"><div class="n">${esc(d.name)}</div>
+        <div class="l">${d.likedBy} liked · ${d.matches} match${d.matches === 1 ? '' : 'es'}</div></div>
+    </div>`).join('') || `<div class="empty">No AI profiles in the database.</div>`;
+  // Clicking an AI profile swipes as it and opens its profile on top; closing the profile leaves you swiping.
+  el.querySelectorAll('.row').forEach((r) => (r.onclick = () => { pickDemo(r.dataset.id, true); openProfile(r.dataset.id); }));
+}
+
+async function pickDemo(id, open) {
+  demoId = id; localStorage.setItem('tonight-console-demo', id); photoIx = 0;
+  history.replaceState(null, '', '#swipe/' + id);
+  document.querySelectorAll('#demos .row').forEach((r) => r.classList.toggle('on', r.dataset.id === id));
+  if (open) { document.body.classList.add('open'); $('#back').hidden = false; }
+  $('#deckCol').innerHTML = `<div class="empty">Loading…</div>`;
+  const [d, l] = await Promise.all([call('deck', { demoId: id }), call('likedBy', { demoId: id })]);
+  if (id !== demoId) return;
+  const p = passes(id);
+  deck = d.deck.filter((x) => !p.has(x.id));
+  likeLists = l;
+  renderCard(); renderLikes();
+}
+
+function renderCard() {
+  const el = $('#deckCol'); if (!el) return;
+  const me = demos.find((d) => d.id === demoId);
+  const p = deck[0];
+  const hidden = passes(demoId).size;
+  const head = `<div class="l">Swiping as <b style="color:var(--text)">${esc(me?.name)}</b> · ${deck.length} left${hidden ? ` · ${hidden} passed <a href="#" id="resetPasses" style="color:var(--mute)">show again</a>` : ''}</div>`;
+  if (!p) {
+    el.innerHTML = head + `<div class="empty">Nobody left to swipe.<br>New members show up here once they finish their profile.</div>`;
+  } else {
+    photoIx = Math.min(photoIx, p.photos.length - 1);
+    const d = p.details || {};
+    const facts = [d.height, d.body, d.looking, ...(Array.isArray(d.languages) ? d.languages : [])].filter(Boolean);
+    el.innerHTML = head + `
+      <div class="card">
+        <div class="photo" id="photo"><img src="${esc(p.photos[photoIx])}" alt="">
+          ${p.photos.length > 1 ? `<div class="dots">${p.photos.map((_, i) => `<i class="${i === photoIx ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>
+        <div class="info">
+          <h2>${esc(p.name)}${p.age ? ', ' + p.age : ''} ${p.verified ? '<span class="tag ok">verified</span>' : ''}${p.review_status && p.review_status !== 'approved' ? `<span class="tag hot">${esc(p.review_status)}</span>` : ''}</h2>
+          <div class="l" style="white-space:normal">${[p.gender, p.city, p.country].filter(Boolean).map(esc).join(' · ')} · joined ${ago(p.created_at)} ago</div>
+          ${p.intents?.length ? `<div>${p.intents.map((i) => `<span class="tag">${esc(i)}</span>`).join(' ')}</div>` : ''}
+          ${p.bio ? `<div>${esc(p.bio)}</div>` : ''}
+          ${(p.prompts || []).map((qa) => `<div class="qa"><b>${esc(qa.q)}</b>${esc(qa.a)}</div>`).join('')}
+          ${p.turn_ons?.length ? `<div class="l" style="white-space:normal">Into: ${p.turn_ons.map(esc).join(', ')}</div>` : ''}
+          ${facts.length ? `<div class="l" style="white-space:normal">${facts.map(esc).join(' · ')}</div>` : ''}
+        </div>
+      </div>
+      <div class="swipeBtns"><button id="pass">✕ Pass</button><button id="like" class="primary">♥ Like</button></div>
+      <div class="l">Keys: ← pass · → like · space next photo</div>`;
+    $('#photo').onclick = nextPhoto;
+    $('#pass').onclick = pass;
+    $('#like').onclick = like;
+  }
+  const r = $('#resetPasses');
+  if (r) r.onclick = (e) => { e.preventDefault(); localStorage.removeItem(passKey(demoId)); pickDemo(demoId); };
+}
+
+function nextPhoto() { const p = deck[0]; if (!p) return; photoIx = (photoIx + 1) % p.photos.length; renderCard(); }
+
+function pass() {
+  const p = deck.shift(); if (!p) return;
+  const s = passes(demoId); s.add(p.id); localStorage.setItem(passKey(demoId), JSON.stringify([...s]));
+  photoIx = 0; renderCard();
+}
+
+async function like() {
+  const p = deck[0]; if (!p) return;
+  $('#like').disabled = $('#pass').disabled = true;
+  try {
+    const { matchId } = await call('like', { demoId, targetId: p.id });
+    deck.shift(); photoIx = 0; renderCard();
+    if (matchId) {
+      toast(`It's a match with ${esc(p.name)}! <a href="#chats/${matchId}" id="toChat">Open chat</a>`);
+      $('#toChat').onclick = async (e) => { e.preventDefault(); await loadList(); show('chats', matchId); };
+    } else toast(`Liked ${esc(p.name)}. If they like back it's a match.`);
+    const [l] = await Promise.all([call('likedBy', { demoId }), loadDemos(), loadList()]);
+    likeLists = l; renderLikes();
+  } catch (err) { alert('Like failed: ' + err.message); renderCard(); }
+}
+
+function renderLikes() {
+  const el = $('#likes'); if (!el) return;
+  const row = (x) => `
+    <div class="row" data-p="${esc(x.person.id)}" data-match="${x.matchId || ''}">
+      ${pic(x.person)}
+      <div class="t"><div class="n">${esc(x.person.name)}${x.person.age ? ', ' + x.person.age : ''}${x.person.isDemo ? '<span class="tag">AI</span>' : ''}</div>
+        <div class="l">${x.person.city ? esc(x.person.city) + ' · ' : ''}${ago(x.at)} ago</div></div>
+      ${x.matchId ? '<span class="tag ok">match · chat</span>' : '<span class="tag">waiting</span>'}
+    </div>`;
+  el.innerHTML = `<div class="sec">Liked ${esc(demos.find((d) => d.id === demoId)?.name || '')} (${likeLists.likedBy.length})</div>` +
+    (likeLists.likedBy.map(row).join('') || `<div class="l" style="padding:0 14px 12px">Nobody yet.</div>`) +
+    `<div class="sec">Liked by ${esc(demos.find((d) => d.id === demoId)?.name || '')} (${likeLists.liked.length})</div>` +
+    (likeLists.liked.map(row).join('') || `<div class="l" style="padding:0 14px 12px">Nobody yet.</div>`);
+  el.querySelectorAll('[data-p]').forEach((r) => (r.onclick = () => openProfile(r.dataset.p, { matchId: r.dataset.match })));
+}
+
+document.addEventListener('keydown', (e) => {
+  if ($('#pv')) { if (e.key === 'Escape') closeProfile(); return; }
+  if (tab !== 'swipe' || !deck[0] || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) return;
+  if (e.key === 'ArrowLeft') pass();
+  else if (e.key === 'ArrowRight') like();
+  else if (e.key === ' ') { e.preventDefault(); nextPhoto(); }
+});
+
+/* ---------- Users ---------- */
+
+const RANGES = { online: ['Online now', 0], day: ['New today', 24], week: ['This week', 24 * 7], month: ['This month', 24 * 30], all: ['All', Infinity] };
+const isNew = (u, hours) => Date.now() - new Date(u.joined) < hours * 3600000;
+const inRange = (u, k) => (k === 'online' ? !!u.online : isNew(u, RANGES[k][1]));
+
+async function loadUsers() {
+  ({ users } = await call('users'));
+  const n = users.filter((u) => !u.isDemo && u.name && isNew(u, 24)).length;
+  const on = users.filter((u) => !u.isDemo && u.online).length;
+  $('#nUsers').innerHTML = (on ? `<span class="badge ok">${on} online</span> ` : '') + (n ? `<span class="badge">${n} new</span>` : '');
+}
+
+function renderUsers() {
+  const el = $('#users'); if (!el) return;
+  // Accounts with no profile at all are mostly app opens that never started sign-up; hidden unless asked for.
+  const blank = users.filter((u) => !u.name).length;
+  const real = users.filter((u) => (showAI || !u.isDemo) && (showBlank || u.name));
+  const q = userQuery.toLowerCase();
+  const rows = real.filter((u) => inRange(u, userRange))
+    .filter((u) => !q || [u.name, u.alias, u.city, u.email, u.id].some((v) => v && String(v).toLowerCase().includes(q)));
+  const status = (u) => [
+    u.isDemo && '<span class="tag">AI</span>',
+    !u.onboarded && '<span class="tag hot">not finished</span>',
+    u.verified && '<span class="tag ok">verified</span>',
+    u.review && u.review !== 'approved' && `<span class="tag hot">${esc(u.review)}</span>`,
+    u.paused && '<span class="tag">paused</span>',
+  ].filter(Boolean).join(' ');
+  el.innerHTML = `
+    <div class="bar">
+      <div class="seg">${Object.entries(RANGES).map(([k, [label, h]]) =>
+        `<button data-r="${k}" class="${k === userRange ? 'on' : ''}">${label} (${real.filter((u) => inRange(u, k)).length})</button>`).join('')}</div>
+      <input id="q" placeholder="Search name, city, email…" value="${esc(userQuery)}">
+      <label><input type="checkbox" id="ai" ${showAI ? 'checked' : ''}> Show AI profiles</label>
+      <label><input type="checkbox" id="blank" ${showBlank ? 'checked' : ''}> Show accounts without a profile (${blank})</label>
+      <span class="sp" style="flex:1"></span>
+      <button id="reloadUsers">Refresh</button>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th></th><th>Name</th><th class="hideS">Age · gender</th><th class="hideS">City</th><th class="hideS">Sign-in</th><th>Joined</th><th>Active</th><th>Status</th></tr></thead>
+      <tbody>${rows.map((u) => `
+        <tr class="${isNew(u, 24) ? 'fresh' : ''}" data-u="${esc(u.id)}">
+          <td style="width:52px">${pic(u)}</td>
+          <td><div class="n">${u.name ? esc(u.name) : '<span style="color:var(--mute)">(no profile yet)</span>'}</div>
+            <div class="l">${u.alias ? '@' + esc(u.alias) : ''}${u.photos ? ` · ${u.photos} photo${u.photos > 1 ? 's' : ''}` : ''}</div></td>
+          <td class="hideS">${[u.age, u.gender].filter(Boolean).map(esc).join(' · ') || '–'}</td>
+          <td class="hideS">${[u.city, u.country].filter(Boolean).map(esc).join(', ') || '–'}</td>
+          <td class="hideS"><div>${esc(u.login || '–')}</div><div class="l">${esc(u.email || '')}</div></td>
+          <td title="${esc(day(u.joined))}">${ago(u.joined)} ago<div class="l">${esc(day(u.joined))}</div></td>
+          <td>${u.online ? '<span class="dot" style="margin:0 6px 0 0"></span><span style="color:var(--ok)">online</span>' : u.lastSeen ? ago(u.lastSeen) + ' ago' : '–'}</td>
+          <td>${status(u)}</td>
+        </tr>`).join('')}</tbody>
+    </table>${rows.length ? '' : `<div class="empty">${userRange === 'online' ? 'Nobody online right now.' : userRange === 'all' ? 'No users here.' : 'No new users here.'}</div>`}</div>`;
+  el.querySelectorAll('[data-r]').forEach((b) => (b.onclick = () => { userRange = b.dataset.r; localStorage.setItem('tonight-console-range', userRange); renderUsers(); }));
+  $('#ai').onchange = (e) => { showAI = e.target.checked; renderUsers(); };
+  $('#blank').onchange = (e) => { showBlank = e.target.checked; renderUsers(); };
+  $('#q').oninput = (e) => { userQuery = e.target.value; const pos = e.target.selectionStart; renderUsers(); $('#q').focus(); $('#q').setSelectionRange(pos, pos); };
+  $('#reloadUsers').onclick = async () => { await loadUsers(); renderUsers(); };
+  el.querySelectorAll('[data-u]').forEach((r) => (r.onclick = () => openProfile(r.dataset.u)));
+}
+
+/* ---------- Profile view ---------- */
+
+// A read-only popup with everything on someone's profile, opened from the Swipe list, the like lists and Users.
+let pvId = null;
+function closeProfile() { pvId = null; $('#pv')?.remove(); }
+
+async function openProfile(id, opts = {}) {
+  closeProfile(); pvId = id;
+  const wrap = document.createElement('div'); wrap.id = 'pv';
+  wrap.innerHTML = `<div class="box"><div class="body"><div class="empty">Loading…</div></div></div>`;
+  wrap.onclick = (e) => { if (e.target === wrap) closeProfile(); };
+  document.body.appendChild(wrap);
+  let p;
+  try { ({ profile: p } = await call('profile', { targetId: id })); }
+  catch (err) { if (pvId === id) wrap.querySelector('.body').innerHTML = `<div class="empty">Could not load: ${esc(err.message)}</div><div class="acts"><button id="pvClose">Close</button></div>`; $('#pvClose') && ($('#pvClose').onclick = closeProfile); return; }
+  if (pvId !== id) return;
+  const list = (v) => (Array.isArray(v) ? v : []).filter(Boolean);
+  // details and boundaries are free-form objects; show whatever is filled in.
+  const pairs = (o) => (o && typeof o === 'object' && !Array.isArray(o))
+    ? Object.entries(o).filter(([, v]) => v != null && v !== '' && !(Array.isArray(v) && !v.length))
+      .map(([k, v]) => `<div><span class="k">${esc(k.replace(/_/g, ' '))}</span>${esc(Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? JSON.stringify(v) : v)}</div>`).join('')
+    : list(o).map((x) => `<span class="tag">${esc(x)}</span>`).join(' ');
+  const tags = [
+    p.isDemo && '<span class="tag">AI</span>',
+    p.online && '<span class="tag ok">online</span>',
+    p.verified && '<span class="tag ok">verified</span>',
+    p.onboarded === false && '<span class="tag hot">not finished</span>',
+    p.review_status && p.review_status !== 'approved' && `<span class="tag hot">${esc(p.review_status)}</span>`,
+    p.paused && '<span class="tag">paused</span>',
+  ].filter(Boolean).join(' ');
+  const swipeAs = p.isDemo ? `<button id="pvSwipe" class="primary">Swipe as ${esc(p.name)}</button>` : '';
+  const chat = opts.matchId ? `<button id="pvChat" class="primary">Open chat</button>` : '';
+  const details = pairs(p.details), bounds = pairs(p.boundaries);
+  wrap.querySelector('.box').innerHTML = `
+    ${p.photos.length ? `<div class="pics">${p.photos.map((u) => `<img src="${esc(u)}" alt="">`).join('')}</div>` : ''}
+    <div class="body">
+      <h2>${esc(p.name || '(no profile yet)')}${p.age ? ', ' + p.age : ''} ${tags}</h2>
+      <div class="l" style="white-space:normal">${[p.alias && '@' + p.alias, p.gender, p.city, p.country].filter(Boolean).map(esc).join(' · ')}</div>
+      ${p.prompt ? `<div><i>${esc(p.prompt)}</i></div>` : ''}
+      ${p.bio ? `<div style="white-space:pre-wrap">${esc(p.bio)}</div>` : ''}
+      ${list(p.intents).length ? `<div><span class="k">Looking for</span>${list(p.intents).map((i) => `<span class="tag">${esc(i)}</span>`).join(' ')}</div>` : ''}
+      ${list(p.prompts).map((qa) => `<div class="qa"><b>${esc(qa.q)}</b>${esc(qa.a)}</div>`).join('')}
+      ${list(p.turn_ons).length ? `<div><span class="k">Into</span>${list(p.turn_ons).map(esc).join(', ')}</div>` : ''}
+      ${bounds ? `<div><span class="k">Boundaries</span>${p.boundaries && !Array.isArray(p.boundaries) ? `<div class="grid">${bounds}</div>` : bounds}</div>` : ''}
+      ${details && !Array.isArray(p.details) ? `<div class="grid">${details}</div>` : details ? `<div>${details}</div>` : ''}
+      <div class="sec" style="padding:8px 0 0">Account</div>
+      <div class="grid">
+        <div><span class="k">Joined</span>${esc(day(p.joined))}</div>
+        <div><span class="k">Active</span>${p.online ? '<span style="color:var(--ok)">online now</span>' : p.lastSeen ? ago(p.lastSeen) + ' ago' : '–'}</div>
+        <div><span class="k">Sign-in</span>${esc(p.login || '–')}</div>
+        ${p.email ? `<div><span class="k">Email</span>${esc(p.email)}</div>` : ''}
+        <div><span class="k">Liked by</span>${p.likedBy}</div>
+        <div><span class="k">Liked</span>${p.liked}</div>
+        <div><span class="k">Matches</span>${p.matches}</div>
+        <div><span class="k">ID</span><span style="font-size:12px;word-break:break-all">${esc(p.id)}</span></div>
+      </div>
+      <div class="acts">${chat}${swipeAs}<button id="pvClose">Close</button></div>
+    </div>`;
+  const pics = wrap.querySelector('.pics');
+  if (pics) pics.onclick = (e) => { if (e.target.tagName === 'IMG') { pics.classList.toggle('big'); e.target.scrollIntoView({ inline: 'center', block: 'nearest' }); } };
+  $('#pvClose').onclick = closeProfile;
+  if ($('#pvChat')) $('#pvChat').onclick = async () => { closeProfile(); await loadList(); show('chats', opts.matchId); };
+  if ($('#pvSwipe')) $('#pvSwipe').onclick = () => { closeProfile(); if (tab !== 'swipe') show('swipe', p.id); else if (demoId !== p.id) pickDemo(p.id, true); };
+}
+
+/* ---------- Overview ---------- */
+
+async function renderOverview() {
+  const { stats: s } = await call('stats');
+  const el = $('#overview'); if (!el || tab !== 'overview') return;
+  const card = (v, k, opts = {}) => `<div class="stat ${opts.cls || ''}" ${opts.go ? `data-go="${opts.go}"` : ''}><div class="v">${v}</div><div class="k">${k}</div></div>`;
+  const max = Math.max(1, ...s.signups.map((d) => d.n));
+  el.innerHTML = `
+    <h3 class="sec2">Right now</h3>
+    <div class="cards">
+      ${card(s.online, 'online now', { cls: s.online ? 'good' : '', go: 'users/online' })}
+      ${card(s.activeToday, 'active today', { go: 'users' })}
+      ${card(matches.filter(needsReply).length, 'chats waiting for an AI reply', { cls: matches.some(needsReply) ? 'alert' : '', go: 'chats/__reply' })}
+      ${card(s.pendingReview, 'profiles waiting for review', { cls: s.pendingReview ? 'alert' : '', go: 'mod/reviews' })}
+      ${card(s.openReports, 'open reports', { cls: s.openReports ? 'alert' : '', go: 'mod/reports' })}
+      ${card(s.supportWaiting, 'support messages waiting', { cls: s.supportWaiting ? 'alert' : '', go: 'mod/support' })}
+    </div>
+    <h3 class="sec2">Today</h3>
+    <div class="cards">
+      ${card(s.newToday, 'new members')}
+      ${card(s.likesToday, 'likes')}
+      ${card(s.matchesToday, 'matches')}
+      ${card(s.messagesToday, 'messages')}
+      ${card(s.messagesToAI, 'messages to AI profiles')}
+    </div>
+    <h3 class="sec2">Members</h3>
+    <div class="cards">
+      ${card(s.members, 'with a finished profile', { go: 'users' })}
+      ${card(s.unfinished, 'started but not finished')}
+      ${card(s.newWeek, 'new this week')}
+      ${card(s.matchesWeek, 'matches this week')}
+    </div>
+    <h3 class="sec2">Sign-ups, last 14 days</h3>
+    <div class="bars">${s.signups.map((d) => `<div title="${d.n} on ${esc(d.day)}">${d.n || ''}<i style="height:${Math.round((d.n / max) * 80)}%"></i><span>${new Date(d.day).getDate()}</span></div>`).join('')}</div>
+    <div class="l">Real members only, AI profiles left out. Refreshes every minute.</div>`;
+  el.querySelectorAll('[data-go]').forEach((c) => (c.onclick = () => {
+    const [t, sub] = c.dataset.go.split('/');
+    if (t === 'users' && sub === 'online') { userRange = 'online'; }
+    if (t === 'chats' && sub) { show('chats').then(() => { $('#filter').value = sub; renderList(); }); return; }
+    show(t, t === 'mod' ? sub : undefined);
+  }));
+}
+
+/* ---------- Moderation ---------- */
+
+let modTab = 'reviews', supportThreads = [], supportOpen = null;
+
+async function loadModCounts() {
+  const { stats: s } = await call('stats');
+  const n = s.pendingReview + s.openReports + s.supportWaiting;
+  $('#nMod').innerHTML = n ? `<span class="badge">${n}</span>` : '';
+  return s;
+}
+
+async function renderMod(which) {
+  modTab = which; history.replaceState(null, '', '#mod/' + which);
+  const el = $('#mod'); if (!el) return;
+  const s = await loadModCounts().catch(() => ({}));
+  el.innerHTML = `
+    <div class="bar"><div class="seg">
+      <button data-m="reviews" class="${which === 'reviews' ? 'on' : ''}">Profile reviews (${s.pendingReview ?? '…'})</button>
+      <button data-m="reports" class="${which === 'reports' ? 'on' : ''}">Reports (${s.openReports ?? '…'})</button>
+      <button data-m="support" class="${which === 'support' ? 'on' : ''}">Support (${s.supportWaiting ?? '…'} waiting)</button>
+    </div><span class="l">Decisions work like the Moderation screen in the app: logged, and the member gets a push.</span></div>
+    <div id="modBody"><div class="empty">Loading…</div></div>`;
+  el.querySelectorAll('[data-m]').forEach((b) => (b.onclick = () => renderMod(b.dataset.m)));
+  if (which === 'reviews') renderReviews();
+  else if (which === 'reports') renderReports();
+  else renderSupport();
+}
+
+async function renderReviews() {
+  const { reviews } = await call('reviews');
+  const el = $('#modBody'); if (!el || modTab !== 'reviews') return;
+  el.style.display = 'block';
+  el.innerHTML = reviews.length ? reviews.map((p) => `
+    <div class="rv" data-id="${p.id}">
+      <div class="shots">${p.photos.length ? p.photos.map((u) => `<img src="${esc(u)}" alt="" data-full="${esc(u)}">`).join('') : '<div class="l">No photos</div>'}</div>
+      <div class="info">
+        <h2 style="margin:0;font-size:20px">${esc(p.name || '(no name)')}${p.age ? ', ' + p.age : ''} ${p.verified ? '<span class="tag ok">verified</span>' : ''}${p.reapplied ? '<span class="tag hot">applied again</span>' : ''}</h2>
+        <div class="l" style="white-space:normal">${[p.gender, p.city, p.country].filter(Boolean).map(esc).join(' · ')} · applied ${ago(p.applied_at || p.created_at)} ago</div>
+        ${p.intents?.length ? `<div>${p.intents.map((i) => `<span class="tag">${esc(i)}</span>`).join(' ')}</div>` : ''}
+        ${p.bio ? `<div>${esc(p.bio)}</div>` : '<div class="l">No bio</div>'}
+        ${(p.prompts || []).map((qa) => `<div class="l" style="white-space:normal"><b style="color:var(--text)">${esc(qa.q)}</b> ${esc(qa.a)}</div>`).join('')}
+        <div class="acts"><button class="ok" data-d="approved">✓ Approve</button><button data-d="rejected">✕ Reject…</button><button data-pv="${p.id}">Full profile</button></div>
+      </div>
+    </div>`).join('') : `<div class="empty">Nobody waiting for review. 🎉</div>`;
+  el.querySelectorAll('.rv').forEach((row) => {
+    const id = row.dataset.id;
+    row.querySelectorAll('[data-d]').forEach((b) => (b.onclick = async () => {
+      const decision = b.dataset.d;
+      let note = null;
+      if (decision === 'rejected') {
+        note = prompt('Why not (shown to the member)? For example: "Add a clear photo of yourself."');
+        if (note === null) return;
+      }
+      b.disabled = true;
+      try { await call('decide', { targetId: id, decision, note }); toast(decision === 'approved' ? 'Approved. They got a push.' : 'Rejected. They got a push with your note.'); renderMod('reviews'); }
+      catch (err) { alert('Failed: ' + err.message); b.disabled = false; }
+    }));
+    const pv = row.querySelector('[data-pv]');
+    if (pv && typeof openProfile === 'function') pv.onclick = () => openProfile(id);
+    else if (pv) pv.remove();
+    row.querySelectorAll('img[data-full]').forEach((img) => (img.onclick = () => window.open(img.dataset.full, '_blank')));
+  });
+}
+
+async function renderReports() {
+  const { reports } = await call('reports', { closed: true });
+  const el = $('#modBody'); if (!el || modTab !== 'reports') return;
+  el.style.display = 'block';
+  const open = reports.filter((r) => (r.status || 'open') === 'open');
+  const closed = reports.filter((r) => (r.status || 'open') !== 'open');
+  const row = (r) => `
+    <div class="rv" data-id="${esc(r.id)}">
+      ${r.photo ? `<img class="av" style="width:56px;height:56px" src="${esc(r.photo)}" alt="">` : '<span class="av" style="width:56px;height:56px"></span>'}
+      <div class="info">
+        <div class="n">${esc(r.target_name || r.post_title || 'Reported item')} ${r.post_id ? '<span class="tag">post</span>' : '<span class="tag">person</span>'} ${(r.status || 'open') !== 'open' ? `<span class="tag">${esc(r.status)}</span>` : ''}</div>
+        <div><b>Reason:</b> ${esc(r.reason || '–')}</div>
+        ${r.post_body ? `<div class="l" style="white-space:normal">"${esc(r.post_body)}"</div>` : ''}
+        <div class="l">Reported by ${esc(r.reporter_alias ? '@' + r.reporter_alias : 'a member')} · ${ago(r.created_at)} ago${r.resolution ? ' · ' + esc(r.resolution) : ''}</div>
+        ${(r.status || 'open') === 'open' ? `<div class="acts"><button data-a="dismiss">Dismiss</button>${r.post_id ? '<button data-a="remove_post">Remove post</button>' : ''}${r.target ? '<button data-a="ban" class="primary">Ban…</button>' : ''}</div>` : ''}
+      </div>
+    </div>`;
+  el.innerHTML = (open.length ? open.map(row).join('') : `<div class="empty">No open reports.</div>`) +
+    (closed.length ? `<div class="sec">Handled (${closed.length})</div>` + closed.map(row).join('') : '');
+  el.querySelectorAll('.rv').forEach((rowEl) => rowEl.querySelectorAll('[data-a]').forEach((b) => (b.onclick = async () => {
+    const a = b.dataset.a;
+    if (a === 'ban' && !confirm('Ban this person? Their likes, matches, posts and comments are removed. This cannot be undone here.')) return;
+    const note = a === 'dismiss' ? null : prompt('Note for the log (optional):') || null;
+    b.disabled = true;
+    try { await call('resolve', { reportId: rowEl.dataset.id, resolution: a, note }); toast('Done.'); renderMod('reports'); }
+    catch (err) { alert('Failed: ' + err.message); b.disabled = false; }
+  })));
+}
+
+async function renderSupport() {
+  ({ threads: supportThreads } = await call('support'));
+  const el = $('#modBody'); if (!el || modTab !== 'support') return;
+  el.style.display = 'flex';
+  el.innerHTML = `<div id="supList" class="col"></div><section id="supChat"><div class="empty">Pick a conversation.</div></section>`;
+  $('#supList').innerHTML = supportThreads.map((t) => `
+    <div class="row ${t.userId === supportOpen ? 'on' : ''}" data-u="${t.userId}">
+      ${pic(t)}
+      <div class="t"><div class="n">${esc(t.name || '(no profile)')}${t.age ? ', ' + t.age : ''}</div>
+        <div class="l">${t.messages.at(-1).fromTeam ? 'You: ' : ''}${esc(t.messages.at(-1).text)}</div></div>
+      <div style="text-align:right"><div class="l">${ago(t.lastAt)}</div>${t.waiting ? '<span class="badge">waiting</span>' : ''}</div>
+    </div>`).join('') || `<div class="empty">No support messages yet.</div>`;
+  $('#supList').querySelectorAll('.row').forEach((r) => (r.onclick = () => { supportOpen = r.dataset.u; renderSupport(); }));
+  const t = supportThreads.find((x) => x.userId === supportOpen);
+  if (!t) return;
+  $('#supChat').innerHTML = `
+    <div id="chatHead">Support chat with <b>${esc(t.name || 'member')}</b>${t.city ? ' · ' + esc(t.city) : ''} · you reply as Tonight support</div>
+    <div id="msgs">${t.messages.map((m) => `<div class="m ${m.fromTeam ? 'd' : 'u'}">${esc(m.text)}</div>`).join('')}</div>
+    <form id="send"><textarea id="text" placeholder="Reply as Tonight support… (Enter sends)"></textarea><button class="primary">Send</button></form>`;
+  $('#msgs').scrollTop = $('#msgs').scrollHeight;
+  $('#text').onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#send').requestSubmit(); } };
+  $('#send').onsubmit = async (e) => {
+    e.preventDefault();
+    const text = $('#text').value.trim(); if (!text) return;
+    try { await call('supportReply', { targetId: t.userId, body: text }); renderSupport(); loadModCounts().catch(() => {}); }
+    catch (err) { alert('Not sent: ' + err.message); }
+  };
+  $('#text').focus();
+}
+
+/* ---------- Wiring ---------- */
+
+document.querySelectorAll('#tabs button').forEach((b) => (b.onclick = () => show(b.dataset.tab)));
+$('#bell').onclick = async () => {
+  const p = await Notification.requestPermission();
+  $('#bell').hidden = p === 'granted';
+  toast(p === 'granted' ? 'Notifications on: you’ll get one when someone messages an AI profile.' : 'Notifications are blocked in this browser.');
+};
+$('#filter').onchange = renderList;
+$('#logout').onclick = () => logout();
+$('#back').onclick = () => {
+  openId = null; document.body.classList.remove('open'); $('#back').hidden = true;
+  history.replaceState(null, '', '#' + tab); if (tab === 'chats') renderList();
+};
+
+// Open chat refreshes every 3s, the match list every 10s, users every minute.
+setInterval(() => { if (key && openId && !document.hidden) loadChat().catch(() => {}); }, 3000);
+// The match list keeps polling in a background tab too, so new messages still notify.
+setInterval(() => { if (key && !$('#login')) loadList().then(() => tab === 'chats' && renderList()).catch(() => {}); }, 10000);
+setInterval(() => { if (key && !$('#login') && !document.hidden) { if (tab === 'overview') renderOverview().catch(() => {}); else loadModCounts().catch(() => {}); } }, 60000);
+setInterval(() => { if (key && !$('#login') && !document.hidden) loadUsers().then(() => tab === 'users' && !document.activeElement?.matches('#q') && renderUsers()).catch(() => {}); }, 60000);
+
+bindLogin();
+if (key) start().catch(() => logout());
+</script>
+</body>
+</html>
