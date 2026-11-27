@@ -1113,6 +1113,7 @@ const CAT_STYLE = {
   Safety: { icon: 'shield', colors: ['#3B7BFF', '#2BC48A'] },
   Confidence: { icon: 'spark', colors: ['#FFB23D', '#F0287A'] },
   Hosting: { icon: 'home', colors: ['#7B3CFF', '#3B7BFF'] },
+  Positions: { icon: 'couple', colors: ['#F0287A', '#7B3CFF'] },
 };
 const catStyle = (cat) => CAT_STYLE[cat] || { icon: 'book', colors: [C.pink, C.blue] };
 
