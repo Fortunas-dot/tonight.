@@ -172,7 +172,8 @@ export function FilterSheet({ visible, filters, show, hasCity, hasCountry, onClo
           </T>
           <View style={styles.wrap}>
             {SHOW.map((g) => (
-              <Chip key={g} label={g} on={s.includes(g)} onPress={() => setS(toggle(s, g))} />
+              // Keep at least one: with none picked you'd see nobody and nobody would see you.
+              <Chip key={g} label={g} on={s.includes(g)} onPress={() => (s.length === 1 && s[0] === g ? null : setS(toggle(s, g)))} />
             ))}
           </View>
 

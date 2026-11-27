@@ -548,8 +548,9 @@ export function Basics({ profile, setProfile, next, back }) {
   const [country, setCountry] = useState(profile.country || '');
   const [city, setCity] = useState(profile.city || '');
   const ageNum = parseInt(age, 10);
-  const valid = name.trim().length > 0 && ageNum >= 18 && ageNum < 100;
-  const toggleShow = (s) => setShow(show.includes(s) ? show.filter((x) => x !== s) : [...show, s]);
+  const valid = name.trim().length > 0 && ageNum >= 18 && ageNum < 100 && show.length > 0;
+  // Keep at least one "Show me": with none you'd see nobody and nobody would see you.
+  const toggleShow = (s) => setShow(show.includes(s) ? (show.length > 1 ? show.filter((x) => x !== s) : show) : [...show, s]);
   const findCountries = useCallback(async (q) => searchCountries(q), []);
   const code = countryCode(country);
   const findCities = useCallback(async (q) => searchCities(q, code), [code]);
